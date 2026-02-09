@@ -5,15 +5,20 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 
-// Firebase config - same as in your app
+// Firebase config - reads from environment variables
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyBl-cet0jvOLl9xr1KwureLJpB5dNwFPsE",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "hospital-capilar-quiz.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "hospital-capilar-quiz",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "hospital-capilar-quiz.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "744064330498",
-  appId: process.env.VITE_FIREBASE_APP_ID || "1:744064330498:web:cd1fbdd9bded3167c88641"
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID,
 };
+
+if (!firebaseConfig.apiKey) {
+  console.error('Missing VITE_FIREBASE_API_KEY. Set environment variables before running.');
+  process.exit(1);
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
