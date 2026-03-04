@@ -1,5 +1,5 @@
 import { Routes, Route, useParams } from 'react-router-dom'
-import EditableQuiz from './components/EditableQuiz'
+import HospitalCapilarQuiz from './components/HospitalCapilarQuiz'
 import QuizRenderer from './components/QuizRenderer'
 import QuizPreview from './components/QuizPreview'
 import './App.css'
@@ -19,8 +19,8 @@ function PreviewPage() {
 function App() {
   return (
     <Routes>
-      {/* Quiz editable - añade ?edit=true para abrir el editor */}
-      <Route path="/" element={<EditableQuiz />} />
+      {/* Hospital Capilar Quiz */}
+      <Route path="/" element={<HospitalCapilarQuiz />} />
 
       {/* Preview mode - accessible before publishing */}
       <Route path="/preview/:slug" element={<PreviewPage />} />
