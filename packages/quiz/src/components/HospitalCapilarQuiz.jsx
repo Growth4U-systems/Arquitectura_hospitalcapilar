@@ -1,9 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronRight, CheckCircle2, ArrowLeft, ShieldCheck, Stethoscope,
   Sparkles, Dna, MapPin, Info, PhoneCall, Calendar, Download, FileText
 } from 'lucide-react';
+import { useAnalytics } from '@hospital-capilar/shared/analytics';
+import { getUTMParams } from '@hospital-capilar/shared/analytics';
+import { db } from '@hospital-capilar/shared/firebase';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 
+// ============================================
+// GENERATE AGENT MESSAGE
+// ============================================
+function generateAgentMessage(answers, result, labels) {
+  const { ecp, score, frame } = result;
+  const nombre = (answers.nombre || 'Paciente').split(' ')[0];
+  const sexo = answers.sexo === 'hombre' ? 'el paciente' : 'la paciente';
+  const pronombre = answers.sexo === 'hombre' ? 'El' : 'Ella';
+
+  const problemLabel = labels.problema || answers.problema;
+  const tiempoLabel = labels.tiempo || answers.tiempo;
+  const probadoLabels = (answers.probado || []).map(v => labels[`probado_${v}`] || v).join(', ') || 'nada';
+  const impactoLabel = labels.impacto || answers.impacto;
+  const inversionLabel = labels.inversion || answers.inversion;
+  const formatoLabel = labels.formato || answers.formato;
+  const edadLabel = labels.edad || answers.edad;
+  const ubicacionLabel = labels.ubicacion || answers.ubicacion || 'no indicada';
+
+  let urgencia = 'media';
+  if (frame === 'FRAME_A' || score >= 60) urgencia = 'ALTA';
+  else if (frame === 'FRAME_D' || score < 30) urgencia = 'baja';
+
+  let intro = '';
+  if (ecp === 'ECP1') intro = `${nombre} es un hombre que lleva ${tiempoLabel} con caída capilar. Ya probó ${probadoLabels} sin resultado. No tiene diagnóstico formal.`;
+  else if (ecp === 'ECP2') intro = `${nombre} es una mujer con caída probablemente hormonal. Lleva ${tiempoLabel} con el problema.`;
+  else if (ecp === 'ECP3') intro = `${nombre} es un joven (${edadLabel}) que está empezando a notar caída. Tiene poco o ningún tratamiento previo.`;
+  else if (ecp === 'ECP4') intro = `${nombre} tuvo mala experiencia en ${labels.clinica_previa || 'otra clínica'}. Viene con desconfianza.`;
+  else if (ecp === 'ECP5') intro = `${nombre} ya se hizo un trasplante (${labels.cirugia_lugar || 'no especificado'}) y necesita mantenimiento.`;
+  else if (ecp === 'ECP6') intro = `${nombre} tiene caída desde el embarazo/parto. Lleva ${tiempoLabel} con el problema.`;
+  else intro = `${nombre} tiene problemas de cuero cabelludo (caspa, irritación). NO es candidato/a — derivar a dermatología.`;
+
+  const condicionesText = answers.sexo === 'mujer' && answers.condicion?.length > 0 && !answers.condicion.includes('desconocida')
+    ? `\nCondiciones: ${answers.condicion.map(v => labels[`condicion_${v}`] || v).join(', ')}.`
+    : '';
+
+  const motivacionLabel = labels.motivacion || answers.motivacion;
+  const conocimientoLabel = labels.conocimiento || answers.conocimiento;
+
+  // Source info
+  const sourceInfo = labels._utm_source
+    ? `${labels._utm_source}/${labels._utm_medium || ''}${labels._utm_campaign ? ` (${labels._utm_campaign})` : ''}`
+    : 'Directo / Orgánico';
+
+  const message = `--- FICHA LEAD: ${answers.nombre || 'Sin nombre'} ---
+
+URGENCIA: ${urgencia.toUpperCase()} | Score: ${score} | Perfil: ${ecp}
+ORIGEN: ${sourceInfo}
+
+RESUMEN:
+${intro}${condicionesText}
+
+DATOS CLAVE:
+- Impacto emocional: ${impactoLabel}
+- Conocimiento de su alopecia: ${conocimientoLabel}
+- Motivacion: ${motivacionLabel}
+- Inversion dispuesta: ${inversionLabel}
+- Formato preferido: ${formatoLabel}
+- Ubicacion: ${ubicacionLabel}
+
+COMO CONTACTAR:
+${frame === 'FRAME_A' ? `${pronombre} quiere reservar consulta. Contactar para confirmar cita (195 euros). Es lead caliente.` : ''}${frame === 'FRAME_C' ? `${pronombre} prefiere que le llamen. Contactar por telefono, sin presion. Explicar proceso y resolver dudas antes de ofrecer cita.` : ''}${frame === 'FRAME_D' ? `${pronombre} necesita mas informacion. Enviar guia PDF y hacer seguimiento suave en 3-5 dias.` : ''}${frame === 'WAITLIST' ? `${pronombre} no esta cerca de ninguna clinica operativa. Apuntar en lista de espera y avisar cuando abramos en su zona.` : ''}${frame === 'DERIVACION' ? `NO contactar comercialmente. Enviar email educativo sobre cuero cabelludo y recomendar dermatologo.` : ''}
+
+TIPS PARA LA LLAMADA:
+${ecp === 'ECP1' ? `- Mencionar que el 40-60% no responden a minoxidil sin diagnostico. Enfatizar que el problema es la falta de diagnostico, no los productos.` : ''}${ecp === 'ECP2' ? `- Hablar de la conexion pelo-hormonas. Mencionar que nadie cruza dermatologia con endocrinologia como nosotros.` : ''}${ecp === 'ECP3' ? `- No alarmar. Enfatizar que actuar temprano = mejores resultados. Ofrecer consulta informativa.` : ''}${ecp === 'ECP4' ? `- CUIDADO: viene con desconfianza. No presionar. Ser transparente. Ofrecer toda la info antes de pedir decision.` : ''}${ecp === 'ECP5' ? `- Hablar de proteger la inversion del trasplante. El pelo nativo necesita mantenimiento.` : ''}${ecp === 'ECP6' ? `- Tranquilizar: el 50% de madres lo sufren. Pero validar que necesita diagnostico para descartar AGA subyacente.` : ''}
+
+CONTACTO:
+- Nombre: ${answers.nombre || 'N/A'}
+- Email: ${answers.email || 'N/A'}
+- Telefono: ${answers.telefono || 'N/A'}
+---`;
+
+  return message;
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 const HospitalCapilarQuiz = () => {
   const [stepIndex, setStepIndex] = useState(-1);
   const [answers, setAnswers] = useState({ probado: [], condicion: [] });
@@ -11,11 +92,36 @@ const HospitalCapilarQuiz = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [finalResult, setFinalResult] = useState(null);
+  const [returningLead, setReturningLead] = useState(null);
+  const [utmParams] = useState(() => getUTMParams());
+
+  // Analytics
+  const analytics = useAnalytics();
+  const questionStartTime = useRef(Date.now());
+  const quizStartTime = useRef(null);
 
   const theme = { primary: '#4CA994', secondary: '#2C3E50', light: '#F0F7F6', white: '#FFFFFF' };
 
+  // ============================================
+  // RETURNING LEAD DETECTION
+  // ============================================
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('hc_quiz_lead');
+      if (stored) {
+        const lead = JSON.parse(stored);
+        if (lead.nombre && lead.ecp) {
+          setReturningLead(lead);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // ============================================
+  // QUESTIONS
+  // ============================================
   const questions = [
-    // BLOQUE 1: IDENTIFICACIÓN
+    // BLOQUE 1: IDENTIFICACION
     {
       id: 'sexo', block: 1,
       title: 'Empecemos. ¿Cuál es tu sexo?',
@@ -123,7 +229,7 @@ const HospitalCapilarQuiz = () => {
         { label: 'Otra', value: 'otra' }
       ]
     },
-    // BLOQUE 2: PROFUNDIDAD + EDUCACIÓN
+    // BLOQUE 2: PROFUNDIDAD + EDUCACION
     {
       id: 'impacto', block: 2,
       title: '¿Cuánto te afecta este problema en tu día a día?',
@@ -184,7 +290,7 @@ const HospitalCapilarQuiz = () => {
         { label: 'Sí, mi médico de cabecera', value: 'cabecera' }
       ]
     },
-    // BLOQUE 3: DISPOSICIÓN
+    // BLOQUE 3: DISPOSICION
     {
       id: 'expectativa', block: 3,
       title: '¿Qué resultado esperas conseguir?',
@@ -232,13 +338,70 @@ const HospitalCapilarQuiz = () => {
   const activeQuestions = questions.filter(q => !q.dependsOn || q.dependsOn(answers));
   const currentQ = activeQuestions[stepIndex >= 0 ? stepIndex : 0];
 
+  // ============================================
+  // LABEL HELPERS (for agent message + display)
+  // ============================================
   const getLabel = (qId, value) => {
     const q = questions.find(q => q.id === qId);
     if (!q) return value;
-    const opt = q.options?.find(o => o.value === value);
+    const opts = q.optionsFn ? q.optionsFn(answers) : q.options;
+    const opt = opts?.find(o => o.value === value);
     return opt ? opt.label : value;
   };
 
+  const buildAllLabels = useCallback((ans) => {
+    const labels = {};
+    for (const q of questions) {
+      const val = ans[q.id];
+      if (val === undefined || val === null) continue;
+      const opts = q.optionsFn ? q.optionsFn(ans) : q.options;
+      if (Array.isArray(val)) {
+        val.forEach(v => {
+          const opt = opts?.find(o => o.value === v);
+          labels[`${q.id}_${v}`] = opt ? opt.label : v;
+        });
+      } else {
+        const opt = opts?.find(o => o.value === val);
+        labels[q.id] = opt ? opt.label : val;
+      }
+    }
+    // Add location label
+    const ubicacionMap = {
+      madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra',
+      acoruna: 'A Coruña', mostoles: 'Mostoles', albacete: 'Albacete',
+      valladolid: 'Valladolid', burgos: 'Burgos', valencia: 'Valencia', otra: 'Otra ciudad'
+    };
+    if (ans.ubicacion) labels.ubicacion = ubicacionMap[ans.ubicacion] || ans.ubicacion;
+    return labels;
+  }, []);
+
+  // Build readable answers object for storage
+  const buildReadableAnswers = useCallback((ans) => {
+    const labels = buildAllLabels(ans);
+    const readable = {};
+    for (const q of questions) {
+      const val = ans[q.id];
+      if (val === undefined || val === null || q.type === 'form') continue;
+      if (Array.isArray(val)) {
+        readable[q.id] = {
+          question: q.title,
+          values: val,
+          labels: val.map(v => labels[`${q.id}_${v}`] || v),
+        };
+      } else {
+        readable[q.id] = {
+          question: q.title,
+          value: val,
+          label: labels[q.id] || val,
+        };
+      }
+    }
+    return readable;
+  }, [buildAllLabels]);
+
+  // ============================================
+  // SCORING ENGINE
+  // ============================================
   const processResults = (finalAnswers) => {
     let ecp = 'ECP1';
     let score = 0;
@@ -282,13 +445,118 @@ const HospitalCapilarQuiz = () => {
     else if (finalAnswers.formato === 'info' || score < 40) frame = 'FRAME_D';
     else frame = 'FRAME_A';
 
-    setFinalResult({ ecp, score, frame, nombre: finalAnswers.nombre || 'Paciente' });
+    const result = { ecp, score, frame, nombre: finalAnswers.nombre || 'Paciente' };
+    setFinalResult(result);
 
-    // Send lead to GoHighLevel
-    sendToGoHighLevel(finalAnswers, { ecp, score, frame });
+    // Generate labels and agent message
+    const labels = {
+      ...buildAllLabels(finalAnswers),
+      _utm_source: utmParams.utm_source || null,
+      _utm_medium: utmParams.utm_medium || null,
+      _utm_campaign: utmParams.utm_campaign || null,
+    };
+    const agentMessage = generateAgentMessage(finalAnswers, result, labels);
+    const readableAnswers = buildReadableAnswers(finalAnswers);
+
+    // Save lead
+    saveLead(finalAnswers, result, readableAnswers, agentMessage);
+
+    // Send to GHL
+    sendToGoHighLevel(finalAnswers, result, agentMessage);
+
+    // Track completion
+    const totalTime = quizStartTime.current ? Date.now() - quizStartTime.current : 0;
+    analytics.trackQuizCompleted(finalAnswers);
+    analytics.trackEvent('quiz_result', {
+      ecp: result.ecp,
+      score: result.score,
+      frame: result.frame,
+      total_time_ms: totalTime,
+    });
   };
 
-  const sendToGoHighLevel = async (data, result) => {
+  // ============================================
+  // SAVE LEAD TO FIRESTORE
+  // ============================================
+  const saveLead = async (data, result, readableAnswers, agentMessage) => {
+    try {
+      const totalTime = quizStartTime.current ? Math.round((Date.now() - quizStartTime.current) / 1000) : 0;
+
+      // Determine source channel from UTMs
+      const sourceChannel = utmParams.utm_source
+        ? `${utmParams.utm_source}/${utmParams.utm_medium || 'unknown'}`
+        : document.referrer ? 'organic/referral' : 'direct';
+
+      const leadDoc = {
+        // Contact info
+        nombre: data.nombre || '',
+        email: data.email || '',
+        telefono: data.telefono || '',
+        ubicacion: data.ubicacion || '',
+
+        // Classification
+        ecp: result.ecp,
+        score: result.score,
+        frame: result.frame,
+
+        // All answers (raw + readable)
+        answersRaw: { ...data },
+        answersReadable: readableAnswers,
+
+        // Agent message
+        agentMessage,
+
+        // Behavior
+        behavior: {
+          totalTimeSeconds: totalTime,
+          totalQuestions: activeQuestions.length,
+          sessionId: analytics.sessionId || null,
+        },
+
+        // Attribution / UTMs
+        source: {
+          channel: sourceChannel,
+          utm_source: utmParams.utm_source || null,
+          utm_medium: utmParams.utm_medium || null,
+          utm_campaign: utmParams.utm_campaign || null,
+          utm_content: utmParams.utm_content || null,
+          utm_term: utmParams.utm_term || null,
+          referrer: document.referrer || 'direct',
+          landing_url: window.location.href,
+        },
+
+        // Metadata
+        status: 'new',
+        createdAt: serverTimestamp(),
+      };
+
+      // Remove form fields from answersRaw
+      delete leadDoc.answersRaw.nombre;
+      delete leadDoc.answersRaw.email;
+      delete leadDoc.answersRaw.telefono;
+
+      const leadsRef = collection(db, 'quiz_leads');
+      await addDoc(leadsRef, leadDoc);
+
+      // Save to localStorage for returning lead detection
+      localStorage.setItem('hc_quiz_lead', JSON.stringify({
+        nombre: data.nombre,
+        email: data.email,
+        ecp: result.ecp,
+        frame: result.frame,
+        score: result.score,
+        completedAt: new Date().toISOString(),
+      }));
+
+    } catch (err) {
+      console.error('Firestore save error:', err);
+    }
+  };
+
+  // ============================================
+  // GHL SYNC
+  // ============================================
+  const sendToGoHighLevel = async (data, result, agentMessage) => {
     const apiKey = import.meta.env.VITE_GHL_API_KEY;
     const locationId = import.meta.env.VITE_GHL_LOCATION_ID;
     if (!apiKey || !locationId) return;
@@ -297,10 +565,13 @@ const HospitalCapilarQuiz = () => {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const quizSummary = Object.entries(data)
-      .filter(([key]) => !['nombre', 'email', 'telefono'].includes(key))
-      .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
-      .join('\n');
+    // Build source tag from UTMs
+    const sourceTag = utmParams.utm_source
+      ? `src-${utmParams.utm_source}`
+      : 'src-direct';
+    const campaignTag = utmParams.utm_campaign
+      ? `camp-${utmParams.utm_campaign}`
+      : null;
 
     try {
       await fetch('https://services.leadconnectorhq.com/contacts/', {
@@ -316,8 +587,10 @@ const HospitalCapilarQuiz = () => {
           lastName,
           email: data.email || '',
           phone: data.telefono || '',
-          tags: [result.ecp, result.frame, `score-${result.score}`],
-          source: 'Quiz Hospital Capilar',
+          tags: [result.ecp, result.frame, `score-${result.score}`, sourceTag, campaignTag].filter(Boolean),
+          source: utmParams.utm_source
+            ? `Quiz HC — ${utmParams.utm_source}/${utmParams.utm_medium || ''}`
+            : 'Quiz Hospital Capilar',
           customFields: [
             { key: 'ecp', field_value: result.ecp },
             { key: 'lead_score', field_value: String(result.score) },
@@ -327,10 +600,25 @@ const HospitalCapilarQuiz = () => {
             { key: 'edad', field_value: data.edad || '' },
             { key: 'problema', field_value: data.problema || '' },
             { key: 'tiempo', field_value: data.tiempo || '' },
-            { key: 'formato', field_value: data.formato || '' },
+            { key: 'probado', field_value: (data.probado || []).join(', ') },
+            { key: 'impacto', field_value: data.impacto || '' },
+            { key: 'conocimiento', field_value: data.conocimiento || '' },
+            { key: 'motivacion', field_value: data.motivacion || '' },
+            { key: 'efectos', field_value: data.efectos || '' },
+            { key: 'profesional', field_value: data.profesional || '' },
+            { key: 'expectativa', field_value: data.expectativa || '' },
             { key: 'inversion', field_value: data.inversion || '' },
+            { key: 'formato', field_value: data.formato || '' },
+            { key: 'condicion', field_value: (data.condicion || []).join(', ') },
+            { key: 'cirugia_lugar', field_value: data.cirugia_lugar || '' },
+            { key: 'clinica_previa', field_value: data.clinica_previa || '' },
+            { key: 'utm_source', field_value: utmParams.utm_source || '' },
+            { key: 'utm_medium', field_value: utmParams.utm_medium || '' },
+            { key: 'utm_campaign', field_value: utmParams.utm_campaign || '' },
+            { key: 'utm_content', field_value: utmParams.utm_content || '' },
+            { key: 'utm_term', field_value: utmParams.utm_term || '' },
           ],
-          notes: `Quiz completado\n\nECP: ${result.ecp}\nScore: ${result.score}\nFrame: ${result.frame}\n\nRespuestas:\n${quizSummary}`,
+          notes: agentMessage,
         }),
       });
     } catch (err) {
@@ -338,6 +626,9 @@ const HospitalCapilarQuiz = () => {
     }
   };
 
+  // ============================================
+  // NAVIGATION HANDLERS
+  // ============================================
   const handleNext = () => {
     if (currentQ.microTip && !showMicroTip) {
       setShowMicroTip(true);
@@ -346,6 +637,7 @@ const HospitalCapilarQuiz = () => {
     setShowMicroTip(false);
     if (stepIndex < activeQuestions.length - 1) {
       setStepIndex(prev => prev + 1);
+      questionStartTime.current = Date.now();
     } else {
       startAnalysis();
     }
@@ -354,18 +646,31 @@ const HospitalCapilarQuiz = () => {
   const handleBack = () => {
     if (stepIndex > 0) {
       setShowMicroTip(false);
+      analytics.trackBackButtonClicked(currentQ.id, activeQuestions[stepIndex - 1]?.id);
       setStepIndex(prev => prev - 1);
+      questionStartTime.current = Date.now();
     } else if (stepIndex === 0) {
       setStepIndex(-1);
     }
   };
 
   const handleAnswer = (value) => {
+    const timeSpent = Date.now() - questionStartTime.current;
+
     if (currentQ.type === 'single') {
       const newAnswers = { ...answers, [currentQ.id]: value };
       setAnswers(newAnswers);
+
+      // Track answer
+      analytics.trackQuestionAnswered(currentQ.id, stepIndex, value);
+      analytics.trackEvent('question_time', {
+        question_id: currentQ.id,
+        time_spent_ms: timeSpent,
+      });
+
       setTimeout(() => {
         setShowMicroTip(false);
+        questionStartTime.current = Date.now();
         if (stepIndex < activeQuestions.length - 1) {
           setStepIndex(prev => prev + 1);
         } else {
@@ -392,9 +697,20 @@ const HospitalCapilarQuiz = () => {
     }
   };
 
+  const handleMultipleNext = () => {
+    const timeSpent = Date.now() - questionStartTime.current;
+    analytics.trackQuestionAnswered(currentQ.id, stepIndex, answers[currentQ.id]);
+    analytics.trackEvent('question_time', {
+      question_id: currentQ.id,
+      time_spent_ms: timeSpent,
+    });
+    handleNext();
+  };
+
   const startAnalysis = () => {
     processResults(answers);
     setIsAnalyzing(true);
+    analytics.trackEvent('analysis_started', { answers_count: Object.keys(answers).length });
     let progress = 0;
     const interval = setInterval(() => {
       progress += 2;
@@ -406,6 +722,72 @@ const HospitalCapilarQuiz = () => {
       }
     }, 40);
   };
+
+  // ============================================
+  // TRACK QUESTION VIEWS
+  // ============================================
+  useEffect(() => {
+    if (stepIndex >= 0 && stepIndex < activeQuestions.length) {
+      const q = activeQuestions[stepIndex];
+      analytics.trackEvent('question_viewed', {
+        question_id: q.id,
+        question_index: stepIndex,
+        total_questions: activeQuestions.length,
+        block: q.block,
+      });
+      questionStartTime.current = Date.now();
+    }
+  }, [stepIndex]);
+
+  // ============================================
+  // TRACK CTA CLICKS
+  // ============================================
+  const handleCTAClick = (ctaType) => {
+    analytics.trackEvent('cta_clicked', {
+      cta_type: ctaType,
+      frame: finalResult?.frame,
+      ecp: finalResult?.ecp,
+      score: finalResult?.score,
+    });
+  };
+
+  // ============================================
+  // RETURNING LEAD SCREEN
+  // ============================================
+  if (returningLead && stepIndex === -1) {
+    return (
+      <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
+        <div className="absolute top-0 left-0 w-full h-1.5" style={{ backgroundColor: theme.primary }}></div>
+        <div className="font-bold text-2xl tracking-tight text-gray-800 flex items-center gap-2 mb-12">
+          <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primary }}></div>
+          HOSPITAL<span style={{ color: theme.primary }}>CAPILAR</span>
+        </div>
+        <div className="max-w-xl text-center">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+            ¡Hola de nuevo, {returningLead.nombre.split(' ')[0]}!
+          </h1>
+          <p className="text-lg text-gray-500 mb-8 leading-relaxed">
+            Ya completaste tu diagnóstico capilar. ¿Qué te gustaría hacer?
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => { setReturningLead(null); analytics.trackEvent('returning_lead_action', { action: 'retake' }); }}
+              className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg hover:-translate-y-1 transition-transform"
+              style={{ backgroundColor: theme.primary }}
+            >
+              Repetir el diagnóstico
+            </button>
+            <button
+              onClick={() => { handleCTAClick('returning_contact'); }}
+              className="w-full py-4 rounded-xl border-2 border-gray-200 text-gray-700 font-bold text-lg hover:bg-gray-50 transition-colors"
+            >
+              Quiero que me contacten
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // PANTALLA INTRO
   if (stepIndex === -1) {
@@ -428,7 +810,12 @@ const HospitalCapilarQuiz = () => {
             Responde a este diagnóstico interactivo (3-4 min). Nuestro sistema evaluará tu nivel de caída y definirá un pre-diagnóstico preciso.
           </p>
           <button
-            onClick={() => setStepIndex(0)}
+            onClick={() => {
+              setStepIndex(0);
+              quizStartTime.current = Date.now();
+              questionStartTime.current = Date.now();
+              analytics.trackQuizStarted();
+            }}
             className="w-full md:w-auto px-12 py-4 rounded-xl text-white font-bold text-lg shadow-lg hover:-translate-y-1 transition-transform"
             style={{ backgroundColor: theme.primary }}
           >
@@ -439,7 +826,7 @@ const HospitalCapilarQuiz = () => {
     );
   }
 
-  // PANTALLA ANÁLISIS
+  // PANTALLA ANALISIS
   if (isAnalyzing) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
@@ -538,10 +925,10 @@ const HospitalCapilarQuiz = () => {
                 <div className="absolute top-0 right-0 bg-[#4CA994] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">PASO RECOMENDADO</div>
                 <h4 className="font-bold text-xl text-gray-900 mb-2 mt-2">Reserva tu diagnóstico presencial</h4>
                 <p className="text-gray-600 mb-6">El siguiente paso es confirmar el pre-diagnóstico con un médico en clínica.</p>
-                <button className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-4 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
+                <button onClick={() => handleCTAClick('reserva_consulta')} className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-4 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
                   Reserva tu Consulta de Diagnóstico — 195€ <Calendar size={20} />
                 </button>
-                <button className="w-full py-3 rounded-xl text-gray-500 font-semibold text-sm hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors">
+                <button onClick={() => handleCTAClick('prefiero_llamada')} className="w-full py-3 rounded-xl text-gray-500 font-semibold text-sm hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors">
                   Prefiero que me llaméis primero <PhoneCall size={16} />
                 </button>
               </div>
@@ -550,7 +937,7 @@ const HospitalCapilarQuiz = () => {
               <div className="border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h4 className="font-bold text-xl text-gray-900 mb-2">Entendemos que quieras hablar antes</h4>
                 <p className="text-gray-600 mb-6">Un asesor médico de Hospital Capilar te llamará en menos de 24h para resolver tus dudas, sin compromiso.</p>
-                <button className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
+                <button onClick={() => handleCTAClick('solicitar_llamada')} className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
                   Solicita que te llamemos <PhoneCall size={20} />
                 </button>
               </div>
@@ -559,7 +946,7 @@ const HospitalCapilarQuiz = () => {
               <div className="border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h4 className="font-bold text-xl text-gray-900 mb-2">Recibe tu Guía Personalizada</h4>
                 <p className="text-gray-600 mb-6">Parece que estás empezando a explorar opciones. Te hemos preparado una guía con todo lo que necesitas saber.</p>
-                <button className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
+                <button onClick={() => handleCTAClick('descarga_guia')} className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
                   Descarga tu Guía (PDF) <Download size={20} />
                 </button>
               </div>
@@ -568,10 +955,10 @@ const HospitalCapilarQuiz = () => {
               <div className="border border-gray-200 rounded-2xl p-6 shadow-sm bg-gray-50">
                 <h4 className="font-bold text-xl text-gray-900 mb-2">Próximas aperturas 2026</h4>
                 <p className="text-gray-600 mb-6">Estamos abriendo 6 nuevas clínicas en 2026. Si te apuntas, serás el primero en enterarte cuando abramos en tu zona.</p>
-                <button className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-4 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
+                <button onClick={() => handleCTAClick('waitlist')} className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-4 hover:-translate-y-0.5 transition-transform" style={{ backgroundColor: theme.primary }}>
                   Avísame cuando abráis cerca <MapPin size={20} />
                 </button>
-                <button className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-sm hover:bg-white flex items-center justify-center gap-2 transition-colors">
+                <button onClick={() => handleCTAClick('videoconsulta')} className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-sm hover:bg-white flex items-center justify-center gap-2 transition-colors">
                   ¿Ofrecéis videoconsulta médica? <PhoneCall size={16} />
                 </button>
               </div>
@@ -580,7 +967,7 @@ const HospitalCapilarQuiz = () => {
               <div className="border border-amber-200 rounded-2xl p-6 shadow-sm bg-amber-50">
                 <h4 className="font-bold text-xl text-amber-900 mb-2">Información enviada</h4>
                 <p className="text-amber-800 mb-6">Te hemos enviado a tu email información educativa sobre cómo manejar problemas del cuero cabelludo antes de visitar a tu dermatólogo.</p>
-                <button className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 transition-colors">
+                <button onClick={() => handleCTAClick('articulo_derivacion')} className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 transition-colors">
                   Ir a leer el artículo <FileText size={20} />
                 </button>
               </div>
@@ -668,7 +1055,7 @@ const HospitalCapilarQuiz = () => {
 
             {currentQ.type === 'multiple' && (answers[currentQ.id] && answers[currentQ.id].length > 0) && (
               <button
-                onClick={handleNext}
+                onClick={handleMultipleNext}
                 className="w-full py-4 rounded-xl text-white font-bold text-lg mt-4 shadow-lg hover:-translate-y-0.5 transition-transform"
                 style={{ backgroundColor: theme.primary }}
               >
@@ -686,16 +1073,19 @@ const HospitalCapilarQuiz = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre completo <span className="text-red-500">*</span></label>
                 <input type="text" value={answers.nombre || ''} onChange={(e) => setAnswers({...answers, nombre: e.target.value})}
+                  onFocus={() => analytics.trackEvent('form_field_focused', { field: 'nombre' })}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-[#4CA994] outline-none" placeholder="Ej: Carlos García" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
                 <input type="email" value={answers.email || ''} onChange={(e) => setAnswers({...answers, email: e.target.value})}
+                  onFocus={() => analytics.trackEvent('form_field_focused', { field: 'email' })}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-[#4CA994] outline-none" placeholder="correo@ejemplo.com" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Teléfono <span className="text-red-500">*</span></label>
                 <input type="tel" value={answers.telefono || ''} onChange={(e) => setAnswers({...answers, telefono: e.target.value})}
+                  onFocus={() => analytics.trackEvent('form_field_focused', { field: 'telefono' })}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-[#4CA994] outline-none" placeholder="+34 600 000 000" />
               </div>
               <div>
@@ -720,7 +1110,18 @@ const HospitalCapilarQuiz = () => {
                 </select>
               </div>
               <button
-                onClick={startAnalysis}
+                onClick={() => {
+                  analytics.trackEvent('form_submitted', {
+                    has_name: !!answers.nombre,
+                    has_email: !!answers.email,
+                    has_phone: !!answers.telefono,
+                    ubicacion: answers.ubicacion,
+                  });
+                  if (answers.email) {
+                    analytics.trackEvent('$identify', { email: answers.email, name: answers.nombre });
+                  }
+                  startAnalysis();
+                }}
                 disabled={!answers.ubicacion || !answers.nombre || !answers.email || !answers.telefono}
                 className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 style={{ backgroundColor: theme.primary }}
