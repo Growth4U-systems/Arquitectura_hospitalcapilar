@@ -369,7 +369,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
                 href="tel:+34623457218"
                 className="w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
               >
-                <Phone size={14} /> Llamar al 900 907 733
+                <Phone size={14} /> Llamar al 623 457 218
               </a>
             </div>
           ) : (
