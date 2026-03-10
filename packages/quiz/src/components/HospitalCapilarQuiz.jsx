@@ -880,7 +880,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
     // contact_score: NUMERICAL 0-100
     // door (quiz_largo > quiz_corto > form) + ubicacion (operativa > otra)
-    const clinicasOperativas = ['madrid', 'pontevedra'];
+    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
     const ubicacion = data.ubicacion || '';
     const isOperativa = clinicasOperativas.includes(ubicacion);
     let contactScore = 50; // NORMAL — próximas aperturas

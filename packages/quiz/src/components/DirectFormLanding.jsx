@@ -90,7 +90,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
     };
 
     // contact_score: NUMERICAL 0-100 (form tiene menos peso que quiz)
-    const clinicasOperativas = ['madrid', 'pontevedra'];
+    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
     const isOperativa = clinicasOperativas.includes(form.provincia);
     let contactScore = 50; // NORMAL — form + operativa o próximas aperturas
     if (!isOperativa && (form.provincia === 'otra' || !form.provincia)) contactScore = 20; // OUT

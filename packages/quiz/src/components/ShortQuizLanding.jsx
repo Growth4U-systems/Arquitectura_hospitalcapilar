@@ -129,7 +129,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       : document.referrer ? 'organic/referral' : 'direct';
 
     // contact_score: NUMERICAL 0-100
-    const clinicasOperativas = ['madrid', 'pontevedra'];
+    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
     const isOperativa = clinicasOperativas.includes(form.provincia);
     let contactScore = 50; // NORMAL — quiz_corto + próximas aperturas
     if (isOperativa) contactScore = 50; // NORMAL — quiz_corto + operativa
