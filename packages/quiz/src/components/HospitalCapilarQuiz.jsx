@@ -1425,7 +1425,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             const IconMap = { Calendar, PhoneCall, Download, MapPin, FileText };
             const PrimaryIcon = IconMap[cta.primary.icon] || ChevronRight;
 
-            const WA_PHONE = '34600000000'; // TODO: replace with real Hospital Capilar WhatsApp number
+            const WA_PHONE = '34623457218';
             const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
             const waText = encodeURIComponent(
               `Hola, soy ${nombre.split(' ')[0]}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
@@ -1495,7 +1495,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
         {/* WhatsApp floating button */}
         {!isDerivacion && (() => {
-          const WA_PHONE = '34600000000'; // TODO: replace with real Hospital Capilar WhatsApp number
+          const WA_PHONE = '34623457218';
           const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
           const waText = encodeURIComponent(
             `Hola, soy ${nombre.split(' ')[0]}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`

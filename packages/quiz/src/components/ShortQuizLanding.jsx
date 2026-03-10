@@ -254,7 +254,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     const ecp = SITUACION_ECP[answers.situacion] || config.ecp;
     const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['Hombre con caida sin diagnostico'];
     const isDerivacion = ecp === 'No candidato - cuero cabelludo';
-    const WA_PHONE = '34600000000';
+    const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
       `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de completar el diagnóstico rápido en Hospital Capilar. Me gustaría recibir más información.`
     );
@@ -366,7 +366,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
                 <WhatsAppIcon size={20} className="text-white" /> Escríbenos por WhatsApp
               </a>
               <a
-                href="tel:900907733"
+                href="tel:+34623457218"
                 className="w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 <Phone size={14} /> Llamar al 900 907 733

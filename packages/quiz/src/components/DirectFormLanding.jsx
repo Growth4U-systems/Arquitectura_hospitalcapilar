@@ -193,7 +193,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
   };
 
   if (submitted) {
-    const WA_PHONE = '34600000000'; // TODO: replace with real Hospital Capilar WhatsApp number
+    const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
       `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de solicitar una valoración en Hospital Capilar desde la web. Me gustaría recibir más información.`
     );
@@ -237,11 +237,11 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
 
           {/* Phone CTA — secondary */}
           <a
-            href="tel:900907733"
+            href="tel:+34623457218"
             className="w-full py-4 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors mb-10"
           >
             <Phone size={20} />
-            Llamar al 900 907 733
+            Llamar al 623 457 218
           </a>
 
           {/* What happens next */}
@@ -293,8 +293,8 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
   const formFields = (
     <>
       <h2 className="text-white text-xl font-bold text-center mb-2">SOLICITA TU VALORACIÓN</h2>
-      <a href="tel:900907733" className="flex items-center justify-center gap-2 text-[#4CA994] font-bold mb-6">
-        <Phone size={18} /> 900 907 733
+      <a href="tel:+34623457218" className="flex items-center justify-center gap-2 text-[#4CA994] font-bold mb-6">
+        <Phone size={18} /> 623 457 218
       </a>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -398,7 +398,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
             {config.ctaForm}
           </a>
           <p className="text-gray-400 mt-6">
-            O llámanos: <a href="tel:900907733" className="text-[#4CA994] font-bold">900 907 733</a>
+            O llámanos: <a href="tel:+34623457218" className="text-[#4CA994] font-bold">623 457 218</a>
           </p>
         </div>
       </section>
