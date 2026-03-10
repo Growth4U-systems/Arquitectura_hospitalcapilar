@@ -264,7 +264,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     // BLOQUE 1: IDENTIFICACION
     {
       id: 'sexo', block: 1,
-      title: 'Empecemos. ¿Cuál es tu sexo?',
+      title: 'Empecemos. ¿Cuál es tu sexo biológico?',
+      subtitle: 'La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para darte un diagnóstico preciso.',
       type: 'single',
       options: [
         { label: 'Hombre', value: 'hombre', icon: '👨' },
@@ -861,14 +862,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     // ubicacion_clinica = campo nativo "city" de GHL (no custom field)
     const CF = {
       // Aditional Info
-      door:              'DhvEpTIS2GaHtCL9GuHT',
-      sexo:              'clOkAKZvg8DWVrVGxA2I',
+      door:              'qLfWQzqlmfFqLSkPpCwn',
+      sexo:              'Z9pZhDFJWJ4QTSGGCYaG',
       ecp:               '7GWpUzewyhIoa6P1Qs6R',
       agent_message:     'b3c4PXftlQRi8zgDqRce',
       contact_score:     'LvOZm5SZe1WR2e1JrEm1',
       // UTMs
       utm_source:        'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:        'R1bYotBnI7wSIjENDEoE',
+      utm_medium:        'vykx7m6bcfbYMXRqToYP',
       utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:       'dydSaUSYbb5R7nYOboLq',
       utm_term:          'eLdhsOthmyD38al527tG',

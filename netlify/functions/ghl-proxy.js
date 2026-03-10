@@ -6,7 +6,7 @@ const STAGE_NEW_LEAD = 'fbed92b1-5e91-4b86-820f-44b9f66f8b73';
 const OPP_CF = {
   lead_priority: 'l99Opesqh9cJBLxSPs4z',
   agent_message: 'cVtN5KboKd2R1cf1s7QA',
-  quiz_answers: 'oCRmgg9YXxus2ECpaR5q',
+  quiz_answers: 'FeCREl0xuPoOUyTV15s0',
 };
 
 exports.handler = async (event) => {
@@ -67,10 +67,10 @@ exports.handler = async (event) => {
       // Determine lead_priority from contact_score
       // HOT: contact_score=HIGH
       // WARM: contact_score=NORMAL
-      // COLD: contact_score=OUT
+      // GEOGRAPHIC_OUT: contact_score=OUT (fuera de zona operativa)
       let priority = 'WARM';
       if (contactScore === 'HIGH') priority = 'HOT';
-      else if (contactScore === 'OUT') priority = 'COLD';
+      else if (contactScore === 'OUT') priority = 'GEOGRAPHIC_OUT';
 
       // Step A: Create opportunity (custom fields don't work on POST)
       const oppPayload = {

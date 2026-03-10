@@ -91,8 +91,8 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
   // Phases: landing → quiz → analyzing → results
   const [phase, setPhase] = useState('landing');
-  const [step, setStep] = useState(0); // 0=situacion, 1=tiempo, 2=urgencia, 3=form
-  const [answers, setAnswers] = useState({ situacion: '', tiempo: '', urgencia: '' });
+  const [step, setStep] = useState(0); // 0=sexo, 1=situacion, 2=tiempo, 3=urgencia, 4=form
+  const [answers, setAnswers] = useState({ sexo: '', situacion: '', tiempo: '', urgencia: '' });
   const [form, setForm] = useState({ nombre: '', email: '', telefono: '', provincia: '' });
   const [submitting, setSubmitting] = useState(false);
   const quizRef = useRef(null);
@@ -144,16 +144,17 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     const tiempoMap = { '<3m': 'menos de 3 meses', '3-12m': '3-12 meses', '1-3a': '1-3 años', '3a+': 'más de 3 años' };
     const urgenciaMap = { alta: 'alta (quiere actuar ya)', media: 'media (quiere entender opciones)', baja: 'baja (solo se informa)' };
 
-    const agentMsg = `Lead quiz corto (${nicho}). ECP: ${ecp}. Tiempo con el problema: ${tiempoMap[answers.tiempo] || answers.tiempo}. Urgencia: ${urgenciaMap[answers.urgencia] || answers.urgencia}. Ciudad: ${ubicacionMap[form.provincia] || form.provincia}. Canal: ${sourceChannel}.`;
+    const agentMsg = `Lead quiz corto (${nicho}). Sexo: ${answers.sexo || 'N/A'}. ECP: ${ecp}. Tiempo con el problema: ${tiempoMap[answers.tiempo] || answers.tiempo}. Urgencia: ${urgenciaMap[answers.urgencia] || answers.urgencia}. Ciudad: ${ubicacionMap[form.provincia] || form.provincia}. Canal: ${sourceChannel}.`;
 
     // GHL Custom Field IDs
     const CF = {
-      door:          'DhvEpTIS2GaHtCL9GuHT',
+      door:          'qLfWQzqlmfFqLSkPpCwn',
+      sexo:          'Z9pZhDFJWJ4QTSGGCYaG',
       ecp:           '7GWpUzewyhIoa6P1Qs6R',
       agent_message: 'b3c4PXftlQRi8zgDqRce',
       contact_score: 'LvOZm5SZe1WR2e1JrEm1',
       utm_source:    'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:    'R1bYotBnI7wSIjENDEoE',
+      utm_medium:    'vykx7m6bcfbYMXRqToYP',
       utm_campaign:  '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:   'dydSaUSYbb5R7nYOboLq',
       utm_term:      'eLdhsOthmyD38al527tG',
@@ -161,6 +162,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
     const customFields = [
       { id: CF.door, field_value: 'quiz_corto' },
+      { id: CF.sexo, field_value: answers.sexo || '' },
       { id: CF.ecp, field_value: ecp },
       { id: CF.agent_message, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
@@ -176,6 +178,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       firstName, lastName,
       email: form.email || '',
       phone: form.telefono,
+      gender: answers.sexo === 'hombre' ? 'male' : answers.sexo === 'mujer' ? 'female' : '',
       city: ubicacionMap[form.provincia] || form.provincia || '',
       country: 'Spain',
       tags: ['new_lead'],
@@ -204,7 +207,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     try {
       await addDoc(collection(db, 'quiz_leads'), {
         nombre: form.nombre, email: form.email, telefono: form.telefono,
-        ubicacion: form.provincia, nicho, ecp,
+        ubicacion: form.provincia, sexo: answers.sexo, nicho, ecp,
         door: 'quiz_corto',
         answersRaw: answers,
         agentMessage: agentMsg,
@@ -257,11 +260,43 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     );
     const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
 
+    // Readable labels for what the user answered
+    const situacionLabels = {
+      'caida-sin-diagnostico': 'Caída sin diagnóstico',
+      'entradas-coronilla': 'Entradas / coronilla',
+      'joven-perdida': 'Pérdida temprana de pelo',
+      'postparto': 'Caída desde embarazo/parto',
+      'hormonal': 'Caída hormonal',
+      'post-cirugia': 'Post-trasplante',
+      'mala-experiencia': 'Mala experiencia previa',
+      'cuero-cabelludo': 'Problema de cuero cabelludo',
+    };
+    const tiempoLabels = { '<3m': 'Menos de 3 meses', '3-12m': '3-12 meses', '1-3a': '1-3 años', '3a+': 'Más de 3 años' };
+    const urgenciaLabels = { alta: 'Quiere actuar ya', media: 'Quiere entender opciones', baja: 'Solo se informa' };
+
+    // Contextual recommendation based on urgency + time
+    const getRecommendation = () => {
+      if (isDerivacion) return null;
+      if (answers.urgencia === 'alta' && (answers.tiempo === '1-3a' || answers.tiempo === '3a+')) {
+        return 'Llevas tiempo con este problema y estás listo para actuar. Es el momento perfecto para un diagnóstico profesional que te dé respuestas concretas.';
+      }
+      if (answers.urgencia === 'alta') {
+        return 'Tu disposición a actuar es clave. Un diagnóstico profesional ahora puede ahorrarte meses de tratamientos que no funcionan.';
+      }
+      if (answers.tiempo === '3a+') {
+        return 'Llevas más de 3 años con este problema. Cuanto más tiempo pasa, menos opciones hay. Un diagnóstico a tiempo marca la diferencia.';
+      }
+      if (answers.tiempo === '1-3a') {
+        return 'Con 1-3 años de evolución, estás a tiempo de frenar la progresión. Un diagnóstico profesional es el primer paso.';
+      }
+      return 'Un diagnóstico profesional es el mejor primer paso. Te permite entender exactamente qué ocurre y qué opciones tienes.';
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#2C3E50] via-[#2C3E50] to-white font-sans">
         <div className="h-1.5 w-full bg-[#4CA994]" />
 
-        <div className="max-w-2xl mx-auto px-5 pt-5 pb-10">
+        <div className="max-w-2xl mx-auto px-5 pt-5 pb-6">
           <div className="flex justify-center mb-5">
             <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
@@ -277,20 +312,41 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
         </div>
 
         <div className="max-w-2xl mx-auto px-5 -mt-2">
+          {/* Summary of answers */}
+          <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Situación</p>
+              <p className="text-white text-xs font-semibold">{situacionLabels[answers.situacion] || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Tiempo</p>
+              <p className="text-white text-xs font-semibold">{tiempoLabels[answers.tiempo] || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Urgencia</p>
+              <p className="text-white text-xs font-semibold">{urgenciaLabels[answers.urgencia] || '—'}</p>
+            </div>
+          </div>
+
           {/* Profile card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-5">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-4">
             <div className="bg-gradient-to-r from-[#4CA994] to-[#3D8B7A] px-5 py-3 flex items-center gap-2.5">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <Stethoscope size={16} className="text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-sm">Tu Perfil Capilar</h3>
-                <p className="text-white/70 text-xs">Pre-diagnóstico rápido</p>
+                <p className="text-white/70 text-xs">{situacionLabels[answers.situacion] || 'Pre-diagnóstico'}</p>
               </div>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-2">
               <h4 className="font-bold text-gray-900">{ecpMsg.title}</h4>
               <p className="text-gray-600 text-sm leading-relaxed">{ecpMsg.body}</p>
+              {getRecommendation() && (
+                <div className="bg-[#F0F7F6] rounded-lg p-3 mt-2 border-l-3 border-[#4CA994]">
+                  <p className="text-[#2C3E50] text-sm font-medium leading-relaxed">{getRecommendation()}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -336,8 +392,8 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
   // QUIZ PHASE (4 steps)
   // ==========================================
   if (phase === 'quiz') {
-    const progress = ((step + 1) / 4) * 100;
-    const steps = ['situacion', 'tiempo', 'urgencia', 'form'];
+    const totalSteps = 5;
+    const progress = ((step + 1) / totalSteps) * 100;
 
     return (
       <div className="min-h-screen bg-white font-sans flex flex-col">
@@ -355,11 +411,41 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
             <div className="w-8" />
           </div>
 
-          {/* Step 1: Situación */}
+          {/* Step 0: Sexo */}
           {step === 0 && (
             <>
               <div className="mb-5">
-                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 1 de 4</span>
+                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 1 de {totalSteps}</span>
+                <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¿Cuál es tu sexo biológico?</h2>
+                <p className="text-gray-500 text-sm">La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para un diagnóstico preciso.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Hombre', value: 'hombre', icon: '👨' },
+                  { label: 'Mujer', value: 'mujer', icon: '👩' },
+                ].map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelect('sexo', opt.value)}
+                    className={`flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all ${
+                      answers.sexo === opt.value ? 'border-[#4CA994] bg-[#F0F7F6]' : 'border-gray-100 hover:border-[#4CA994]/50'
+                    }`}
+                  >
+                    <span className="text-3xl">{opt.icon}</span>
+                    <span className={`font-semibold text-[15px] ${answers.sexo === opt.value ? 'text-[#2C3E50]' : 'text-gray-700'}`}>
+                      {opt.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Step 1: Situación */}
+          {step === 1 && (
+            <>
+              <div className="mb-5">
+                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 2 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¿Qué describe mejor tu situación?</h2>
               </div>
               <div className="grid gap-2">
@@ -395,10 +481,10 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
           )}
 
           {/* Step 2: Tiempo */}
-          {step === 1 && (
+          {step === 2 && (
             <>
               <div className="mb-5">
-                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 2 de 4</span>
+                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 3 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¿Hace cuánto notas este problema?</h2>
               </div>
               <div className="grid gap-2">
@@ -430,10 +516,10 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
           )}
 
           {/* Step 3: Urgencia */}
-          {step === 2 && (
+          {step === 3 && (
             <>
               <div className="mb-5">
-                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 3 de 4</span>
+                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 4 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¿Cómo de urgente es para ti resolver esto?</h2>
               </div>
               <div className="grid gap-2">
@@ -464,10 +550,10 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
           )}
 
           {/* Step 4: Form */}
-          {step === 3 && (
+          {step === 4 && (
             <div>
               <div className="mb-5">
-                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 4 de 4</span>
+                <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 5 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¡Ya casi está!</h2>
                 <p className="text-gray-500 text-sm">Para preparar tu pre-diagnóstico, necesitamos tus datos:</p>
               </div>
@@ -542,7 +628,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
             Diagnóstico rápido (1 min)
             <ArrowRight size={22} />
           </button>
-          <p className="text-sm text-gray-400 mt-4">4 preguntas | 100% confidencial | Sin compromiso</p>
+          <p className="text-sm text-gray-400 mt-4">5 preguntas | 100% confidencial | Sin compromiso</p>
         </div>
       </div>
 

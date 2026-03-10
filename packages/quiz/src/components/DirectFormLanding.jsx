@@ -78,12 +78,12 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
     // GHL Custom Field IDs — Contact level (definitivo)
     // ubicacion_clinica = campo nativo "city" de GHL (no custom field)
     const CF = {
-      door:              'DhvEpTIS2GaHtCL9GuHT',
+      door:              'qLfWQzqlmfFqLSkPpCwn',
       ecp:               '7GWpUzewyhIoa6P1Qs6R',
       agent_message:     'b3c4PXftlQRi8zgDqRce',
       contact_score:     'LvOZm5SZe1WR2e1JrEm1',
       utm_source:        'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:        'R1bYotBnI7wSIjENDEoE',
+      utm_medium:        'vykx7m6bcfbYMXRqToYP',
       utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:       'dydSaUSYbb5R7nYOboLq',
       utm_term:          'eLdhsOthmyD38al527tG',
