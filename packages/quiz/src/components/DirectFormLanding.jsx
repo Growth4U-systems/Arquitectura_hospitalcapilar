@@ -78,7 +78,6 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
     // GHL Custom Field IDs — Contact level (definitivo)
     const CF = {
       door:                    '2JYlfGk60lHbuyh9vcdV',
-      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
       ecp:                     'cFIcdJlT9sfnC3KMSwDD',
       agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
       contact_score:           'SGT17lKk7bZgkInBTtrT',
@@ -96,11 +95,6 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
     let contactScore = 50; // NORMAL — form + operativa o próximas aperturas
     if (!isOperativa && (form.provincia === 'otra' || !form.provincia)) contactScore = 20; // OUT
 
-    // ubicacion_clinica mapping: madrid, pontevedra, or otros
-    const ubicacionClinica = form.provincia === 'madrid' ? 'madrid'
-      : form.provincia === 'pontevedra' ? 'pontevedra'
-      : 'otros';
-
     // Ubicación legible para city nativo
     const ubicacionMap = {
       madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra',
@@ -112,7 +106,6 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
 
     const customFields = [
       { id: CF.door, field_value: 'form' },
-      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: config.ecp },
       { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },

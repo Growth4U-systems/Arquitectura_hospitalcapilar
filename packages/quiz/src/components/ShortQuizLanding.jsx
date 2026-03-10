@@ -135,11 +135,6 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     if (isOperativa) contactScore = 50; // NORMAL — quiz_corto + operativa
     else if (form.provincia === 'otra' || !form.provincia) contactScore = 20; // OUT
 
-    // ubicacion_clinica mapping: madrid, pontevedra, or otros
-    const ubicacionClinica = form.provincia === 'madrid' ? 'madrid'
-      : form.provincia === 'pontevedra' ? 'pontevedra'
-      : 'otros';
-
     const ubicacionMap = {
       madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra',
       acoruna: 'A Coruña', mostoles: 'Móstoles', albacete: 'Albacete',
@@ -155,7 +150,6 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     const CF = {
       door:                    '2JYlfGk60lHbuyh9vcdV',
       sexo:                    'P7D2edjnOHwXLpglw9tB',
-      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
       ecp:                     'cFIcdJlT9sfnC3KMSwDD',
       agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
       contact_score:           'SGT17lKk7bZgkInBTtrT',
@@ -170,7 +164,6 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     const customFields = [
       { id: CF.door, field_value: 'quiz_corto' },
       { id: CF.sexo, field_value: answers.sexo || '' },
-      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: ecp },
       { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },

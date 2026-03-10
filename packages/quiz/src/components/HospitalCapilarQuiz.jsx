@@ -866,7 +866,6 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       // Aditional Info
       door:                    '2JYlfGk60lHbuyh9vcdV',
       sexo:                    'P7D2edjnOHwXLpglw9tB',
-      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
       ecp:                     'cFIcdJlT9sfnC3KMSwDD',
       agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
       contact_score:           'SGT17lKk7bZgkInBTtrT',
@@ -888,16 +887,10 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     if (isOperativa) contactScore = 85; // HIGH — quiz_largo + operativa
     else if (ubicacion === 'otra' || !ubicacion) contactScore = 20; // OUT
 
-    // ubicacion_clinica mapping: madrid, pontevedra, or otros
-    const ubicacionClinica = ubicacion === 'madrid' ? 'madrid'
-      : ubicacion === 'pontevedra' ? 'pontevedra'
-      : 'otros';
-
     // Build custom fields array
     const customFields = [
       { id: CF.door, field_value: 'quiz_largo' },
       { id: CF.sexo, field_value: data.sexo || '' },
-      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: result.ecp },
       { id: CF.agent_message_contact, field_value: agentMessage || '' },
       { id: CF.contact_score, field_value: contactScore },
