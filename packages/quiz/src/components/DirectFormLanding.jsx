@@ -76,24 +76,30 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
       : document.referrer ? 'organic/referral' : 'direct';
 
     // GHL Custom Field IDs — Contact level (definitivo)
-    // ubicacion_clinica = campo nativo "city" de GHL (no custom field)
     const CF = {
-      door:              'qLfWQzqlmfFqLSkPpCwn',
-      ecp:               '7GWpUzewyhIoa6P1Qs6R',
-      agent_message:     'b3c4PXftlQRi8zgDqRce',
-      contact_score:     'LvOZm5SZe1WR2e1JrEm1',
-      utm_source:        'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:        'vykx7m6bcfbYMXRqToYP',
-      utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
-      utm_content:       'dydSaUSYbb5R7nYOboLq',
-      utm_term:          'eLdhsOthmyD38al527tG',
+      door:                    '2JYlfGk60lHbuyh9vcdV',
+      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
+      ecp:                     'cFIcdJlT9sfnC3KMSwDD',
+      agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
+      contact_score:           'SGT17lKk7bZgkInBTtrT',
+      consent:                 'x2QNuqJqst8Oy8H6pV0G',
+      utm_source:              'MisB9YJJAH7cnh8JOtQn',
+      utm_medium:              'vykx7m6bcfbYMXRqToYP',
+      utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
+      utm_content:             'dydSaUSYbb5R7nYOboLq',
+      utm_term:                'eLdhsOthmyD38al527tG',
     };
 
-    // contact_score: form tiene menos peso que quiz
-    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
+    // contact_score: NUMERICAL 0-100 (form tiene menos peso que quiz)
+    const clinicasOperativas = ['madrid', 'pontevedra'];
     const isOperativa = clinicasOperativas.includes(form.provincia);
-    let contactScore = 'NORMAL'; // form + operativa o próximas aperturas
-    if (!isOperativa && (form.provincia === 'otra' || !form.provincia)) contactScore = 'OUT';
+    let contactScore = 50; // NORMAL — form + operativa o próximas aperturas
+    if (!isOperativa && (form.provincia === 'otra' || !form.provincia)) contactScore = 20; // OUT
+
+    // ubicacion_clinica mapping: madrid, pontevedra, or otros
+    const ubicacionClinica = form.provincia === 'madrid' ? 'madrid'
+      : form.provincia === 'pontevedra' ? 'pontevedra'
+      : 'otros';
 
     // Ubicación legible para city nativo
     const ubicacionMap = {
@@ -106,8 +112,9 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
 
     const customFields = [
       { id: CF.door, field_value: 'form' },
+      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: config.ecp },
-      { id: CF.agent_message, field_value: agentMsg },
+      { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
     ];
 

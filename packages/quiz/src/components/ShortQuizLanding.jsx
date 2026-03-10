@@ -128,12 +128,17 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       ? `${utmParams.utm_source}/${utmParams.utm_medium || 'unknown'}`
       : document.referrer ? 'organic/referral' : 'direct';
 
-    // contact_score
-    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
+    // contact_score: NUMERICAL 0-100
+    const clinicasOperativas = ['madrid', 'pontevedra'];
     const isOperativa = clinicasOperativas.includes(form.provincia);
-    let contactScore = 'NORMAL';
-    if (isOperativa) contactScore = 'NORMAL'; // quiz_corto + operativa = NORMAL
-    else if (form.provincia === 'otra' || !form.provincia) contactScore = 'OUT';
+    let contactScore = 50; // NORMAL — quiz_corto + próximas aperturas
+    if (isOperativa) contactScore = 50; // NORMAL — quiz_corto + operativa
+    else if (form.provincia === 'otra' || !form.provincia) contactScore = 20; // OUT
+
+    // ubicacion_clinica mapping: madrid, pontevedra, or otros
+    const ubicacionClinica = form.provincia === 'madrid' ? 'madrid'
+      : form.provincia === 'pontevedra' ? 'pontevedra'
+      : 'otros';
 
     const ubicacionMap = {
       madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra',
@@ -148,23 +153,26 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
     // GHL Custom Field IDs
     const CF = {
-      door:          'qLfWQzqlmfFqLSkPpCwn',
-      sexo:          'Z9pZhDFJWJ4QTSGGCYaG',
-      ecp:           '7GWpUzewyhIoa6P1Qs6R',
-      agent_message: 'b3c4PXftlQRi8zgDqRce',
-      contact_score: 'LvOZm5SZe1WR2e1JrEm1',
-      utm_source:    'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:    'vykx7m6bcfbYMXRqToYP',
-      utm_campaign:  '3fUI7GO9o7oZ7ddMNnFf',
-      utm_content:   'dydSaUSYbb5R7nYOboLq',
-      utm_term:      'eLdhsOthmyD38al527tG',
+      door:                    '2JYlfGk60lHbuyh9vcdV',
+      sexo:                    'P7D2edjnOHwXLpglw9tB',
+      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
+      ecp:                     'cFIcdJlT9sfnC3KMSwDD',
+      agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
+      contact_score:           'SGT17lKk7bZgkInBTtrT',
+      consent:                 'x2QNuqJqst8Oy8H6pV0G',
+      utm_source:              'MisB9YJJAH7cnh8JOtQn',
+      utm_medium:              'vykx7m6bcfbYMXRqToYP',
+      utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
+      utm_content:             'dydSaUSYbb5R7nYOboLq',
+      utm_term:                'eLdhsOthmyD38al527tG',
     };
 
     const customFields = [
       { id: CF.door, field_value: 'quiz_corto' },
       { id: CF.sexo, field_value: answers.sexo || '' },
+      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: ecp },
-      { id: CF.agent_message, field_value: agentMsg },
+      { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
     ];
     if (utmParams.utm_source) customFields.push({ id: CF.utm_source, field_value: utmParams.utm_source });

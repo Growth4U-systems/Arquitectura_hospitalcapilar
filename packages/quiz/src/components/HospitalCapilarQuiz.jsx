@@ -862,37 +862,44 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     const perfil = calculatePerfil(result.score, result.frame);
 
     // GHL Custom Field IDs — Contact level (definitivo)
-    // ubicacion_clinica = campo nativo "city" de GHL (no custom field)
     const CF = {
       // Aditional Info
-      door:              'qLfWQzqlmfFqLSkPpCwn',
-      sexo:              'Z9pZhDFJWJ4QTSGGCYaG',
-      ecp:               '7GWpUzewyhIoa6P1Qs6R',
-      agent_message:     'b3c4PXftlQRi8zgDqRce',
-      contact_score:     'LvOZm5SZe1WR2e1JrEm1',
+      door:                    '2JYlfGk60lHbuyh9vcdV',
+      sexo:                    'P7D2edjnOHwXLpglw9tB',
+      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
+      ecp:                     'cFIcdJlT9sfnC3KMSwDD',
+      agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
+      contact_score:           'SGT17lKk7bZgkInBTtrT',
+      consent:                 'x2QNuqJqst8Oy8H6pV0G',
       // UTMs
-      utm_source:        'MisB9YJJAH7cnh8JOtQn',
-      utm_medium:        'vykx7m6bcfbYMXRqToYP',
-      utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
-      utm_content:       'dydSaUSYbb5R7nYOboLq',
-      utm_term:          'eLdhsOthmyD38al527tG',
+      utm_source:              'MisB9YJJAH7cnh8JOtQn',
+      utm_medium:              'vykx7m6bcfbYMXRqToYP',
+      utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
+      utm_content:             'dydSaUSYbb5R7nYOboLq',
+      utm_term:                'eLdhsOthmyD38al527tG',
     };
 
-    // contact_score: HIGH / NORMAL / OUT
+    // contact_score: NUMERICAL 0-100
     // door (quiz_largo > quiz_corto > form) + ubicacion (operativa > otra)
-    const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
+    const clinicasOperativas = ['madrid', 'pontevedra'];
     const ubicacion = data.ubicacion || '';
     const isOperativa = clinicasOperativas.includes(ubicacion);
-    let contactScore = 'NORMAL'; // próximas aperturas
-    if (isOperativa) contactScore = 'HIGH'; // quiz_largo + operativa
-    else if (ubicacion === 'otra' || !ubicacion) contactScore = 'OUT';
+    let contactScore = 50; // NORMAL — próximas aperturas
+    if (isOperativa) contactScore = 85; // HIGH — quiz_largo + operativa
+    else if (ubicacion === 'otra' || !ubicacion) contactScore = 20; // OUT
+
+    // ubicacion_clinica mapping: madrid, pontevedra, or otros
+    const ubicacionClinica = ubicacion === 'madrid' ? 'madrid'
+      : ubicacion === 'pontevedra' ? 'pontevedra'
+      : 'otros';
 
     // Build custom fields array
     const customFields = [
       { id: CF.door, field_value: 'quiz_largo' },
       { id: CF.sexo, field_value: data.sexo || '' },
+      { id: CF.ubicacion_clinica, field_value: ubicacionClinica },
       { id: CF.ecp, field_value: result.ecp },
-      { id: CF.agent_message, field_value: agentMessage || '' },
+      { id: CF.agent_message_contact, field_value: agentMessage || '' },
       { id: CF.contact_score, field_value: contactScore },
     ];
 

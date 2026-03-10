@@ -4,9 +4,9 @@ const STAGE_NEW_LEAD = 'fbed92b1-5e91-4b86-820f-44b9f66f8b73';
 
 // Opportunity custom field IDs
 const OPP_CF = {
-  lead_priority: 'l99Opesqh9cJBLxSPs4z',
-  agent_message: 'cVtN5KboKd2R1cf1s7QA',
-  quiz_answers: 'FeCREl0xuPoOUyTV15s0',
+  lead_priority:    'l99Opesqh9cJBLxSPs4z',
+  agent_message:    'cVtN5KboKd2R1cf1s7QA',
+  bono_diagnostico: 'QFeGi097rXODJDWg7YPF',
 };
 
 exports.handler = async (event) => {
@@ -41,7 +41,6 @@ exports.handler = async (event) => {
 
     // Extract extra fields before sending to GHL contacts API
     const agentMessage = body._agentMessage || '';
-    const quizAnswers = body._quizAnswers || '';
     const contactScore = body._contactScore || '';
     delete body._agentMessage;
     delete body._quizAnswers;
@@ -64,13 +63,14 @@ exports.handler = async (event) => {
     let noteData = null;
     let oppError = null;
     if (contactId) {
-      // Determine lead_priority from contact_score
-      // HOT: contact_score=HIGH
-      // WARM: contact_score=NORMAL
-      // GEOGRAPHIC_OUT: contact_score=OUT (fuera de zona operativa)
+      // Determine lead_priority from contact_score (now numerical 0-100)
+      // HOT: contact_score >= 70
+      // WARM: contact_score >= 30
+      // COLD: contact_score < 30 (fuera de zona operativa)
+      const scoreNum = typeof contactScore === 'number' ? contactScore : parseInt(contactScore, 10) || 50;
       let priority = 'WARM';
-      if (contactScore === 'HIGH') priority = 'HOT';
-      else if (contactScore === 'OUT') priority = 'GEOGRAPHIC_OUT';
+      if (scoreNum >= 70) priority = 'HOT';
+      else if (scoreNum < 30) priority = 'COLD';
 
       // Step A: Create opportunity (custom fields don't work on POST)
       const oppPayload = {
@@ -107,7 +107,7 @@ exports.handler = async (event) => {
               customFields: [
                 { id: OPP_CF.lead_priority, field_value: priority },
                 { id: OPP_CF.agent_message, field_value: agentMessage },
-                { id: OPP_CF.quiz_answers, field_value: quizAnswers },
+                { id: OPP_CF.bono_diagnostico, field_value: 'not_paid' },
               ],
             }),
           });
