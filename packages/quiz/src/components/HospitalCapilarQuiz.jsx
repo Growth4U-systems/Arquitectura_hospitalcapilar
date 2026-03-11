@@ -7,6 +7,9 @@ import { useAnalytics } from '@hospital-capilar/shared/analytics';
 import { getUTMParams } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import PaywallOverlay from './PaywallOverlay';
+import StripeCheckoutModal from './StripeCheckoutModal';
+import PaymentConfirmation from './PaymentConfirmation';
 
 const WhatsAppIcon = ({ size = 24, className = '' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className} fill="currentColor">
@@ -212,6 +215,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const [returningLead, setReturningLead] = useState(null);
   const [utmParams] = useState(() => getUTMParams());
   const ghlContactIdRef = useRef(null);
+  const [paymentStep, setPaymentStep] = useState(null); // null | 'paywall' | 'paying' | 'paid'
+  const [stripeClientSecret, setStripeClientSecret] = useState(null);
 
   // Analytics
   const analytics = useAnalytics();
@@ -1205,7 +1210,67 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     const strClinica = getLabel('clinica_previa', answers.clinica_previa) || 'otra clínica';
     const strCirugiaLugar = getLabel('cirugia_lugar', answers.cirugia_lugar) || 'otra clínica';
 
+    // Payment flow overlays
+    if (paymentStep === 'paid') {
+      return (
+        <PaymentConfirmation
+          nombre={nombre}
+          email={answers.email || ''}
+          ubicacion={answers.ubicacion || ''}
+          onCallRequest={() => handleCTAClick('solicitar_llamada')}
+        />
+      );
+    }
+
+    const handleStartPayment = async () => {
+      try {
+        setPaymentStep('paying');
+        const res = await fetch('/.netlify/functions/stripe-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: answers.email || '',
+            nombre: answers.nombre || nombre || '',
+            contactId: ghlContactIdRef.current || '',
+            ecp: finalResult?.ecp || '',
+            ubicacion: answers.ubicacion || '',
+            embedded: true,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.clientSecret) {
+          setStripeClientSecret(data.clientSecret);
+        } else {
+          // Fallback to redirect mode
+          window.open(STRIPE_CHECKOUT_URL, '_blank');
+          setPaymentStep('paywall');
+        }
+      } catch (err) {
+        console.error('[Stripe] Embedded checkout error, using fallback:', err);
+        window.open(STRIPE_CHECKOUT_URL, '_blank');
+        setPaymentStep('paywall');
+      }
+    };
+
     return (
+      <>
+      {paymentStep === 'paywall' && (
+        <PaywallOverlay
+          ecp={ecp}
+          nombre={nombre}
+          onPay={handleStartPayment}
+          onClose={() => setPaymentStep(null)}
+          onCallRequest={() => { setPaymentStep(null); handleCTAClick('solicitar_llamada'); }}
+        />
+      )}
+      {paymentStep === 'paying' && stripeClientSecret && (
+        <StripeCheckoutModal
+          clientSecret={stripeClientSecret}
+          onComplete={() => { setPaymentStep('paid'); analytics.trackEvent('payment_completed', { ecp, amount: 195 }); }}
+          onCancel={() => { setStripeClientSecret(null); setPaymentStep('paywall'); }}
+        />
+      )}
       <div className="min-h-screen bg-gradient-to-b from-[#2C3E50] via-[#2C3E50] to-white font-sans">
         <div className="h-1.5 w-full bg-[#4CA994]"></div>
 
@@ -1440,31 +1505,10 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             );
             const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
 
-            const handlePrimaryClick = async () => {
+            const handlePrimaryClick = () => {
               handleCTAClick(cta.primary.type);
               if (cta.primary.type === 'pagar_bono') {
-                try {
-                  const res = await fetch('/.netlify/functions/stripe-checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email: answers.email || '',
-                      nombre: answers.nombre || nombre || '',
-                      contactId: ghlContactIdRef.current || '',
-                      ecp: finalResult?.ecp || '',
-                    }),
-                  });
-                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                  const data = await res.json();
-                  if (data.url && data.url.startsWith('https://')) {
-                    window.location.href = data.url;
-                  } else {
-                    window.open(STRIPE_CHECKOUT_URL, '_blank');
-                  }
-                } catch (err) {
-                  console.error('[Stripe] Checkout error, using fallback:', err);
-                  window.open(STRIPE_CHECKOUT_URL, '_blank');
-                }
+                setPaymentStep('paywall');
               }
             };
 
@@ -1543,6 +1587,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           );
         })()}
       </div>
+      </>
     );
   }
 
