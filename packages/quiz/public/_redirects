@@ -1,3 +1,6 @@
 # PostHog reverse proxy — bypasses adblockers
 /ingest/static/*  https://eu-assets.i.posthog.com/static/:splat  200
 /ingest/*  https://eu.i.posthog.com/:splat  200
+
+# SPA fallback — all unmatched routes serve index.html
+/*  /index.html  200
