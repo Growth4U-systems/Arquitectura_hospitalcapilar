@@ -127,6 +127,18 @@ async function updateGHLOpportunity(contactId, apiKey) {
       }),
     });
     console.log('[Stripe Webhook] Opportunity updated:', opp.id, 'status:', updateRes.status);
+
+    // Add "Pago 195€" tag to contact
+    try {
+      await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify({ tags: ['Pago 195€', 'Bono Diagnostico'] }),
+      });
+      console.log('[Stripe Webhook] Payment tags added to contact:', contactId);
+    } catch (tagErr) {
+      console.log('[Stripe Webhook] Tag addition failed:', tagErr.message);
+    }
   } catch (err) {
     console.log('[Stripe Webhook] GHL opportunity update failed:', err.message);
   }

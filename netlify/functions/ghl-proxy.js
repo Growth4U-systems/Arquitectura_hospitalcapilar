@@ -4,10 +4,11 @@ const STAGE_NEW_LEAD = 'fbed92b1-5e91-4b86-820f-44b9f66f8b73';
 
 // Opportunity custom field IDs
 const OPP_CF = {
-  lead_priority:    'l99Opesqh9cJBLxSPs4z',
-  agent_message:    'cVtN5KboKd2R1cf1s7QA',
-  bono_diagnostico: 'QFeGi097rXODJDWg7YPF',
+  lead_priority:       'l99Opesqh9cJBLxSPs4z',
+  agent_message:       'cVtN5KboKd2R1cf1s7QA',
+  tratamiento_status:  'Hk81fRW2HaTqlry4I1L0',
 };
+
 
 exports.handler = async (event) => {
   const headers = {
@@ -58,6 +59,20 @@ exports.handler = async (event) => {
     const contactId = contactData?.contact?.id || contactData?.meta?.contactId || contactData?.id || contactData?.contactId;
     console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', !!contactData?.meta?.contactId);
 
+    // 1b. Add "New Lead" tag to contact
+    if (contactId) {
+      try {
+        await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+          method: 'POST',
+          headers: ghlHeaders,
+          body: JSON.stringify({ tags: ['New Lead', 'Quiz Diagnostico'] }),
+        });
+        console.log('[GHL] Tags added to contact:', contactId);
+      } catch (tagErr) {
+        console.log('[GHL] Tag addition failed:', tagErr.message);
+      }
+    }
+
     // 2. Create opportunity if we have a contactId
     let opportunityData = null;
     let noteData = null;
@@ -107,7 +122,7 @@ exports.handler = async (event) => {
               customFields: [
                 { id: OPP_CF.lead_priority, field_value: priority },
                 { id: OPP_CF.agent_message, field_value: agentMessage },
-                { id: OPP_CF.bono_diagnostico, field_value: 'not_paid' },
+                { id: OPP_CF.tratamiento_status, field_value: 'not_paid' },
               ],
             }),
           });
