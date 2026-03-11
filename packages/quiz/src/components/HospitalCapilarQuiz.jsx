@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronRight, CheckCircle2, ArrowLeft, ShieldCheck, Stethoscope,
-  Sparkles, Dna, MapPin, Info, PhoneCall, Calendar, Download, FileText
+  Sparkles, Dna, MapPin, Info, PhoneCall, Calendar, Download, FileText,
+  Check, X, Star, ChevronDown, Lock, Phone
 } from 'lucide-react';
 import { useAnalytics } from '@hospital-capilar/shared/analytics';
 import { getUTMParams } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
-import PaywallOverlay from './PaywallOverlay';
 import PaymentConfirmation from './PaymentConfirmation';
+import { OBJECTIONS_BY_ECP, TESTIMONIALS_BY_ECP, INCLUDED_BY_CTA, FAQS_BY_CTA } from './resultContent';
 
 const WhatsAppIcon = ({ size = 24, className = '' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className} fill="currentColor">
@@ -214,7 +215,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const [returningLead, setReturningLead] = useState(null);
   const [utmParams] = useState(() => getUTMParams());
   const ghlContactIdRef = useRef(null);
-  const [paymentStep, setPaymentStep] = useState(null); // null | 'paywall' | 'paying' | 'paid'
+  const [paymentStep, setPaymentStep] = useState(null); // null | 'paying' | 'paid'
+  const [openFaq, setOpenFaq] = useState(null);
 
   // Analytics
   const analytics = useAnalytics();
@@ -1203,10 +1205,6 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   if (finalResult && stepIndex === activeQuestions.length) {
     const { ecp, frame, nombre } = finalResult;
     const isDerivacion = frame === 'DERIVACION';
-    const strTiempo = getLabel('tiempo', answers.tiempo);
-    const arrProbado = (answers.probado || []).map(v => getLabel('probado', v)).join(', ') || 'tratamientos';
-    const strClinica = getLabel('clinica_previa', answers.clinica_previa) || 'otra clínica';
-    const strCirugiaLugar = getLabel('cirugia_lugar', answers.cirugia_lugar) || 'otra clínica';
 
     // Payment flow overlays
     if (paymentStep === 'paid') {
@@ -1247,17 +1245,52 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       }
     };
 
+    const perfil = calculatePerfil(finalResult.score, frame);
+    const cta = getCTAConfig(ecp, perfil, frame);
+    const ctaType = cta.primary.type;
+    const isAmber = cta.primary.style === 'amber';
+    const IconMap = { Calendar, PhoneCall, Download, MapPin, FileText };
+    const PrimaryIcon = IconMap[cta.primary.icon] || ChevronRight;
+    const firstName = nombre.split(' ')[0];
+
+    const WA_PHONE = '34623457218';
+    const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
+    const waText = encodeURIComponent(
+      `Hola, soy ${firstName}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
+    );
+    const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
+
+    const handlePrimaryClick = () => {
+      handleCTAClick(ctaType);
+      if (ctaType === 'pagar_bono') {
+        handleStartPayment();
+      }
+    };
+
+    const handleSecondaryClick = () => {
+      handleCTAClick(cta.secondary.type);
+      if (cta.secondary.type === 'whatsapp') {
+        window.open(waUrl, '_blank');
+      }
+    };
+
+    const objections = OBJECTIONS_BY_ECP[ecp] || [];
+    const testimonials = TESTIMONIALS_BY_ECP[ecp] || [];
+    const includedItems = INCLUDED_BY_CTA[ctaType] || INCLUDED_BY_CTA['solicitar_llamada'];
+    const faqs = FAQS_BY_CTA[ctaType] || FAQS_BY_CTA['solicitar_llamada'];
+
+    // ECP-specific subtitle for the header
+    const ecpSubtitles = {
+      'Hombre con caida sin diagnostico': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
+      'Mujer con caida hormonal': 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.',
+      'Joven con alopecia temprana': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
+      'Mala experiencia otra clinica': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
+      'Post-trasplante mantenimiento': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
+      'Caida postparto': 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal con un estudio capilar completo.',
+    };
+
     return (
       <>
-      {paymentStep === 'paywall' && (
-        <PaywallOverlay
-          ecp={ecp}
-          nombre={nombre}
-          onPay={handleStartPayment}
-          onClose={() => setPaymentStep(null)}
-          onCallRequest={() => { setPaymentStep(null); handleCTAClick('solicitar_llamada'); }}
-        />
-      )}
       {paymentStep === 'paying' && (
         <div className="fixed inset-0 z-50 bg-[#F7F8FA] flex items-center justify-center">
           <div className="text-center">
@@ -1266,321 +1299,192 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           </div>
         </div>
       )}
-      <div className="min-h-screen bg-gradient-to-b from-[#2C3E50] via-[#2C3E50] to-white font-sans">
-        <div className="h-1.5 w-full bg-[#4CA994]"></div>
+      <div className="min-h-screen bg-[#F7F8FA] font-sans">
+        {/* Top banner */}
+        <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
+          Tu diagnóstico personalizado está listo
+        </div>
 
-        {/* Header oscuro compacto */}
-        <div className="max-w-2xl mx-auto px-5 pt-5 pb-10">
-          <div className="flex items-center justify-between mb-5">
-            <button
-              onClick={() => { setStepIndex(activeQuestions.length - 1); setFinalResult(null); }}
-              className="flex items-center gap-2 text-gray-400 hover:text-gray-200 p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7 brightness-0 invert" style={{ filter: 'brightness(0) invert(1)' }} />
-            <div className="w-8" />
-          </div>
-          <div className="text-center">
-            <div className="inline-flex items-center gap-1.5 bg-[#4CA994]/20 text-[#4CA994] text-xs font-bold px-3 py-1 rounded-full mb-3">
-              <CheckCircle2 size={13} /> Diagnóstico completado
-            </div>
-            <h2 className="text-2xl font-extrabold text-white mb-1">
-              {nombre.split(' ')[0]}, aquí tienes tu resultado
+        <div className="max-w-lg mx-auto px-4 pb-40">
+          {/* Header */}
+          <div className="text-center py-6">
+            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
+              {firstName}, {isDerivacion ? 'esto es lo que hemos encontrado' : 'descubre qué le pasa a tu pelo'}
             </h2>
-            <p className="text-gray-400 text-sm">Basado en tus respuestas, este es nuestro análisis.</p>
+            <p className="text-gray-500 text-sm">
+              {isDerivacion
+                ? 'Basado en tus respuestas, este es nuestro análisis.'
+                : ecpSubtitles[ecp] || 'Basado en tus respuestas, este es nuestro análisis.'}
+            </p>
+          </div>
+
+          {/* Objections section */}
+          {objections.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                ¿Te sientes así? <span className="text-[#4CA994]">Tenemos la respuesta.</span>
+              </h3>
+              <div className="space-y-4 mt-4">
+                {objections.map((obj, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="w-6 h-6 bg-red-50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                      <X size={14} className="text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm line-through">"{obj.myth}"</p>
+                      <p className="text-gray-800 text-sm font-medium mt-0.5">{obj.truth}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* What's included */}
+          {!isDerivacion && (
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                {ctaType === 'pagar_bono' ? 'Lo que incluye tu diagnóstico' : 'Lo que haremos por ti'}
+              </h3>
+              <div className="space-y-2">
+                {includedItems.map((text, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-8 h-8 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0">
+                      <Check size={18} className="text-[#4CA994]" />
+                    </div>
+                    <span className="text-gray-800 text-sm font-medium">{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Price card (only for payment CTA) */}
+          {ctaType === 'pagar_bono' && (
+            <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#4CA994] text-white text-xs font-bold px-4 py-1 rounded-full">
+                DIAGNÓSTICO COMPLETO
+              </div>
+              <div className="text-center pt-2">
+                <span className="text-4xl font-extrabold text-gray-900">195€</span>
+                <p className="text-sm text-gray-500 mt-1">Pago único · Se descuenta si inicias tratamiento</p>
+              </div>
+            </div>
+          )}
+
+          {/* CTA info card (for non-payment CTAs) */}
+          {ctaType !== 'pagar_bono' && (
+            <div className={`bg-white rounded-2xl border-2 ${isAmber ? 'border-amber-300' : 'border-[#4CA994]'} p-5 mb-6 shadow-sm relative`}>
+              {cta.primary.badge && (
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${isAmber ? 'bg-amber-600' : 'bg-[#4CA994]'} text-white text-xs font-bold px-4 py-1 rounded-full`}>
+                  {cta.primary.badge}
+                </div>
+              )}
+              <div className={cta.primary.badge ? 'pt-2' : ''}>
+                <h4 className={`font-bold text-lg ${isAmber ? 'text-amber-900' : 'text-gray-900'} mb-1`}>{cta.heading}</h4>
+                <p className={`text-sm ${isAmber ? 'text-amber-800' : 'text-gray-600'}`}>{cta.description}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Testimonials */}
+          {testimonials.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Historias reales</h3>
+              <div className="space-y-3">
+                {testimonials.map((t, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-sm text-gray-900">{t.name}</span>
+                      <span className="text-gray-400 text-xs">{t.age} años</span>
+                      <div className="flex gap-0.5 ml-auto">
+                        {Array.from({ length: t.stars }).map((_, j) => (
+                          <Star key={j} size={14} className="text-yellow-400 fill-yellow-400" />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-gray-600 text-sm italic leading-relaxed">"{t.text}"</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* FAQ */}
+          {faqs.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-base font-bold text-gray-900 text-center mb-4">Preguntas frecuentes</h3>
+              <div className="space-y-2">
+                {faqs.map((faq, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full flex items-center justify-between p-4 text-left"
+                    >
+                      <span className="text-sm font-medium text-gray-800 pr-4">{faq.q}</span>
+                      <ChevronDown size={18} className={`text-gray-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                    </button>
+                    {openFaq === i && (
+                      <div className="px-4 pb-4">
+                        <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Trust footer */}
+          <div className="text-center mb-4">
+            <div className="flex items-center justify-center gap-6 text-gray-400 text-sm">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} />
+                <span>100% confidencial</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Stethoscope size={16} />
+                <span>Centro médico</span>
+              </div>
+            </div>
+            {ctaType === 'pagar_bono' && (
+              <p className="text-xs text-gray-400 flex items-center justify-center gap-1 mt-2">
+                <Lock size={12} /> Pago 100% seguro con Stripe
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Card principal de perfil */}
-        <div className="max-w-2xl mx-auto px-5 -mt-2">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-5">
-            {/* Barra superior de la card */}
-            <div className="bg-gradient-to-r from-[#4CA994] to-[#3D8B7A] px-5 py-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Stethoscope size={16} className="text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-sm">Tu Perfil Capilar</h3>
-                <p className="text-white/70 text-xs">Pre-diagnóstico personalizado</p>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-            {ecp === 'Hombre con caida sin diagnostico' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Dna size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Llevas <strong>{strTiempo.toLowerCase()}</strong> tratando tu caída capilar con {arrProbado.toLowerCase()} sin los resultados que esperabas.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Esto es más común de lo que piensas — el 40-60% de personas no responden a minoxidil. Y en muchos casos, el problema no es el producto sino que <strong>nunca se diagnosticó correctamente la causa de tu caída</strong>. Sin una tricoscopía y analítica hormonal, cualquier tratamiento es una apuesta.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Un diagnóstico integral presencial donde nuestro equipo médico evalúa tu caso con microscopio capilar + analítica completa + valoración médica personalizada. En 30 minutos sabrás exactamente qué tienes y qué opciones reales hay.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {ecp === 'Mujer con caida hormonal' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Dna size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Tu caída de pelo está probablemente conectada a un <strong>desbalance hormonal</strong> que nadie ha evaluado en relación con tu pelo.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">La caída femenina por causa hormonal es una de las menos diagnosticadas correctamente. Los dermatólogos tratan el pelo, los ginecólogos tratan las hormonas — pero nadie cruza ambas cosas.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Una consulta diagnóstica que incluye analítica hormonal completa cruzada con un estudio capilar con microscopio. Es la pieza que falta entre tu pelo y tu salud.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {ecp === 'Joven con alopecia temprana' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Dna size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Estás empezando a notar señales de caída y quieres saber si es momento de actuar o de esperar.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Buena noticia: <strong>actuar temprano es la mejor decisión que puedes tomar</strong> con la alopecia. Cuanto antes se diagnostica, más opciones tienes y mejores resultados se consiguen. Mala noticia: la caída capilar NO se frena sola. Si llevas {strTiempo.toLowerCase()} notándolo, es probable que progrese.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Hablar con nuestro equipo para entender tu caso concreto. Nada de presión — solo que sepas dónde estás y qué opciones existen a tu edad.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {ecp === 'Mala experiencia otra clinica' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <ShieldCheck size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Ya pasaste por una experiencia negativa en <strong>{strClinica}</strong> y entendemos que tengas dudas.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Lo primero: lo sentimos. Sabemos que hay clínicas que prometen mucho y entregan poco. No es lo que hacemos. Hospital Capilar es un centro médico especializado — no un centro estético. Aquí no hay "consultas gratuitas" que son ventas disfrazadas. Hay médicos que te diagnostican con datos y te dicen la verdad, te guste o no.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Que hables con nosotros sin compromiso. Preferimos que nos preguntes todo lo que necesites antes de tomar cualquier decisión.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {ecp === 'Post-trasplante mantenimiento' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Sparkles size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Te realizaste un trasplante capilar ({strCirugiaLugar}) y necesitas un plan para proteger tu inversión.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Un trasplante capilar sin plan de mantenimiento pierde resultados con el tiempo. El pelo trasplantado no se cae, pero <strong>el pelo nativo sigue sometido a los mismos factores</strong> que causaron la caída original.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Un diagnóstico para evaluar el estado actual de tu pelo nativo y diseñar un plan de mantenimiento personalizado que proteja los resultados de tu cirugía.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {ecp === 'Caida postparto' && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Dna size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Estás perdiendo pelo desde tu embarazo o parto y necesitas saber si es temporal o algo más.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">El efluvio postparto afecta al 50% de madres y en la mayoría de casos es temporal. Pero en algunas mujeres, <strong>el embarazo revela una alopecia subyacente (AGA)</strong> que estaba oculta y necesita tratamiento.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Un diagnóstico que cruce tu perfil hormonal con tu estudio capilar. Si es efluvio temporal, te lo decimos y te ahorras preocupaciones. Si es algo más, actuamos a tiempo.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            {isDerivacion && (
-              <>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Info size={15} className="text-amber-500" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Lo que describes parece un <strong>problema dermatológico del cuero cabelludo</strong> más que una caída capilar.</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-[#4CA994]" />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">Problemas como la dermatitis seborreica, la caspa severa o las inflamaciones del cuero cabelludo requieren un enfoque dermatológico específico que no es nuestra especialidad.</p>
-                </div>
-                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-4 flex gap-3">
-                  <div className="w-7 h-7 bg-[#4CA994] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Stethoscope size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[#2C3E50] font-bold text-sm mb-0.5">Nuestra recomendación</p>
-                    <p className="text-gray-600 text-sm leading-relaxed">Visitar un dermatólogo que pueda evaluar tu cuero cabelludo directamente.</p>
-                  </div>
-                </div>
-              </>
-            )}
-            </div>
-          </div>
-
-          {/* CTA Card */}
-          {(() => {
-            const perfil = calculatePerfil(finalResult.score, frame);
-            const cta = getCTAConfig(ecp, perfil, frame);
-            const isAmber = cta.primary.style === 'amber';
-            const IconMap = { Calendar, PhoneCall, Download, MapPin, FileText };
-            const PrimaryIcon = IconMap[cta.primary.icon] || ChevronRight;
-
-            const WA_PHONE = '34623457218';
-            const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
-            const waText = encodeURIComponent(
-              `Hola, soy ${nombre.split(' ')[0]}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
-            );
-            const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
-
-            const handlePrimaryClick = () => {
-              handleCTAClick(cta.primary.type);
-              if (cta.primary.type === 'pagar_bono') {
-                setPaymentStep('paywall');
-              }
-            };
-
-            const handleSecondaryClick = () => {
-              handleCTAClick(cta.secondary.type);
-              if (cta.secondary.type === 'whatsapp') {
-                window.open(waUrl, '_blank');
-              }
-            };
-
-            return (
-              <div className={`bg-white rounded-2xl shadow-xl border ${isAmber ? 'border-amber-200' : cta.primary.badge ? 'border-[#4CA994]' : 'border-gray-100'} p-5 relative overflow-hidden`}>
-                {cta.primary.badge && (
-                  <div className="absolute top-0 right-0 bg-[#4CA994] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">{cta.primary.badge}</div>
-                )}
-                <h4 className={`font-bold text-lg ${isAmber ? 'text-amber-900' : 'text-gray-900'} mb-1 ${cta.primary.badge ? 'mt-2' : ''}`}>{cta.heading}</h4>
-                <p className={`text-sm ${isAmber ? 'text-amber-800' : 'text-gray-600'} mb-4`}>{cta.description}</p>
-                <button
-                  onClick={handlePrimaryClick}
-                  className={`w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg flex items-center justify-center gap-2 ${cta.secondary ? 'mb-3' : ''} hover:-translate-y-0.5 transition-transform ${isAmber ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
-                  style={isAmber ? {} : { backgroundColor: theme.primary }}
-                >
-                  {cta.primary.label} <PrimaryIcon size={18} />
-                </button>
-                {cta.secondary && (
-                  <button
-                    onClick={handleSecondaryClick}
-                    className={`w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
-                      cta.secondary.type === 'whatsapp'
-                        ? 'text-[#25D366] hover:bg-green-50'
-                        : cta.secondary.style === 'outline'
-                          ? 'border-2 border-gray-200 text-gray-600 hover:bg-white'
-                          : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    {cta.secondary.icon === 'WhatsApp' ? <WhatsAppIcon size={16} /> : null}
-                    {cta.secondary.label}
-                    {cta.secondary.icon !== 'WhatsApp' && (() => { const SI = IconMap[cta.secondary.icon] || ChevronRight; return <SI size={14} />; })()}
-                  </button>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* Trust badges */}
-          <div className="flex items-center justify-center gap-6 py-8 text-gray-400 text-sm">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} />
-              <span>100% confidencial</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Stethoscope size={16} />
-              <span>Centro médico</span>
-            </div>
-          </div>
-        </div>
-
-        {/* WhatsApp floating button */}
-        {!isDerivacion && (() => {
-          const WA_PHONE = '34623457218';
-          const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
-          const waText = encodeURIComponent(
-            `Hola, soy ${nombre.split(' ')[0]}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
-          );
-          return (
-            <a
-              href={`https://wa.me/${WA_PHONE}?text=${waText}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => handleCTAClick('whatsapp')}
-              className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#1da851] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-110"
-              aria-label="Contactar por WhatsApp"
+        {/* Sticky CTA — fixed at bottom */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={handlePrimaryClick}
+              className={`w-full font-bold text-lg py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 ${
+                isAmber
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-[#4CA994] hover:bg-[#3d9480] text-white'
+              }`}
             >
-              <WhatsAppIcon size={28} className="text-white" />
-            </a>
-          );
-        })()}
+              {cta.primary.label} <PrimaryIcon size={18} />
+            </button>
+            {cta.secondary && (
+              <button
+                onClick={handleSecondaryClick}
+                className={`w-full text-center text-sm mt-2 py-1 transition-colors flex items-center justify-center gap-1 ${
+                  cta.secondary.type === 'whatsapp'
+                    ? 'text-[#25D366] hover:text-[#1da851]'
+                    : 'text-gray-500 hover:text-[#4CA994]'
+                }`}
+              >
+                {cta.secondary.icon === 'WhatsApp' ? <WhatsAppIcon size={14} /> : null}
+                {cta.secondary.label}
+                {cta.secondary.icon !== 'WhatsApp' && (() => { const SI = IconMap[cta.secondary.icon] || ChevronRight; return <SI size={14} />; })()}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       </>
     );

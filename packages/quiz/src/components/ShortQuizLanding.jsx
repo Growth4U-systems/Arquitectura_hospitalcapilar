@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, Phone, ShieldCheck, Stethoscope, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, Phone, ShieldCheck, Stethoscope, Clock, Check, X, Star, ChevronDown } from 'lucide-react';
 import { useAnalytics, getUTMParams } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { NICHOS } from './nichoConfig';
+import { OBJECTIONS_BY_ECP, TESTIMONIALS_BY_ECP, INCLUDED_BY_CTA, FAQS_BY_CTA } from './resultContent';
 import {
   TopBar,
   StatsSection,
@@ -93,8 +94,9 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
   const [phase, setPhase] = useState('landing');
   const [step, setStep] = useState(0); // 0=sexo, 1=situacion, 2=tiempo, 3=urgencia, 4=form
   const [answers, setAnswers] = useState({ sexo: '', situacion: '', tiempo: '', urgencia: '' });
-  const [form, setForm] = useState({ nombre: '', email: '', telefono: '', provincia: '' });
+  const [form, setForm] = useState({ nombre: '', email: '', telefono: '', provincia: '', consentPrivacidad: false, consentComunicaciones: false });
   const [submitting, setSubmitting] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
   const quizRef = useRef(null);
 
   const handleStartQuiz = () => {
@@ -115,7 +117,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
   };
 
   const handleSubmit = async () => {
-    if (!form.nombre || !form.email || !form.telefono || !form.provincia) return;
+    if (!form.nombre || !form.email || !form.telefono || !form.provincia || !form.consentPrivacidad) return;
     setSubmitting(true);
     setPhase('analyzing');
 
@@ -154,6 +156,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
       contact_score:           'SGT17lKk7bZgkInBTtrT',
       consent:                 'x2QNuqJqst8Oy8H6pV0G',
+      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
       utm_source:              'MisB9YJJAH7cnh8JOtQn',
       utm_medium:              'vykx7m6bcfbYMXRqToYP',
       utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
@@ -167,6 +170,8 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       { id: CF.ecp, field_value: ecp },
       { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
+      { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
+      { id: CF.consent, field_value: form.consentPrivacidad ? `privacidad:si|comunicaciones:${form.consentComunicaciones ? 'si' : 'no'}` : '' },
     ];
     if (utmParams.utm_source) customFields.push({ id: CF.utm_source, field_value: utmParams.utm_source });
     if (utmParams.utm_medium) customFields.push({ id: CF.utm_medium, field_value: utmParams.utm_medium });
@@ -297,97 +302,207 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#2C3E50] via-[#2C3E50] to-white font-sans">
-        <div className="h-1.5 w-full bg-[#4CA994]" />
-
-        <div className="max-w-2xl mx-auto px-5 pt-5 pb-6">
-          <div className="flex justify-center mb-5">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7" style={{ filter: 'brightness(0) invert(1)' }} />
-          </div>
-          <div className="text-center">
-            <div className="inline-flex items-center gap-1.5 bg-[#4CA994]/20 text-[#4CA994] text-xs font-bold px-3 py-1 rounded-full mb-3">
-              <CheckCircle2 size={13} /> Diagnóstico completado
-            </div>
-            <h2 className="text-2xl font-extrabold text-white mb-1">
-              {form.nombre.split(' ')[0]}, aquí tienes tu resultado
-            </h2>
-            <p className="text-gray-400 text-sm">Basado en tus respuestas, este es nuestro análisis.</p>
-          </div>
+      <div className="min-h-screen bg-[#F7F8FA] font-sans">
+        {/* Top banner */}
+        <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
+          Tu diagnóstico personalizado está listo
         </div>
 
-        <div className="max-w-2xl mx-auto px-5 -mt-2">
+        <div className="max-w-lg mx-auto px-4 pb-40">
+          {/* Header */}
+          <div className="text-center py-6">
+            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
+              {form.nombre.split(' ')[0]}, aquí tienes tu resultado
+            </h2>
+            <p className="text-gray-500 text-sm">Basado en tus respuestas, este es nuestro análisis.</p>
+          </div>
+
           {/* Summary of answers */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center">
+          <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4 grid grid-cols-3 gap-3 text-center shadow-sm">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Situación</p>
-              <p className="text-white text-xs font-semibold">{situacionLabels[answers.situacion] || '—'}</p>
+              <p className="text-gray-900 text-xs font-semibold">{situacionLabels[answers.situacion] || '—'}</p>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Tiempo</p>
-              <p className="text-white text-xs font-semibold">{tiempoLabels[answers.tiempo] || '—'}</p>
+              <p className="text-gray-900 text-xs font-semibold">{tiempoLabels[answers.tiempo] || '—'}</p>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Urgencia</p>
-              <p className="text-white text-xs font-semibold">{urgenciaLabels[answers.urgencia] || '—'}</p>
+              <p className="text-gray-900 text-xs font-semibold">{urgenciaLabels[answers.urgencia] || '—'}</p>
             </div>
           </div>
 
           {/* Profile card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-4">
-            <div className="bg-gradient-to-r from-[#4CA994] to-[#3D8B7A] px-5 py-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Stethoscope size={16} className="text-white" />
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6 shadow-sm">
+            <div className="px-5 py-3 flex items-center gap-2.5 border-b border-gray-100">
+              <div className="w-8 h-8 bg-[#F0F7F6] rounded-full flex items-center justify-center">
+                <Stethoscope size={16} className="text-[#4CA994]" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-sm">Tu Perfil Capilar</h3>
-                <p className="text-white/70 text-xs">{situacionLabels[answers.situacion] || 'Pre-diagnóstico'}</p>
+                <h3 className="text-gray-900 font-bold text-sm">Tu Perfil Capilar</h3>
+                <p className="text-gray-400 text-xs">{situacionLabels[answers.situacion] || 'Pre-diagnóstico'}</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
               <h4 className="font-bold text-gray-900">{ecpMsg.title}</h4>
               <p className="text-gray-600 text-sm leading-relaxed">{ecpMsg.body}</p>
               {getRecommendation() && (
-                <div className="bg-[#F0F7F6] rounded-lg p-3 mt-2 border-l-3 border-[#4CA994]">
+                <div className="bg-[#F0F7F6] border border-[#4CA994]/20 rounded-xl p-3 mt-2">
                   <p className="text-[#2C3E50] text-sm font-medium leading-relaxed">{getRecommendation()}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* CTA */}
+          {/* Objections */}
+          {(() => {
+            const objections = OBJECTIONS_BY_ECP[ecp] || [];
+            if (objections.length === 0) return null;
+            return (
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  ¿Te sientes así? <span className="text-[#4CA994]">Tenemos la respuesta.</span>
+                </h3>
+                <div className="space-y-4 mt-4">
+                  {objections.map((obj, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="w-6 h-6 bg-red-50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                        <X size={14} className="text-red-400" />
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm line-through">"{obj.myth}"</p>
+                        <p className="text-gray-800 text-sm font-medium mt-0.5">{obj.truth}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* What's included */}
+          {!isDerivacion && (
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que haremos por ti</h3>
+              <div className="space-y-2">
+                {(INCLUDED_BY_CTA['solicitar_llamada']).map((text, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-8 h-8 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0">
+                      <Check size={18} className="text-[#4CA994]" />
+                    </div>
+                    <span className="text-gray-800 text-sm font-medium">{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA info card */}
           {!isDerivacion ? (
-            <div className="bg-white rounded-2xl shadow-xl border border-[#4CA994] p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#4CA994] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">SIGUIENTE PASO</div>
-              <h4 className="font-bold text-lg text-gray-900 mb-1 mt-2">Te contactamos en menos de 24h</h4>
-              <p className="text-sm text-gray-600 mb-4">Un asesor médico revisará tu caso y te llamará para orientarte. Sin compromiso.</p>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => analytics.trackEvent('short_quiz_whatsapp_clicked', { nicho, ecp })}
-                className="w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-base shadow-lg flex items-center justify-center gap-2 mb-3 hover:-translate-y-0.5 transition-transform"
-              >
-                <WhatsAppIcon size={20} className="text-white" /> Escríbenos por WhatsApp
-              </a>
-              <a
-                href="tel:+34623457218"
-                className="w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                <Phone size={14} /> Llamar al 623 457 218
-              </a>
+            <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#4CA994] text-white text-xs font-bold px-4 py-1 rounded-full">
+                SIGUIENTE PASO
+              </div>
+              <div className="pt-2">
+                <h4 className="font-bold text-lg text-gray-900 mb-1">Te contactamos en menos de 24h</h4>
+                <p className="text-sm text-gray-600">Un asesor médico revisará tu caso y te llamará para orientarte. Sin compromiso.</p>
+              </div>
             </div>
           ) : (
-            <div className="bg-amber-50 rounded-2xl border border-amber-200 p-5">
+            <div className="bg-white rounded-2xl border-2 border-amber-300 p-5 mb-6 shadow-sm">
               <h4 className="font-bold text-lg text-amber-900 mb-1">Te recomendamos visitar un dermatólogo</h4>
               <p className="text-sm text-amber-800">Los problemas de cuero cabelludo requieren atención dermatológica especializada.</p>
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-6 py-6 text-gray-400 text-sm">
-            <div className="flex items-center gap-2"><ShieldCheck size={16} /><span>100% confidencial</span></div>
-            <div className="flex items-center gap-2"><Stethoscope size={16} /><span>Centro médico</span></div>
+          {/* Testimonials */}
+          {(() => {
+            const testimonials = TESTIMONIALS_BY_ECP[ecp] || [];
+            if (testimonials.length === 0) return null;
+            return (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Historias reales</h3>
+                <div className="space-y-3">
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-sm text-gray-900">{t.name}</span>
+                        <span className="text-gray-400 text-xs">{t.age} años</span>
+                        <div className="flex gap-0.5 ml-auto">
+                          {Array.from({ length: t.stars }).map((_, j) => (
+                            <Star key={j} size={14} className="text-yellow-400 fill-yellow-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm italic leading-relaxed">"{t.text}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* FAQ */}
+          {(() => {
+            const faqs = FAQS_BY_CTA['solicitar_llamada'] || [];
+            return (
+              <div className="mb-8">
+                <h3 className="text-base font-bold text-gray-900 text-center mb-4">Preguntas frecuentes</h3>
+                <div className="space-y-2">
+                  {faqs.map((faq, i) => (
+                    <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                      <button
+                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                        className="w-full flex items-center justify-between p-4 text-left"
+                      >
+                        <span className="text-sm font-medium text-gray-800 pr-4">{faq.q}</span>
+                        <ChevronDown size={18} className={`text-gray-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                      </button>
+                      {openFaq === i && (
+                        <div className="px-4 pb-4">
+                          <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Trust badges */}
+          <div className="text-center mb-4">
+            <div className="flex items-center justify-center gap-6 text-gray-400 text-sm">
+              <div className="flex items-center gap-2"><ShieldCheck size={16} /><span>100% confidencial</span></div>
+              <div className="flex items-center gap-2"><Stethoscope size={16} /><span>Centro médico</span></div>
+            </div>
           </div>
         </div>
+
+        {/* Sticky CTA — fixed at bottom */}
+        {!isDerivacion ? (
+          <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+            <div className="max-w-lg mx-auto">
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => analytics.trackEvent('short_quiz_whatsapp_clicked', { nicho, ecp })}
+                className="w-full py-4 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <WhatsAppIcon size={20} className="text-white" /> Escríbenos por WhatsApp
+              </a>
+              <a
+                href="tel:+34623457218"
+                className="w-full text-center text-sm text-gray-500 mt-2 py-1 hover:text-[#4CA994] transition-colors flex items-center justify-center gap-1"
+              >
+                <Phone size={14} /> Llamar al 623 457 218
+              </a>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -590,16 +705,25 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
                     className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:border-[#4CA994] outline-none text-sm font-medium"
                   />
                 </div>
+                <div className="space-y-2 mt-3">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.consentPrivacidad} onChange={e => setForm({ ...form, consentPrivacidad: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#4CA994] focus:ring-[#4CA994]" />
+                    <span className="text-xs text-gray-500">Acepto la <a href="https://hospitalcapilar.com/politica-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline text-[#4CA994]">política de privacidad</a> <span className="text-red-500">*</span></span>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.consentComunicaciones} onChange={e => setForm({ ...form, consentComunicaciones: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#4CA994] focus:ring-[#4CA994]" />
+                    <span className="text-xs text-gray-500">Acepto recibir comunicaciones sobre tratamientos capilares</span>
+                  </label>
+                </div>
                 <button
                   onClick={handleSubmit}
-                  disabled={!form.nombre || !form.email || !form.telefono || !form.provincia || submitting}
+                  disabled={!form.nombre || !form.email || !form.telefono || !form.provincia || !form.consentPrivacidad || submitting}
                   className="w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-[#4CA994] hover:-translate-y-0.5"
                 >
                   {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Ver mi pre-diagnóstico <ArrowRight size={18} /></>}
                 </button>
-                <p className="text-xs text-center text-gray-400 mt-3 px-4">
-                  Acepto la política de privacidad. Tus datos están protegidos y solo se usarán para enviarte el pre-diagnóstico.
-                </p>
               </div>
             </div>
           )}
