@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BookingCalendar from '../components/BookingCalendar.jsx';
+---
+
+<BaseLayout title="Test Booking - Hospital Capilar">
+  <div class="min-h-screen bg-[#F7F8FA]">
+    <div class="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold">
+      TEST — Calendario de Reservas Koibox
+    </div>
+    <div class="max-w-lg mx-auto px-4 py-6">
+      <div class="bg-[#4CA994]/5 border border-[#4CA994]/20 rounded-2xl p-5">
+        <BookingCalendar
+          client:only="react"
+          nombre="Test Usuario"
+          email="test@test.com"
+          telefono="600000000"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
