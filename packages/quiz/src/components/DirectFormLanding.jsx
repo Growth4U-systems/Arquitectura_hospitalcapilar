@@ -45,7 +45,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
   const analytics = useAnalytics();
   const [utmParams] = useState(() => getUTMParams());
 
-  const [form, setForm] = useState({ nombre: '', email: '', telefono: '', provincia: '' });
+  const [form, setForm] = useState({ nombre: '', email: '', telefono: '', provincia: '', consentPrivacidad: false, consentComunicaciones: false });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -82,6 +82,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
       agent_message_contact:   '5voFSSQP0yBFa8VdLuzY',
       contact_score:           'SGT17lKk7bZgkInBTtrT',
       consent:                 'x2QNuqJqst8Oy8H6pV0G',
+      ubicacion_clinica:       'LygjPVQnLbqqdL4eqQwT',
       utm_source:              'MisB9YJJAH7cnh8JOtQn',
       utm_medium:              'vykx7m6bcfbYMXRqToYP',
       utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
@@ -109,6 +110,8 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
       { id: CF.ecp, field_value: config.ecp },
       { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
+      { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
+      { id: CF.consent, field_value: form.consentPrivacidad ? `privacidad:si|comunicaciones:${form.consentComunicaciones ? 'si' : 'no'}` : '' },
     ];
 
     // UTMs
@@ -337,18 +340,27 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
           />
         </div>
 
+        <div className="space-y-2 mt-3">
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.consentPrivacidad} onChange={e => setForm({ ...form, consentPrivacidad: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#4CA994] focus:ring-[#4CA994]" />
+            <span className="text-xs text-gray-400">Acepto la <a href="https://hospitalcapilar.com/politica-de-privacidad" target="_blank" rel="noopener noreferrer" className="underline text-[#4CA994]">política de privacidad</a> <span className="text-red-400">*</span></span>
+          </label>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.consentComunicaciones} onChange={e => setForm({ ...form, consentComunicaciones: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#4CA994] focus:ring-[#4CA994]" />
+            <span className="text-xs text-gray-400">Acepto recibir comunicaciones sobre tratamientos capilares</span>
+          </label>
+        </div>
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !form.consentPrivacidad}
           className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg hover:-translate-y-0.5 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-[#4CA994]"
         >
           {submitting ? <><Loader2 size={20} className="animate-spin" /> Enviando...</> : config.ctaForm}
         </button>
       </form>
-
-      <p className="text-gray-400 text-xs text-center mt-4">
-        Al enviar el formulario aceptas la <a href="https://hospitalcapilar.com/politica-de-privacidad/" target="_blank" rel="noopener noreferrer" className="underline">política de privacidad</a>
-      </p>
     </>
   );
 
