@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Capilar — Ad Mockups Presentación</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f1729;
+    color: #fff;
+    padding: 60px 40px;
+  }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+
+  h1 span { color: #4ECDC4; }
+
+  .subtitle {
+    font-size: 18px;
+    color: #8892a4;
+    margin-bottom: 60px;
+    font-style: italic;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 60px 0 12px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title .badge {
+    background: #4ECDC4;
+    color: #0f1729;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-subtitle {
+    font-size: 15px;
+    color: #8892a4;
+    margin-bottom: 32px;
+  }
+
+  .niche-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4ECDC4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .niche-name {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  /* ─── META AD MOCKUP ─── */
+  .ad-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 40px;
+    margin-bottom: 60px;
+  }
+
+  .meta-ad {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 420px;
+    color: #1c1e21;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+
+  .meta-ad-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .meta-ad-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .meta-ad-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1c1e21;
+    line-height: 1.2;
+  }
+
+  .meta-ad-sponsored {
+    font-size: 12px;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .meta-ad-dots {
+    margin-left: auto;
+    color: #65676b;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .meta-ad-text {
+    padding: 0 16px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1c1e21;
+  }
+
+  .meta-ad-text strong {
+    font-weight: 700;
+  }
+
+  .meta-ad-image {
+    width: 100%;
+    aspect-ratio: 1/1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .meta-ad-image-bg {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    position: relative;
+  }
+
+  /* Nicho 1 — El Espejo */
+  .bg-espejo {
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+
+  .bg-espejo .ad-visual-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+  }
+
+  .bg-espejo .ad-visual-headline {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .bg-espejo .ad-visual-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+  }
+
+  /* Nicho 2 — Farmacia */
+  .bg-farmacia {
+    background: linear-gradient(160deg, #2d1b4e 0%, #1a1a3e 50%, #0d2137 100%);
+  }
+
+  /* Nicho 3 — Que Me Pasa */
+  .bg-quemepasa {
+    background: linear-gradient(160deg, #0a2540 0%, #0d3b66 50%, #145374 100%);
+  }
+
+  /* Nicho 6 — Es Normal */
+  .bg-esnormal {
+    background: linear-gradient(160deg, #3d1c3f 0%, #2d1b4e 50%, #1a1a3e 100%);
+  }
+
+  .ad-visual-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  .ad-visual-headline {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  .ad-visual-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 20px;
+    max-width: 300px;
+  }
+
+  .ad-visual-cta {
+    background: #4ECDC4;
+    color: #0f1729;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    display: inline-block;
+    letter-spacing: 0.3px;
+  }
+
+  .ad-visual-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .ad-visual-logo {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 1px;
+  }
+
+  .meta-ad-link {
+    background: #f0f2f5;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .meta-ad-link-text {
+    flex: 1;
+  }
+
+  .meta-ad-link-domain {
+    font-size: 12px;
+    color: #65676b;
+    text-transform: uppercase;
+  }
+
+  .meta-ad-link-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1c1e21;
+    line-height: 1.3;
+  }
+
+  .meta-ad-link-desc {
+    font-size: 12px;
+    color: #65676b;
+  }
+
+  .meta-ad-link-btn {
+    background: #e4e6eb;
+    color: #1c1e21;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+
+  .meta-ad-actions {
+    display: flex;
+    padding: 6px 16px 10px;
+    gap: 4px;
+    border-top: 1px solid #e4e6eb;
+  }
+
+  .meta-ad-action {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* ─── GOOGLE AD MOCKUP ─── */
+  .google-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 32px;
+    margin-bottom: 60px;
+  }
+
+  .google-ad {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 620px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+
+  .google-ad-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #202124;
+    background: transparent;
+    border: 1px solid #dadce0;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-bottom: 8px;
+  }
+
+  .google-ad-url {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .google-ad-favicon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .google-ad-url-text {
+    font-size: 14px;
+    color: #202124;
+    line-height: 1.3;
+  }
+
+  .google-ad-url-text span {
+    color: #4d5156;
+    font-size: 12px;
+  }
+
+  .google-ad-title {
+    font-size: 20px;
+    color: #1a0dab;
+    font-weight: 400;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+
+  .google-ad-title:hover {
+    text-decoration: underline;
+  }
+
+  .google-ad-desc {
+    font-size: 14px;
+    color: #4d5156;
+    line-height: 1.5;
+  }
+
+  .google-ad-desc strong {
+    color: #202124;
+    font-weight: 600;
+  }
+
+  .google-ad-extensions {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+
+  .google-ad-ext {
+    font-size: 13px;
+    color: #1a0dab;
+    cursor: pointer;
+  }
+
+  .google-ad-ext:hover {
+    text-decoration: underline;
+  }
+
+  .google-ad-callouts {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #4d5156;
+  }
+
+  /* ─── STORIES/REELS MOCKUP ─── */
+  .stories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 250px));
+    gap: 24px;
+    margin-bottom: 60px;
+  }
+
+  .story-ad {
+    width: 250px;
+    height: 444px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+
+  .story-bg {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    position: relative;
+  }
+
+  .story-bg-espejo {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+  }
+
+  .story-bg-farmacia {
+    background: linear-gradient(180deg, #2d1b4e 0%, #1a1a3e 40%, #0d2137 100%);
+  }
+
+  .story-bg-quemepasa {
+    background: linear-gradient(180deg, #0a2540 0%, #0d3b66 40%, #145374 100%);
+  }
+
+  .story-bg-esnormal {
+    background: linear-gradient(180deg, #3d1c3f 0%, #2d1b4e 40%, #1a1a3e 100%);
+  }
+
+  .story-bg-inversion {
+    background: linear-gradient(180deg, #1a3c34 0%, #0d2b26 40%, #0a1f1c 100%);
+  }
+
+  .story-bg-negocio {
+    background: linear-gradient(180deg, #3b1a1a 0%, #2d1616 40%, #1f0f0f 100%);
+  }
+
+  .story-top {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .story-progress {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+  }
+
+  .story-progress-fill {
+    height: 100%;
+    background: #fff;
+    border-radius: 2px;
+    width: 30%;
+  }
+
+  .story-account {
+    position: absolute;
+    top: 24px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .story-account-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-weight: 800;
+    color: #fff;
+    border: 2px solid #fff;
+  }
+
+  .story-account-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .story-account-sponsored {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .story-visual-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    text-align: center;
+    width: 85%;
+  }
+
+  .story-emoji {
+    font-size: 56px;
+    margin-bottom: 12px;
+  }
+
+  .story-headline {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .story-subtext {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.4;
+  }
+
+  .story-cta-bar {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .story-cta-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .story-swipe {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ─── DIVIDERS ─── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(78, 205, 196, 0.3), transparent);
+    margin: 60px 0;
+  }
+
+  /* ─── PAGE BREAK HINT ─── */
+  .page-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #4ECDC4;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+
+  .highlight { color: #4ECDC4; }
+
+  /* Keyword highlight in Google ads */
+  .kw { font-weight: 600; }
+
+  /* ─── COMPARISON TABLE STYLE ─── */
+  .comparison-note {
+    background: rgba(78, 205, 196, 0.08);
+    border-left: 3px solid #4ECDC4;
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0 40px;
+    font-size: 14px;
+    color: #c0c8d4;
+    line-height: 1.6;
+  }
+
+  .comparison-note strong {
+    color: #4ECDC4;
+  }
+</style>
+</head>
+<body>
+
+<h1>Ejemplos de <span>campanas reales</span></h1>
+<p class="subtitle">Mockups de Meta Ads, Google Ads e Instagram Stories por nicho — Hospital Capilar x Growth4U</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- META ADS — FEED                           -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="section-title">
+  Meta Ads — Feed Instagram / Facebook
+  <span class="badge">Awareness + Consideration</span>
+</div>
+<p class="section-subtitle">Formato feed cuadrado. Cada nicho con su dolor, su visual y su CTA al quiz.</p>
+
+<div class="ad-grid">
+
+  <!-- NICHO 1: El Espejo -->
+  <div>
+    <div class="niche-label">Nicho #1 — Prioridad Alta</div>
+    <div class="niche-name">El Espejo de Cada Manana</div>
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div>
+          <div class="meta-ad-name">Hospital Capilar</div>
+          <div class="meta-ad-sponsored">Patrocinado · <svg width="12" height="12" viewBox="0 0 16 16" fill="#65676b"><circle cx="8" cy="8" r="7" fill="none" stroke="#65676b" stroke-width="1.5"/><path d="M8 4v5l3 2" stroke="#65676b" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="meta-ad-dots">...</div>
+      </div>
+      <div class="meta-ad-text">
+        <strong>3 anos con gorra. Hoy me la quite.</strong><br><br>
+        Si tienes 20-algo y cada manana ves menos pelo en el espejo, no estas solo. El 25% de los hombres entre 18 y 24 ya tiene caida activa.<br><br>
+        No necesitas otro producto de farmacia.<br>Necesitas saber que tienes. <span style="color:#4CA994">Sin compromiso.</span>
+      </div>
+      <div class="meta-ad-image">
+        <div class="meta-ad-image-bg bg-espejo">
+          <div class="ad-visual-badge">DIAGNOSTICO GRATUITO</div>
+          <div class="ad-visual-icon">🧢</div>
+          <div class="ad-visual-headline">3 anos con gorra.<br>Hoy me la quite.</div>
+          <div class="ad-visual-sub">Un medico de verdad, no un asesor capilar.</div>
+          <div class="ad-visual-cta">Haz el test capilar — 2 min</div>
+          <div class="ad-visual-logo">HOSPITAL CAPILAR</div>
+        </div>
+      </div>
+      <div class="meta-ad-link">
+        <div class="meta-ad-link-text">
+          <div class="meta-ad-link-domain">diagnostico.hospitalcapilar.com</div>
+          <div class="meta-ad-link-title">Test Capilar Gratuito | Hospital Capilar</div>
+          <div class="meta-ad-link-desc">Descubre que le pasa a tu pelo en 2 minutos</div>
+        </div>
+        <div class="meta-ad-link-btn">Mas info</div>
+      </div>
+      <div class="meta-ad-actions">
+        <div class="meta-ad-action">👍 Me gusta</div>
+        <div class="meta-ad-action">💬 Comentar</div>
+        <div class="meta-ad-action">↗ Compartir</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NICHO 2: Farmacia -->
+  <div>
+    <div class="niche-label">Nicho #2 — Prioridad Alta</div>
+    <div class="niche-name">La Farmacia Sin Salida</div>
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div>
+          <div class="meta-ad-name">Hospital Capilar</div>
+          <div class="meta-ad-sponsored">Patrocinado · <svg width="12" height="12" viewBox="0 0 16 16" fill="#65676b"><circle cx="8" cy="8" r="7" fill="none" stroke="#65676b" stroke-width="1.5"/><path d="M8 4v5l3 2" stroke="#65676b" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="meta-ad-dots">...</div>
+      </div>
+      <div class="meta-ad-text">
+        <strong>1.200EUR en productos. 0 diagnosticos.</strong><br><br>
+        Minoxidil, biotina, champu anticaida, suplementos... Al principio parecia funcionar. Despues no. Ahora tienes menos pelo Y menos dinero.<br><br>
+        No necesitas otro producto.<br>Necesitas saber <strong>que tienes.</strong>
+      </div>
+      <div class="meta-ad-image">
+        <div class="meta-ad-image-bg bg-farmacia">
+          <div class="ad-visual-badge">TRICOLOGO + ANALITICA HORMONAL</div>
+          <div class="ad-visual-icon">💊</div>
+          <div class="ad-visual-headline">1.200EUR al bano.<br>0 diagnosticos.</div>
+          <div class="ad-visual-sub">De "a ver si funciona" a "se que funciona y por que".</div>
+          <div class="ad-visual-cta">Descubre que necesitas realmente</div>
+          <div class="ad-visual-logo">HOSPITAL CAPILAR</div>
+        </div>
+      </div>
+      <div class="meta-ad-link">
+        <div class="meta-ad-link-text">
+          <div class="meta-ad-link-domain">diagnostico.hospitalcapilar.com</div>
+          <div class="meta-ad-link-title">Diagnostico Capilar Completo | Hospital Capilar</div>
+          <div class="meta-ad-link-desc">Tricoscopia + analitica hormonal. No otro producto.</div>
+        </div>
+        <div class="meta-ad-link-btn">Reservar</div>
+      </div>
+      <div class="meta-ad-actions">
+        <div class="meta-ad-action">👍 Me gusta</div>
+        <div class="meta-ad-action">💬 Comentar</div>
+        <div class="meta-ad-action">↗ Compartir</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NICHO 3: Que Me Pasa -->
+  <div>
+    <div class="niche-label">Nicho #3 — Prioridad Alta</div>
+    <div class="niche-name">Que Me Pasa?</div>
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div>
+          <div class="meta-ad-name">Hospital Capilar</div>
+          <div class="meta-ad-sponsored">Patrocinado · <svg width="12" height="12" viewBox="0 0 16 16" fill="#65676b"><circle cx="8" cy="8" r="7" fill="none" stroke="#65676b" stroke-width="1.5"/><path d="M8 4v5l3 2" stroke="#65676b" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="meta-ad-dots">...</div>
+      </div>
+      <div class="meta-ad-text">
+        <strong>47 millones de resultados en Google. Ninguno te dice que tienes TU.</strong><br><br>
+        Estres? Hormonas? Genetica? Cada web dice algo diferente. Y mientras tanto, sigues perdiendo pelo.<br><br>
+        <span style="color:#4CA994">Saber que tienes. Sin compromiso. En 1 semana.</span>
+      </div>
+      <div class="meta-ad-image">
+        <div class="meta-ad-image-bg bg-quemepasa">
+          <div class="ad-visual-badge">CONSULTA DIAGNOSTICA</div>
+          <div class="ad-visual-icon">🔍</div>
+          <div class="ad-visual-headline">Google no es<br>un medico.</div>
+          <div class="ad-visual-sub">Tricoscopia + analitica hormonal en 1 visita.<br>No "ponte minoxidil".</div>
+          <div class="ad-visual-cta">Haz el test — descubre tu caso</div>
+          <div class="ad-visual-logo">HOSPITAL CAPILAR</div>
+        </div>
+      </div>
+      <div class="meta-ad-link">
+        <div class="meta-ad-link-text">
+          <div class="meta-ad-link-domain">diagnostico.hospitalcapilar.com</div>
+          <div class="meta-ad-link-title">Test Capilar Online | Hospital Capilar</div>
+          <div class="meta-ad-link-desc">4 preguntas. 2 minutos. Tu caso, no estadisticas.</div>
+        </div>
+        <div class="meta-ad-link-btn">Empezar</div>
+      </div>
+      <div class="meta-ad-actions">
+        <div class="meta-ad-action">👍 Me gusta</div>
+        <div class="meta-ad-action">💬 Comentar</div>
+        <div class="meta-ad-action">↗ Compartir</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NICHO 6: Es Normal -->
+  <div>
+    <div class="niche-label">Nicho #6 — Estrategico</div>
+    <div class="niche-name">Es Normal, Ya Pasara</div>
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div>
+          <div class="meta-ad-name">Hospital Capilar</div>
+          <div class="meta-ad-sponsored">Patrocinado · <svg width="12" height="12" viewBox="0 0 16 16" fill="#65676b"><circle cx="8" cy="8" r="7" fill="none" stroke="#65676b" stroke-width="1.5"/><path d="M8 4v5l3 2" stroke="#65676b" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="meta-ad-dots">...</div>
+      </div>
+      <div class="meta-ad-text">
+        <strong>"Es normal despues del parto, ya pasara."</strong><br><br>
+        Te lo dijo tu ginecologa. Han pasado 14 meses. No ha pasado.<br><br>
+        Postparto, menopausia o SOP — no es lo mismo. Y mereces un diagnostico, no una frase.<br><br>
+        <span style="color:#4CA994">Si no necesitas tratamiento, te lo decimos.</span>
+      </div>
+      <div class="meta-ad-image">
+        <div class="meta-ad-image-bg bg-esnormal">
+          <div class="ad-visual-badge">CAIDA CAPILAR FEMENINA</div>
+          <div class="ad-visual-icon">💆‍♀️</div>
+          <div class="ad-visual-headline">14 meses<br>"normales".</div>
+          <div class="ad-visual-sub">No es estres. Es un diagnostico que nadie te ha hecho.</div>
+          <div class="ad-visual-cta">Test capilar para mujeres — 2 min</div>
+          <div class="ad-visual-logo">HOSPITAL CAPILAR</div>
+        </div>
+      </div>
+      <div class="meta-ad-link">
+        <div class="meta-ad-link-text">
+          <div class="meta-ad-link-domain">diagnostico.hospitalcapilar.com</div>
+          <div class="meta-ad-link-title">Diagnostico Capilar Femenino | Hospital Capilar</div>
+          <div class="meta-ad-link-desc">Tricologo especializado. No esteticistas.</div>
+        </div>
+        <div class="meta-ad-link-btn">Mas info</div>
+      </div>
+      <div class="meta-ad-actions">
+        <div class="meta-ad-action">👍 Me gusta</div>
+        <div class="meta-ad-action">💬 Comentar</div>
+        <div class="meta-ad-action">↗ Compartir</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- INSTAGRAM STORIES / REELS                  -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="section-title">
+  Stories / Reels — Instagram & TikTok
+  <span class="badge">6 Videos Cortos</span>
+</div>
+<p class="section-subtitle">Patron: gancho visceral (0-3s) → historia → tricoscopio → resultado creible → CTA quiz</p>
+
+<div class="stories-grid">
+
+  <!-- Story 1: El Espejo -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-espejo">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">🧢</div>
+        <div class="story-headline">3 anos<br>con gorra.</div>
+        <div class="story-subtext">Ni fotos. Ni citas. Ni playa.<br>Hoy me la quite.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">HAZ EL TEST CAPILAR</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+  <!-- Story 2: Farmacia -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-farmacia">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">💊</div>
+        <div class="story-headline">1.247EUR<br>al bano.</div>
+        <div class="story-subtext">Minoxidil. Biotina. Champu.<br>Sigo igual.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">NECESITAS UN DIAGNOSTICO</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+  <!-- Story 3: Que Me Pasa -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-quemepasa">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">🔍</div>
+        <div class="story-headline">Google no es<br>un medico.</div>
+        <div class="story-subtext">47M resultados.<br>Ninguno te dice que tienes TU.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">DESCUBRE TU CASO — 2 MIN</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+  <!-- Story 4: Inversion -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-inversion">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">💸</div>
+        <div class="story-headline">3.500EUR.<br>Nadie me<br>dijo esto.</div>
+        <div class="story-subtext">El trasplantado se queda.<br>El resto sigue cayendo.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">PROTEGE TU INVERSION</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+  <!-- Story 5: Negocio -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-negocio">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">🏪</div>
+        <div class="story-headline">5.000EUR<br>y un<br>vendedor.</div>
+        <div class="story-subtext">Pague 5.000EUR.<br>No me atendio un medico.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">AQUI SI HAY UN MEDICO</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+  <!-- Story 6: Es Normal -->
+  <div class="story-ad">
+    <div class="story-bg story-bg-esnormal">
+      <div class="story-top">
+        <div class="story-progress"><div class="story-progress-fill"></div></div>
+      </div>
+      <div class="story-account">
+        <div class="story-account-avatar">HC</div>
+        <div>
+          <div class="story-account-name">hospitalcapilar</div>
+          <div class="story-account-sponsored">Patrocinado</div>
+        </div>
+      </div>
+      <div class="story-visual-center">
+        <div class="story-emoji">💆‍♀️</div>
+        <div class="story-headline">14 meses<br>"normales".</div>
+        <div class="story-subtext">Es normal, ya pasara.<br>No paso.</div>
+      </div>
+      <div class="story-cta-bar">
+        <div class="story-cta-text">TEST CAPILAR FEMENINO</div>
+      </div>
+      <div class="story-swipe">Desliza hacia arriba</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- GOOGLE ADS                                 -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="section-title">
+  Google Search Ads
+  <span class="badge">Intent Alto</span>
+</div>
+<p class="section-subtitle">Keywords de alta intencion. El usuario ya esta buscando una solucion.</p>
+
+<div class="google-grid">
+
+  <!-- Google Ad 1: alopecia joven -->
+  <div>
+    <div class="niche-label">Nicho #1 — El Espejo</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "alopecia joven tratamiento"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://diagnostico.hospitalcapilar.com/rapido</span>
+        </div>
+      </div>
+      <div class="google-ad-title">Caida del Pelo a los 20? No Esperes Mas | Hospital Capilar</div>
+      <div class="google-ad-desc">
+        El 25% de hombres entre 18-24 ya tiene caida activa. <strong>Diagnostico con tricologo real</strong> — no esteticistas. Tricoscopia + analitica hormonal en 1 visita. Sin compromiso. 4.8/5 Trustpilot.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Test Capilar Online</span>
+        <span class="google-ad-ext">Tratamientos desde 820EUR</span>
+        <span class="google-ad-ext">9 Clinicas en Espana</span>
+        <span class="google-ad-ext">Opiniones Reales</span>
+      </div>
+      <div class="google-ad-callouts">4.8/5 Trustpilot · Mismo medico siempre · Diagnostico en 1 semana</div>
+    </div>
+  </div>
+
+  <!-- Google Ad 2: minoxidil no funciona -->
+  <div>
+    <div class="niche-label">Nicho #2 — Farmacia</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "minoxidil no funciona"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://diagnostico.hospitalcapilar.com</span>
+        </div>
+      </div>
+      <div class="google-ad-title">El Minoxidil No Funciona? Hay Una Razon | Hospital Capilar</div>
+      <div class="google-ad-desc">
+        El 84% se auto-trata antes de ver un profesional. <strong>Sin diagnostico, no hay solucion.</strong> Tricoscopia + analitica hormonal descubren por que tu tratamiento no funciona. Protocolo medico personalizado.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Diagnostico Completo</span>
+        <span class="google-ad-ext">Por Que No Funciona</span>
+        <span class="google-ad-ext">Pide Cita Online</span>
+        <span class="google-ad-ext">Precios Transparentes</span>
+      </div>
+      <div class="google-ad-callouts">Tricologo, no esteticista · Analitica hormonal incluida · 4.8/5 Trustpilot</div>
+    </div>
+  </div>
+
+  <!-- Google Ad 3: diagnostico capilar -->
+  <div>
+    <div class="niche-label">Nicho #3 — Que Me Pasa</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "por que se me cae el pelo"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://diagnostico.hospitalcapilar.com</span>
+        </div>
+      </div>
+      <div class="google-ad-title">Se Te Cae el Pelo? Diagnostico en 1 Semana | Hospital Capilar</div>
+      <div class="google-ad-desc">
+        El 70% con caida capilar no tiene diagnostico medico. <strong>Dermatologo publico: 3-6 meses de espera.</strong> En Hospital Capilar: tricoscopia + analitica hormonal en 1 visita. Saber que tienes. Sin compromiso.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Test Online 2 Min</span>
+        <span class="google-ad-ext">5 Tipos de Alopecia</span>
+        <span class="google-ad-ext">Reservar Consulta</span>
+        <span class="google-ad-ext">9 Clinicas</span>
+      </div>
+      <div class="google-ad-callouts">Medico en cada consulta · CRT/HRT protocolos propios · Sin lista de espera</div>
+    </div>
+  </div>
+
+  <!-- Google Ad 4: mantenimiento post injerto -->
+  <div>
+    <div class="niche-label">Nicho #4 — Inversion</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "mantenimiento despues de injerto capilar"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://hospitalcapilar.com/post-trasplante</span>
+        </div>
+      </div>
+      <div class="google-ad-title">Operado Sin Seguimiento? Tu Pelo Nativo Sigue Cayendo | HC</div>
+      <div class="google-ad-desc">
+        El trasplantado se queda. <strong>El resto no.</strong> Protege tu inversion de 3.000EUR+ con un protocolo medico de mantenimiento. Cirugia y tratamiento bajo mismo techo. 4.8/5 en Trustpilot.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Post-Trasplante</span>
+        <span class="google-ad-ext">Mantenimiento 820EUR/ano</span>
+        <span class="google-ad-ext">Consulta Valoracion</span>
+      </div>
+      <div class="google-ad-callouts">Cirugia + tratamiento · Pelo nativo protegido · 95% satisfaccion</div>
+    </div>
+  </div>
+
+  <!-- Google Ad 5: opiniones Insparya -->
+  <div>
+    <div class="niche-label">Nicho #5 — Negocio</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "opiniones Insparya"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://hospitalcapilar.com/por-que-hospital-capilar</span>
+        </div>
+      </div>
+      <div class="google-ad-title">Buscas Otra Clinica Capilar? Lee Por Que Cambiaron | HC 4.8/5</div>
+      <div class="google-ad-desc">
+        Siempre el mismo medico. <strong>Nunca un vendedor con bata.</strong> Si con tratamiento basta, te lo decimos. Diagnostico completo antes de cualquier propuesta. Tu progreso registrado. 4.8 vs 3.8 Trustpilot.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Opiniones Trustpilot</span>
+        <span class="google-ad-ext">HC vs Otras Clinicas</span>
+        <span class="google-ad-ext">Pedir Cita</span>
+        <span class="google-ad-ext">Precios Claros</span>
+      </div>
+      <div class="google-ad-callouts">Tricologo en cada visita · Transparencia radical · 9 centros</div>
+    </div>
+  </div>
+
+  <!-- Google Ad 6: caida pelo mujer -->
+  <div>
+    <div class="niche-label">Nicho #6 — Es Normal</div>
+    <div class="niche-name" style="margin-bottom:12px">Keyword: "caida pelo mujer postparto"</div>
+    <div class="google-ad">
+      <div class="google-ad-label">Patrocinado</div>
+      <div class="google-ad-url">
+        <div class="google-ad-favicon">HC</div>
+        <div class="google-ad-url-text">
+          hospitalcapilar.com<br>
+          <span>https://diagnostico.hospitalcapilar.com/mujer</span>
+        </div>
+      </div>
+      <div class="google-ad-title">Caida Postparto Que No Para? No Es "Normal" | Hospital Capilar</div>
+      <div class="google-ad-desc">
+        Postparto, menopausia o SOP — <strong>no es lo mismo y el tratamiento tampoco.</strong> Tricologo especializado en alopecia femenina. Diagnostico real, no "ya pasara". Si no necesitas tratamiento, te lo decimos.
+      </div>
+      <div class="google-ad-extensions">
+        <span class="google-ad-ext">Test Capilar Femenino</span>
+        <span class="google-ad-ext">Alopecia Postparto</span>
+        <span class="google-ad-ext">Alopecia y Menopausia</span>
+        <span class="google-ad-ext">Pedir Cita</span>
+      </div>
+      <div class="google-ad-callouts">Medico especializado · No esteticistas · Diagnostico hormonal completo</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<div class="comparison-note">
+  <strong>Nota para la presentacion:</strong> Estos mockups usan el copy real propuesto para cada nicho. Los visuales de los anuncios Meta se reemplazarian por video/foto real del equipo HC, pacientes (con consentimiento), y el tricoscopio como elemento visual unificador. Los Google Ads estan listos para implementar — solo necesitan validacion de landing URLs y presupuesto por keyword group.
+</div>
+
+</body>
+</html>

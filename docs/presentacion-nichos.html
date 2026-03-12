@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Capilar x Growth4U — Estrategia de Nichos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #0f1729;
+    --bg-light: #162035;
+    --bg-card: #1a2744;
+    --teal: #4ECDC4;
+    --teal-dim: rgba(78,205,196,0.15);
+    --teal-border: rgba(78,205,196,0.3);
+    --orange: #F7A948;
+    --red: #E74C3C;
+    --pink: #E91E8C;
+    --purple: #8B5CF6;
+    --green: #22C55E;
+    --text: #E8ECF1;
+    --text-dim: #8892A4;
+    --text-dimmer: #5A6478;
+    --white: #FFFFFF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ─── SLIDE SYSTEM ─── */
+  .deck {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .slide.prev {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  /* ─── NAVIGATION ─── */
+  .nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 56px;
+    background: rgba(15,23,41,0.92);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(78,205,196,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    z-index: 100;
+  }
+
+  .nav-counter {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    min-width: 80px;
+  }
+
+  .nav-counter span { color: var(--teal); }
+
+  .nav-progress {
+    flex: 1;
+    max-width: 600px;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    margin: 0 24px;
+    cursor: pointer;
+  }
+
+  .nav-progress-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .nav-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover {
+    background: var(--teal);
+    color: var(--bg);
+    border-color: var(--teal);
+  }
+
+  .nav-section-name {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    font-weight: 500;
+    min-width: 200px;
+    text-align: right;
+  }
+
+  /* ─── TYPOGRAPHY ─── */
+  .slide-number {
+    font-size: 120px;
+    font-weight: 900;
+    color: var(--teal);
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: -20px;
+  }
+
+  h1 {
+    font-size: 54px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  h1 .teal { color: var(--teal); }
+  h1 .orange { color: var(--orange); }
+
+  h2 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 20px;
+    color: var(--teal);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .desc {
+    font-size: 17px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 800px;
+    font-style: italic;
+  }
+
+  .small-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dimmer);
+    margin-bottom: 16px;
+  }
+
+  .source {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    font-style: italic;
+    margin-top: 24px;
+  }
+
+  .teal-line {
+    width: 60px;
+    height: 4px;
+    background: var(--teal);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  /* ─── LAYOUT HELPERS ─── */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; }
+  .gap-20 { gap: 20px; }
+  .gap-24 { gap: 24px; }
+  .gap-32 { gap: 32px; }
+  .gap-40 { gap: 40px; }
+  .gap-60 { gap: 60px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .flex-1 { flex: 1; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-32 { margin-top: 32px; }
+  .mt-40 { margin-top: 40px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-24 { margin-bottom: 24px; }
+  .mb-32 { margin-bottom: 32px; }
+
+  /* ─── COMPONENTS ─── */
+
+  /* Stat boxes */
+  .stats-row {
+    display: flex;
+    gap: 20px;
+    margin: 24px 0;
+  }
+
+  .stat-box {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--teal);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-number.white { color: var(--white); }
+  .stat-number.orange { color: var(--orange); }
+  .stat-number.green { color: var(--green); }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .card-accent {
+    border-left: 4px solid var(--teal);
+  }
+
+  .card-accent-orange { border-left: 4px solid var(--orange); }
+  .card-accent-red { border-left: 4px solid var(--red); }
+  .card-accent-pink { border-left: 4px solid var(--pink); }
+  .card-accent-purple { border-left: 4px solid var(--purple); }
+  .card-accent-green { border-left: 4px solid var(--green); }
+
+  .card h3 { color: var(--white); }
+  .card p { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+  .card ul { font-size: 14px; color: var(--text-dim); line-height: 1.8; padding-left: 0; list-style: none; }
+  .card ul li::before { content: "· "; color: var(--teal); font-weight: 700; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .card-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .card-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  /* Competitor cards */
+  .competitor-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    border-top: 3px solid var(--red);
+  }
+
+  .competitor-card h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .competitor-card .tagline {
+    font-size: 13px;
+    color: var(--orange);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+
+  .competitor-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .competitor-card .win {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  /* Quote */
+  .quote {
+    background: var(--bg-card);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 12px 12px 0;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+
+  .quote p {
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .quote .attr {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    font-style: normal;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-teal { background: var(--teal); color: var(--bg); }
+  .badge-orange { background: var(--orange); color: var(--bg); }
+  .badge-red { background: var(--red); color: #fff; }
+  .badge-pink { background: var(--pink); color: #fff; }
+  .badge-dim { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+
+  /* Callout box */
+  .callout {
+    background: var(--teal-dim);
+    border: 1px solid var(--teal-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+
+  .callout p {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--teal);
+  }
+
+  .callout-red {
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.3);
+  }
+
+  .callout-red p { color: var(--orange); }
+
+  /* Table */
+  .table-wrapper {
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    background: var(--teal);
+    color: var(--bg);
+    font-weight: 700;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--text-dim);
+  }
+
+  tbody tr:hover { background: rgba(78,205,196,0.05); }
+
+  .priority-alta { color: var(--green); font-weight: 700; }
+  .priority-media { color: var(--orange); font-weight: 700; }
+  .priority-estrat { color: var(--pink); font-weight: 700; }
+
+  /* Niche slide */
+  .niche-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .niche-icon {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  .niche-header h2 {
+    margin-bottom: 0;
+  }
+
+  .niche-subtitle {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  .niche-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 16px;
+  }
+
+  .niche-col h4 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .niche-col ul {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    list-style: none;
+    padding: 0;
+  }
+
+  .niche-col ul li { padding-left: 12px; position: relative; }
+  .niche-col ul li::before { content: "→ "; position: absolute; left: 0; color: var(--teal); }
+
+  .niche-col .msg {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.5;
+    padding-left: 12px;
+    border-left: 2px solid var(--teal);
+    margin-bottom: 8px;
+  }
+
+  /* Agenda list */
+  .agenda-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .agenda-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .agenda-num {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--teal);
+    min-width: 48px;
+    line-height: 1;
+    padding-top: 4px;
+  }
+
+  .agenda-item h3 {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .agenda-item p {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* Timeline */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 16px;
+    position: relative;
+    padding-left: 28px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: rgba(78,205,196,0.2);
+  }
+
+  .timeline-item {
+    position: relative;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--teal);
+  }
+
+  .timeline-item h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+
+  .timeline-item p {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Cover slide special */
+  .cover-slide {
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .cover-badge {
+    display: inline-flex;
+    gap: 20px;
+    margin-top: 32px;
+  }
+
+  .cover-badge-item {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hc-logo {
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+
+  .hc-logo svg { height: 48px; width: auto; }
+
+  .cover-top {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dimmer);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .cover-confidential {
+    position: absolute;
+    top: 40px;
+    right: 80px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dimmer);
+  }
+
+  /* Section divider */
+  .section-slide {
+    justify-content: flex-end;
+    padding-bottom: 120px;
+  }
+
+  .section-slide .slide-number {
+    font-size: 180px;
+    margin-bottom: -30px;
+  }
+
+  .section-slide h1 {
+    font-size: 64px;
+  }
+
+  .section-slide .desc {
+    font-size: 18px;
+    max-width: 700px;
+  }
+
+  /* Positioning */
+  .uvp-box {
+    background: var(--bg-card);
+    border: 1px solid rgba(78,205,196,0.3);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin: 20px 0;
+  }
+
+  .uvp-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dimmer);
+    margin-bottom: 8px;
+  }
+
+  .uvp-text {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.3;
+  }
+
+  /* Legal comparison */
+  .legal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+
+  /* Video cards */
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .video-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--teal);
+  }
+
+  .video-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .video-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .video-card .platform {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    font-weight: 600;
+    background: rgba(255,255,255,0.05);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .video-card:nth-child(2) { border-left-color: var(--orange); }
+  .video-card:nth-child(3) { border-left-color: var(--purple); }
+  .video-card:nth-child(4) { border-left-color: var(--green); }
+  .video-card:nth-child(5) { border-left-color: var(--red); }
+  .video-card:nth-child(6) { border-left-color: var(--pink); }
+
+  /* Quiz test cards */
+  .quiz-test-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .quiz-test-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 24px;
+    border-top: 4px solid var(--green);
+  }
+
+  .quiz-test-card:nth-child(2) { border-top-color: var(--orange); }
+  .quiz-test-card:nth-child(3) { border-top-color: var(--purple); }
+
+  .quiz-test-card .letter {
+    font-size: 24px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .quiz-test-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .quiz-test-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Action table */
+  .action-table td:nth-child(3) {
+    font-weight: 600;
+  }
+
+  /* Executive summary */
+  .exec-big-numbers {
+    display: flex;
+    gap: 60px;
+    margin: 40px 0;
+    justify-content: center;
+  }
+
+  .exec-num {
+    text-align: center;
+  }
+
+  .exec-num .big {
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .exec-num .big-label {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ICE table */
+  .ice-table td:nth-child(3) {
+    font-weight: 800;
+    color: var(--teal);
+    font-size: 16px;
+  }
+
+  /* ─── META AD MOCKUP (embedded) ─── */
+  .meta-ad-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .meta-ad {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    color: #1c1e21;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    font-size: 12px;
+  }
+
+  .meta-ad-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .meta-ad-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+  }
+
+  .meta-ad-name { font-size: 12px; font-weight: 600; color: #1c1e21; }
+  .meta-ad-sponsored { font-size: 10px; color: #65676b; }
+  .meta-ad-text-sm { padding: 0 12px 10px; font-size: 11px; line-height: 1.4; color: #1c1e21; }
+  .meta-ad-text-sm strong { font-weight: 700; }
+
+  .meta-ad-visual {
+    width: 100%;
+    aspect-ratio: 1.2 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+  }
+
+  .meta-ad-visual .emoji { font-size: 40px; margin-bottom: 8px; }
+  .meta-ad-visual .headline { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 6px; }
+  .meta-ad-visual .sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-bottom: 14px; }
+  .meta-ad-visual .cta-btn { background: var(--teal); color: var(--bg); font-weight: 700; font-size: 11px; padding: 8px 20px; border-radius: 6px; }
+  .meta-ad-visual .logo-sm { position: absolute; bottom: 8px; right: 10px; font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+  .meta-ad-visual .badge-sm { position: absolute; top: 8px; left: 10px; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: 600; color: #fff; }
+
+  .bg-1 { background: linear-gradient(160deg, #1a1a2e, #0f3460); }
+  .bg-2 { background: linear-gradient(160deg, #2d1b4e, #0d2137); }
+  .bg-3 { background: linear-gradient(160deg, #0a2540, #145374); }
+  .bg-6 { background: linear-gradient(160deg, #3d1c3f, #1a1a3e); }
+
+  .meta-ad-link-bar {
+    background: #f0f2f5;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .meta-ad-link-bar .domain { font-size: 10px; color: #65676b; text-transform: uppercase; }
+  .meta-ad-link-bar .title { font-size: 11px; font-weight: 600; color: #1c1e21; }
+  .meta-ad-link-bar .btn { background: #e4e6eb; color: #1c1e21; font-size: 10px; font-weight: 600; padding: 5px 12px; border-radius: 4px; white-space: nowrap; }
+
+  /* ─── GOOGLE AD MOCKUP (embedded) ─── */
+  .google-ad-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .google-ad {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  .google-ad .label-sp {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; color: #202124;
+    border: 1px solid #dadce0; border-radius: 3px;
+    padding: 1px 5px; margin-bottom: 6px;
+  }
+
+  .google-ad .url-line {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+  }
+
+  .google-ad .favicon {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; font-weight: 800; color: #fff;
+  }
+
+  .google-ad .url-text { font-size: 12px; color: #202124; }
+  .google-ad .url-text span { color: #4d5156; font-size: 10px; }
+  .google-ad .ad-title { font-size: 16px; color: #1a0dab; line-height: 1.3; margin-bottom: 4px; }
+  .google-ad .ad-desc { font-size: 12px; color: #4d5156; line-height: 1.4; }
+  .google-ad .ad-desc strong { color: #202124; }
+  .google-ad .ext { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: #1a0dab; }
+  .google-ad .callouts { margin-top: 6px; font-size: 11px; color: #4d5156; }
+
+  /* ─── STORIES MOCKUP (embedded) ─── */
+  .stories-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .story-mock {
+    width: 160px;
+    height: 284px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 14px;
+  }
+
+  .story-mock .s-top {
+    position: absolute; top: 8px; left: 8px; right: 8px;
+    height: 2px; background: rgba(255,255,255,0.3); border-radius: 2px;
+  }
+
+  .story-mock .s-top-fill {
+    height: 100%; width: 30%; background: #fff; border-radius: 2px;
+  }
+
+  .story-mock .s-account {
+    position: absolute; top: 18px; left: 10px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .story-mock .s-av {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, #2C3E50, #4CA994);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6px; font-weight: 800; color: #fff; border: 1.5px solid #fff;
+  }
+
+  .story-mock .s-name { font-size: 9px; font-weight: 600; color: #fff; }
+
+  .story-mock .s-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%);
+    text-align: center; width: 85%;
+  }
+
+  .story-mock .s-emoji { font-size: 36px; margin-bottom: 6px; }
+  .story-mock .s-headline { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 4px; }
+  .story-mock .s-sub { font-size: 9px; color: rgba(255,255,255,0.65); line-height: 1.3; }
+
+  .story-mock .s-cta {
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+    border-radius: 8px; padding: 10px; text-align: center;
+  }
+
+  .story-mock .s-cta-text { font-size: 9px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+
+  .sbg-1 { background: linear-gradient(180deg, #1a1a2e, #0f3460); }
+  .sbg-2 { background: linear-gradient(180deg, #2d1b4e, #0d2137); }
+  .sbg-3 { background: linear-gradient(180deg, #0a2540, #145374); }
+  .sbg-4 { background: linear-gradient(180deg, #1a3c34, #0a1f1c); }
+  .sbg-5 { background: linear-gradient(180deg, #3b1a1a, #1f0f0f); }
+  .sbg-6 { background: linear-gradient(180deg, #3d1c3f, #1a1a3e); }
+
+  /* Scroll helpers for overflowing slides */
+  .slide-scrollable {
+    overflow-y: auto;
+    padding-bottom: 80px;
+  }
+
+  /* Cyan footer accent bar */
+  .nav-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--teal);
+  }
+
+  /* Keyboard hint */
+  .keyboard-hint {
+    position: fixed;
+    bottom: 68px;
+    right: 32px;
+    font-size: 11px;
+    color: var(--text-dimmer);
+    z-index: 50;
+    opacity: 0.6;
+  }
+
+  .keyboard-hint kbd {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: inherit;
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ═══════ SLIDE 1: COVER ═══════ -->
+<div class="slide cover-slide active" data-section="Portada">
+  <div class="cover-confidential">Confidencial</div>
+  <div class="hc-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 100" fill="none">
+      <circle cx="100" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="100" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="140" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="140" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="140" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="180" cy="28" r="18" fill="#6BA89E"/>
+      <text x="140" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" letter-spacing="2">
+        <tspan fill="#6BA89E">HOSPITAL</tspan><tspan fill="#fff" font-weight="700">CAPILAR</tspan>
+      </text>
+    </svg>
+  </div>
+  <div class="cover-top">Hospital Capilar &times; Growth4U</div>
+  <h1 style="font-size:64px;">Estrategia de Nichos<br>y <span class="teal">Posicionamiento</span></h1>
+  <div class="subtitle">Tratamientos Capilares &mdash; Plan de Go-to-Market</div>
+  <div class="desc">Sesion de trabajo &mdash; 14 Marzo 2026</div>
+  <div class="cover-badge">
+    <div class="cover-badge-item">6 bloques</div>
+    <div class="cover-badge-item">~1.5 horas</div>
+    <div class="cover-badge-item">Validacion + Decisiones</div>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 2: AGENDA ═══════ -->
+<div class="slide" data-section="Agenda">
+  <div class="teal-line"></div>
+  <h2>Agenda</h2>
+  <div class="small-desc mb-24">Cada bloque construye sobre el anterior. Los nichos nacen de los datos. Las estrategias nacen de los nichos.</div>
+  <div class="agenda-list">
+    <div class="agenda-item">
+      <div class="agenda-num">01</div>
+      <div><h3>La oportunidad</h3><p>Un mercado de &euro;276M sin dueno. Por que tratamientos, por que ahora.</p></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-num">02</div>
+      <div><h3>Donde estamos hoy</h3><p>HC tiene el mejor producto. Pero el mundo no lo sabe.</p></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-num">03</div>
+      <div><h3>Los 6 nichos</h3><p>6 tipos de pacientes, 6 dolores, 6 mensajes distintos.</p></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-num">04</div>
+      <div><h3>Posicionamiento</h3><p>&ldquo;La clinica de la verdad&rdquo; &mdash; por que HC gana siendo honesto.</p></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-num">05</div>
+      <div><h3>La propuesta</h3><p>Que hacemos, como testeamos, que contenido producimos.</p></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-num">06</div>
+      <div><h3>Proximos pasos</h3><p>Del 14 al 24 de marzo: quien hace que.</p></div>
+    </div>
+  </div>
+  <div class="source">Fuente: Foundation analysis Layers 0-4 (43 fuentes, 9 competidores)</div>
+</div>
+
+<!-- ═══════ SLIDE 3: SECTION — La Oportunidad ═══════ -->
+<div class="slide section-slide" data-section="01 La Oportunidad">
+  <div class="slide-number">01</div>
+  <h1>La Oportunidad</h1>
+  <div class="desc">Un mercado enorme, en crecimiento, sin dueno &mdash; y una puerta que no va a estar abierta para siempre</div>
+</div>
+
+<!-- ═══════ SLIDE 4: Espana #1 ═══════ -->
+<div class="slide" data-section="01 La Oportunidad">
+  <h2>Espana #1 en alopecia &mdash; ttos. es <span class="teal">4&times; cirugia</span></h2>
+  <div class="small-desc mb-16">20M de espanoles tienen perdida capilar. La mayoria no saben que tienen ni han visto un especialista. Nadie ha construido una marca de confianza.</div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-number white">20M</div><div class="stat-label">Afectados<br>44,5% H &middot; 40% M</div></div>
+    <div class="stat-box"><div class="stat-number">&euro;276M</div><div class="stat-label">Ttos. 2024<br>vs &euro;63,8M cirugia</div></div>
+    <div class="stat-box"><div class="stat-number green">+12,1%</div><div class="stat-label">Crecimiento 2024<br>CAGR 7,05%</div></div>
+    <div class="stat-box"><div class="stat-number orange">&lt;6%</div><div class="stat-label">Cuota maxima<br>Fragmentado</div></div>
+  </div>
+
+  <div class="card-grid-2 mt-16">
+    <div class="card card-accent">
+      <h3>Por que tratamientos &mdash; no cirugia</h3>
+      <ul>
+        <li>Mercado 4&times; mas grande en euros</li>
+        <li>Margen 90% (vs 40% cirugia)</li>
+        <li>Modelo recurrente: LTV multi-ano</li>
+        <li>Cross-sell: 90% jovenes son operables</li>
+        <li>PMF validado: +88% sin marketing</li>
+      </ul>
+    </div>
+    <div class="card card-accent-orange">
+      <h3>Por que AHORA</h3>
+      <ul>
+        <li>70% sin diagnostico &rarr; oportunidad educacional</li>
+        <li>DTC educando Y frustrando &rarr; pipeline</li>
+        <li>Cuadrante vacio en tratamientos medicos</li>
+        <li>Insparya puede pivotar en 12 meses</li>
+        <li>Potencial: &euro;1.6B &mdash; &euro;3.6B</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: Grand View Research, Mordor Intelligence, Stanpa, INE 2024, Medihair 2025</div>
+</div>
+
+<!-- ═══════ SLIDE 5: SECTION — Donde estamos ═══════ -->
+<div class="slide section-slide" data-section="02 Donde Estamos">
+  <div class="slide-number">02</div>
+  <h1>Donde Estamos Hoy</h1>
+  <div class="desc">HC tiene el mejor producto del sector. Pero su web dice 'injerto', su contenido dice 'cirugia', y los pacientes de tratamientos no saben que existen.</div>
+</div>
+
+<!-- ═══════ SLIDE 6: Fortalezas + Gaps (unificado) ═══════ -->
+<div class="slide slide-scrollable" data-section="02 Donde Estamos">
+  <h2>El mejor producto &mdash; <span class="teal">con gaps de ejecucion</span></h2>
+
+  <div class="stats-row" style="margin-top:12px; margin-bottom:16px;">
+    <div class="stat-box"><div class="stat-number">4.8/5</div><div class="stat-label">Trustpilot<br>(vs Insparya 3.8)</div></div>
+    <div class="stat-box"><div class="stat-number green">+88%</div><div class="stat-label">Crecimiento<br>sin marketing</div></div>
+    <div class="stat-box"><div class="stat-number">90%</div><div class="stat-label">Margen ttos.<br>(vs 40% cirugia)</div></div>
+    <div class="stat-box"><div class="stat-number orange">+4.000</div><div class="stat-label">Pacientes<br>atendidos</div></div>
+  </div>
+
+  <div class="card-grid-2">
+    <div class="card card-accent-green">
+      <h3 style="color:var(--green)">Fortalezas confirmadas</h3>
+      <ul>
+        <li>Tricologo en CADA consulta (no esteticista)</li>
+        <li>Tricoscopia + analitica hormonal en 1 visita</li>
+        <li>CRT/HRT protocolos propios + pauta anual</li>
+        <li>4.8/5 TP &mdash; mejor del sector (75+ reviews)</li>
+        <li>Transparencia radical: publican limitaciones</li>
+        <li>&euro;3,5M inversion &rarr; 3&rarr;9 clinicas</li>
+        <li>Lifecycle: tto &rarr; cirugia &rarr; mantenimiento</li>
+        <li>Google convierte 5&times; mejor que Meta</li>
+      </ul>
+    </div>
+    <div class="card card-accent-red">
+      <h3 style="color:var(--red)">Gaps de ejecucion</h3>
+      <ul>
+        <li>Web 100% cirugia &mdash; H1=&ldquo;injerto&rdquo;, hero=packs</li>
+        <li>0 landings tratamientos, 0 funnel, 0 paid ttos</li>
+        <li>No-shows: 47% Madrid, 40% Murcia, 25% Pontevedra</li>
+        <li>Contenido social 100% cirugia, 0% ttos</li>
+        <li>0 reviews de tratamientos (todas de cirugia)</li>
+        <li>Sin comercial dedicado a tratamientos</li>
+        <li>Pricing bonos &euro;820 no publicado en web</li>
+        <li>17% referidos sin programa formalizado</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p>152 ttos/mes SIN funnel. HC crece A PESAR del sistema. Los gaps se cierran en semanas &mdash; es marketing + ops.</p>
+  </div>
+
+  <div class="source">Fuente: Company Brief v1.4, Self-Analysis v1.0, Trustpilot, Forbes Espana</div>
+</div>
+
+<!-- ═══════ SLIDE 8: Competidores ═══════ -->
+<div class="slide slide-scrollable" data-section="02 Donde Estamos">
+  <h2>5 competidores que facturan mas &mdash; <span class="teal">pero cuyos pacientes estan descontentos</span></h2>
+  <div class="small-desc mb-16">Todos tienen tratamientos. Ninguno los hace bien.</div>
+
+  <div class="card-grid-3 mt-16" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="competitor-card">
+      <h4>Insparya</h4>
+      <div class="tagline">&ldquo;El gigante con pies de barro&rdquo;</div>
+      <p>&euro;20,7M, CR7, 3.8/5 TP. &ldquo;Te tratan como ganado&rdquo;. Ttos=add-on. &euro;2M I+D, pueden pivotar.</p>
+      <div class="win">&#10003; Mismo medico + diagnostico + 4.8 vs 3.8</div>
+    </div>
+    <div class="competitor-card">
+      <h4>Svenson</h4>
+      <div class="tagline">&ldquo;La marca que se vendio&rdquo;</div>
+      <p>&euro;17,4M, 31 clinicas. Esteticistas no medicos. NK5 concurso. OCU presion. &euro;1.300-2.600.</p>
+      <div class="win">&#10003; Medico real + mitad de precio (&euro;820)</div>
+    </div>
+    <div class="competitor-card">
+      <h4>Capilclinic</h4>
+      <div class="tagline">&ldquo;SEO brutal, producto debil&rdquo;</div>
+      <p>Dominan keywords. Ttos=add-ons. Sin analitica hormonal.</p>
+      <div class="win">&#10003; Diagnostico completo vs &ldquo;vistazo + minoxidil&rdquo;</div>
+    </div>
+  </div>
+
+  <div class="card-grid-2 mt-16">
+    <div class="competitor-card">
+      <h4>Medical Hair</h4>
+      <div class="tagline">&ldquo;Reviews que no cuadran&rdquo;</div>
+      <p>&euro;70/ses. 1.570 reviews 4.9/5. Sin analitica.</p>
+      <div class="win">&#10003; Pauta anual integrada vs sesiones sueltas</div>
+    </div>
+    <div class="competitor-card">
+      <h4>IMD</h4>
+      <div class="tagline">&ldquo;Belleza, no medicina&rdquo;</div>
+      <p>21 clinicas. Esteticistas=comerciales. Sin analitica hormonal.</p>
+      <div class="win">&#10003; Enfoque medico genuino para mujeres</div>
+    </div>
+  </div>
+
+  <div class="callout-red callout mt-24">
+    <p>Ninguno tiene: diagnostico completo + CRT/HRT + pauta anual + transparencia + 4.8/5. Cuadrante vacio.</p>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 9: SECTION — Los 6 Nichos ═══════ -->
+<div class="slide section-slide" data-section="03 Los 6 Nichos">
+  <div class="slide-number">03</div>
+  <h1>Los 6 Nichos</h1>
+  <div class="desc">No son segmentos de mercado. Son personas reales con dolores reales. Cada una necesita escuchar algo diferente.</div>
+</div>
+
+<!-- ═══════ SLIDE 10: Tabla nichos ═══════ -->
+<div class="slide" data-section="03 Los 6 Nichos">
+  <h2>6 nichos que cubren todo el journey</h2>
+  <div class="small-desc mb-8">De 'algo me pasa' a 'necesito cambiar de clinica'</div>
+  <div class="desc" style="font-size:14px; max-width:100%; margin-bottom:20px;">Un joven de 23 con gorra permanente, una mujer postparto que llena la almohada de pelos, un frustrado con 2 anos de minoxidil &mdash; todos necesitan a HC. Pero no les puedes decir lo mismo.</div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th></th><th>Nicho</th><th>Quien (1 frase)</th><th>SAM</th><th>Competidor objetivo</th><th>Prior.</th><th>Funnel</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>&#129524;</td><td><strong>El Espejo</strong></td><td>Joven, pelo cayendo</td><td>~80K</td><td>Olistic/Keeps (DTC) + Capilclinic (SEO)</td><td class="priority-alta">ALTA</td><td>Awareness</td></tr>
+        <tr><td>&#128138;</td><td><strong>Farmacia</strong></td><td>1-3 anos minoxidil</td><td>~70K</td><td>Olistic Science (700K clientes) + OTC generico</td><td class="priority-alta">ALTA</td><td>Consider.</td></tr>
+        <tr><td>&#10067;</td><td><strong>Que Me Pasa?</strong></td><td>Se cae, no sabe por que</td><td>~150K</td><td>Capilclinic (SEO generico) + Sistema publico</td><td class="priority-alta">ALTA</td><td>Awareness</td></tr>
+        <tr><td>&#128184;</td><td><strong>Inversion</strong></td><td>Operado sin manten.</td><td>~25K</td><td>Clinicas Turquia + Insparya (sin follow-up)</td><td class="priority-media">MEDIA</td><td>Consider.</td></tr>
+        <tr><td>&#127978;</td><td><strong>Negocio</strong></td><td>Insatisfecho otra clinica</td><td>~12K</td><td>Insparya (#1 insatisfechos) + Svenson (OCU)</td><td class="priority-media">MEDIA</td><td>Decision</td></tr>
+        <tr><td>&#128105;</td><td><strong>Es Normal</strong></td><td>Mujer caida hormonal</td><td>~9,6M</td><td>IMD (esteticistas, no medicos) + Blue ocean</td><td class="priority-estrat">ESTRAT.</td><td>Awareness</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="source">Fuente: Niche Discovery v1.0, Company Brief v1.4, Pfizer Espana 2024</div>
+</div>
+
+<!-- ═══════ SLIDE 11: Nicho #1 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #1 El Espejo">
+  <div class="niche-header">
+    <div class="niche-icon">&#129524;</div>
+    <div>
+      <span class="badge badge-teal">Nicho #1 &middot; Prioridad Alta</span>
+      <h2 style="margin-top:4px">El Espejo de Cada Manana</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">Jovenes 20-28 con alopecia temprana &mdash; el segmento con mayor LTV de todo el funnel</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">Olistic/Keeps (DTC captura jovenes) + Capilclinic (SEO roba trafico)</span></div>
+
+  <div class="quote">
+    <p>&ldquo;Llevo gorra todos los dias desde hace 3 anos. Ni fotos, ni citas, ni playa.&rdquo;</p>
+    <div class="attr">&mdash; r/dating_advice, 25 anos</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">Tiene 24. Cada manana menos pelo. Busca en TikTok, Reddit. Compra minoxidil. No va al medico porque 'no es para tanto'. Pero lleva gorra todo el dia.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">POR QUE</h4>
+      <ul>
+        <li>82% pacientes HC = hombres (dato HC 2025)</li>
+        <li>25% de 18-24 ya tiene caida activa</li>
+        <li>GenZ busca TikTok/Reddit antes que medico</li>
+        <li>LTV maximo: tto&rarr;cirugia&rarr;mantenimiento</li>
+        <li>90% jovenes en tto son operables (cross-sell)</li>
+        <li>La madre como influencer: recomienda y/o paga</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent-orange">
+      <h4 style="color:var(--orange)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;3 anos con gorra. Hoy me la quite.&rdquo;</div>
+      <div class="msg">&ldquo;No es tu culpa. Pero si tu decision.&rdquo;</div>
+      <div class="msg">&ldquo;Aqui nadie va a venderte nada&rdquo;</div>
+      <div class="msg">&ldquo;Un medico de verdad, no un asesor capilar&rdquo;</div>
+      <div class="msg">&ldquo;No te hagas cirugia todavia &mdash; primero estabilizar&rdquo;</div>
+    </div>
+    <div class="niche-col card card-accent-purple">
+      <h4 style="color:var(--purple)">DONDE</h4>
+      <ul>
+        <li>TikTok/Reels &mdash; Video gorra quitandose</li>
+        <li>Google Ads: &ldquo;alopecia joven&rdquo;, CPC &euro;1-3</li>
+        <li>Reddit r/tressless (500K+ suscriptores)</li>
+        <li>Quiz online &rarr; Consulta diagnostica</li>
+        <li>Contenido educacional: mitos, efectos secundarios</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: datos HC 2025, Svenson, r/dating_advice, r/tressless</div>
+</div>
+
+<!-- ═══════ SLIDE 12: Nicho #2 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #2 Farmacia">
+  <div class="niche-header">
+    <div class="niche-icon">&#128138;</div>
+    <div>
+      <span class="badge badge-orange">Nicho #2 &middot; Prioridad Alta</span>
+      <h2 style="margin-top:4px">La Farmacia Sin Salida</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">OTC frustrados &mdash; 1-3 anos con minoxidil/suplementos sin resultado</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">Olistic Science (700K clientes que fallaran = nuestro pipeline) + OTC generico</span></div>
+
+  <div class="quote" style="border-left-color: var(--orange);">
+    <p>&ldquo;Empece con minoxidil en enero 2024... mejoria 3-4 meses... un ano despues, la caida continua. He gastado mas de 1.200&euro;.&rdquo;</p>
+    <div class="attr">&mdash; u/Paul_iio, r/tressless</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">Ha probado todo: minoxidil, biotina, champu, Olistic Science, dermaroller. Al principio parecia funcionar. Despues no. Ahora tiene menos pelo Y menos dinero.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent-orange">
+      <h4 style="color:var(--orange)">POR QUE</h4>
+      <ul>
+        <li>400-500K usan minoxidil en Espana</li>
+        <li>Olistic Science: 700K+ clientes = pipeline</li>
+        <li>Ciclo fallo 1-2 anos &rarr; buscan medico</li>
+        <li>84% auto-tratamiento antes de profesional</li>
+        <li>Momento de captura preciso: &ldquo;deja de funcionar&rdquo;</li>
+        <li>Intent de busqueda altisimo</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;1.200&euro; en productos. 0 diagnosticos. Algo falla.&rdquo;</div>
+      <div class="msg">&ldquo;No necesitas otro producto. Necesitas saber que tienes.&rdquo;</div>
+      <div class="msg">&ldquo;De 'a ver si funciona' a 'se que funciona y por que'&rdquo;</div>
+      <div class="msg">&ldquo;La escalera logica: OTC &rarr; medico &rarr; protocolo&rdquo;</div>
+      <p style="font-size:13px; color:var(--teal); margin-top:8px; font-weight:600;">HC = paso natural post-OTC</p>
+    </div>
+    <div class="niche-col card card-accent-purple">
+      <h4 style="color:var(--purple)">DONDE</h4>
+      <ul>
+        <li>Google Ads: &ldquo;minoxidil no funciona&rdquo; (intent 100%)</li>
+        <li>SEO: &ldquo;Por que el minoxidil dejo de funcionarte&rdquo;</li>
+        <li>Reddit r/tressless &mdash; threads frustracion</li>
+        <li>Retargeting usuarios DTC/Olistic Science</li>
+        <li>Blog educacional: escalera OTC &rarr; medico</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: r/tressless, estimacion sectorial, Olistic Science</div>
+</div>
+
+<!-- ═══════ SLIDE 13: Nicho #3 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #3 Que Me Pasa">
+  <div class="niche-header">
+    <div class="niche-icon">&#10067;</div>
+    <div>
+      <span class="badge badge-teal">Nicho #3 &middot; Prioridad Alta</span>
+      <h2 style="margin-top:4px">Que Me Pasa?</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">Sin diagnostico medico &mdash; no saben que tipo de alopecia tienen</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">Capilclinic (domina SEO generico) + Sistema publico (3-6 meses espera)</span></div>
+
+  <div class="quote" style="border-left-color: var(--purple);">
+    <p>&ldquo;70% de los espanoles no saben que es la alopecia areata.&rdquo;</p>
+    <div class="attr">&mdash; Pfizer Espana 2024</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">Se le cae el pelo. Busca 'por que se me cae el pelo?' &mdash; 47M resultados. Lee sobre estres, hormonas, genetica. No sabe cual es SU caso. Dermatologo publico: 3-6 meses.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent-purple">
+      <h4 style="color:var(--purple)">POR QUE</h4>
+      <ul>
+        <li>SAM ~150K &mdash; nicho con mayor volumen</li>
+        <li>70% con caida no tienen diagnostico medico</li>
+        <li>Dermatologo publico: espera 3-6 meses</li>
+        <li>Entry point perfecto: quiz &rarr; consulta &rarr; tto</li>
+        <li>Mayoria OTC por defecto</li>
+        <li>Educacion &rarr; diagnostico &rarr; protocolo &rarr; paciente de por vida</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;47M resultados en Google. Ninguno te dice que tienes TU.&rdquo;</div>
+      <div class="msg">&ldquo;Tricoscopia + analitica hormonal, no 'ponte minoxidil'&rdquo;</div>
+      <div class="msg">&ldquo;6 meses de espera? Diagnostico en 1 semana.&rdquo;</div>
+      <div class="msg">&ldquo;Saber que tienes. Sin compromiso.&rdquo;</div>
+      <p style="font-size:13px; color:var(--text-dim); margin-top:8px;">Tono: educativo, no comercial</p>
+    </div>
+    <div class="niche-col card card-accent-orange">
+      <h4 style="color:var(--orange)">DONDE</h4>
+      <ul>
+        <li>Quiz HC (4-5 preguntas, baja friccion)</li>
+        <li>Google Ads: &ldquo;diagnostico capilar&rdquo;, CPC &euro;1-2</li>
+        <li>SEO: &ldquo;por que se me cae el pelo&rdquo; (vol. alto)</li>
+        <li>TikTok: &ldquo;Google no es un medico&rdquo;</li>
+        <li>Contenido: 5 tipos de alopecia por medico real</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: Pfizer Espana 2024, Market Intelligence v1.1</div>
+</div>
+
+<!-- ═══════ SLIDE 14: Nicho #4 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #4 Inversion">
+  <div class="niche-header">
+    <div class="niche-icon">&#128184;</div>
+    <div>
+      <span class="badge badge-dim">Nicho #4 &middot; Prioridad Media</span>
+      <h2 style="margin-top:4px">La Inversion Que Se Deshace</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">Post-trasplante sin mantenimiento &mdash; nadie les dijo que el pelo nativo sigue cayendo</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">Clinicas Turquia (operan sin mantenimiento) + Insparya (cirugia sin follow-up)</span></div>
+
+  <div class="quote" style="border-left-color: var(--green);">
+    <p>&ldquo;Tome una decision impulsiva de ir a una fabrica de pelo en Turquia. 8 meses despues el trasplantado crece pero el resto sigue cayendose.&rdquo;</p>
+    <div class="attr">&mdash; r/HairTransplants</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">Se gasto &euro;3.500 en Estambul. Le dijeron 'para siempre'. Nadie explico que el pelo nativo sigue sometido a alopecia. 3 anos despues: isla de pelo trasplantado rodeada de calva.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent-green">
+      <h4 style="color:var(--green)">POR QUE</h4>
+      <ul>
+        <li>20K/ano Turquia + 15K Espana operados</li>
+        <li>10% ttos HC = post-cirugia (dato HC 2025)</li>
+        <li>Mayoria SIN mantenimiento post-quirurgico</li>
+        <li>Pelo nativo sigue cayendo (nadie lo advierte)</li>
+        <li>Ya invirtieron &euro;3-8K &rarr; disposicion pagar</li>
+        <li>Vuelven ~3 anos despues</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;Tu trasplante costo miles. Quien cuida el pelo que queda?&rdquo;</div>
+      <div class="msg">&ldquo;El trasplantado se queda. El resto no.&rdquo;</div>
+      <div class="msg">&ldquo;Cirugia y tratamiento bajo mismo techo&rdquo;</div>
+      <div class="msg">&ldquo;Proteger inversion &euro;3K+ por &euro;820/ano&rdquo;</div>
+      <p style="font-size:13px; color:var(--teal); margin-top:8px; font-weight:600;">Completar la inversion, no empezar de nuevo</p>
+    </div>
+    <div class="niche-col card card-accent-orange">
+      <h4 style="color:var(--orange)">DONDE</h4>
+      <ul>
+        <li>Google Ads: &ldquo;mantenimiento post injerto&rdquo; (intent 100%)</li>
+        <li>YouTube: animacion pelo nativo vs trasplantado</li>
+        <li>Facebook/Reddit grupos trasplante capilar</li>
+        <li>Landing: &ldquo;Operado sin seguimiento?&rdquo;</li>
+        <li>Video: &ldquo;Lo que no me dijeron en Turquia&rdquo;</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: Company Brief v1.4, datos HC 2025, r/HairTransplants</div>
+</div>
+
+<!-- ═══════ SLIDE 15: Nicho #5 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #5 Negocio">
+  <div class="niche-header">
+    <div class="niche-icon">&#127978;</div>
+    <div>
+      <span class="badge badge-dim">Nicho #5 &middot; Prioridad Media</span>
+      <h2 style="margin-top:4px">El Negocio, No El Paciente</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">Insatisfechos de otras clinicas &mdash; les vendieron, buscan un medico de verdad</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">Insparya (fuente #1 insatisfechos) + Svenson (presion comercial OCU)</span></div>
+
+  <div class="quote" style="border-left-color: var(--red);">
+    <p>&ldquo;Todo es marketing. Decepcionante... revisiones impersonales, cada vez un medic@ diferente... un completo desastre... 5.000&euro;.&rdquo;</p>
+    <div class="attr">&mdash; Trustpilot Insparya</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">Fue a Insparya. Le atendio un 'asesor' = comercial con bata. Cirugia sin diagnostico completo. 5.000&euro;. Seguimiento nefasto. Busca 'opiniones Insparya'.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent-red">
+      <h4 style="color:var(--red)">POR QUE</h4>
+      <ul>
+        <li>Insparya 3.8/5 &mdash; quejas sistematicas</li>
+        <li>Svenson OCU: presion comercial</li>
+        <li>HC ya recibe insatisfechos organicamente</li>
+        <li>Intent 100%, disposicion pagar probada</li>
+        <li>Valoran que HC primero valora, no vende directo</li>
+        <li>Bajo volumen, alta conversion, alto ticket</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;En tu anterior clinica te atendio un vendedor. Aqui un medico.&rdquo;</div>
+      <div class="msg">&ldquo;Siempre el mismo medico.&rdquo;</div>
+      <div class="msg">&ldquo;Si con tratamiento basta, te lo decimos.&rdquo;</div>
+      <div class="msg">&ldquo;Tu progreso registrado.&rdquo;</div>
+      <div class="msg">&ldquo;4.8/5 TP &mdash; lee por que cambiaron.&rdquo;</div>
+    </div>
+    <div class="niche-col card card-accent-orange">
+      <h4 style="color:var(--orange)">DONDE</h4>
+      <ul>
+        <li>Google: &ldquo;opiniones Insparya/Svenson&rdquo; (SEO+SEM)</li>
+        <li>SEO comparativo: &ldquo;HC vs Insparya&rdquo;</li>
+        <li>Trustpilot: reviews pacientes que cambiaron</li>
+        <li>Retargeting webs competidores</li>
+        <li>Video: &ldquo;5.000&euro; y un vendedor&rdquo; (storytime)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: Trustpilot, OCU, datos HC 2025, Competitor Intel v1.0</div>
+</div>
+
+<!-- ═══════ SLIDE 16: Nicho #6 ═══════ -->
+<div class="slide slide-scrollable" data-section="Nicho #6 Es Normal">
+  <div class="niche-header">
+    <div class="niche-icon">&#128105;</div>
+    <div>
+      <span class="badge badge-pink">Nicho #6 &middot; Estrategico</span>
+      <h2 style="margin-top:4px">Es Normal, Ya Pasara</h2>
+    </div>
+  </div>
+  <div class="niche-subtitle">Mujeres con alopecia hormonal &mdash; el mercado mas grande, silenciado y desatendido</div>
+  <div style="display:inline-flex;gap:8px;margin-bottom:12px;"><span class="badge badge-dim">Competidor objetivo</span><span style="font-size:13px;color:var(--text-dim);">IMD (21 clinicas mujer, esteticistas no medicos) + Blue ocean</span></div>
+
+  <div class="quote" style="border-left-color: var(--pink);">
+    <p>&ldquo;'Es normal despues del parto, ya pasara' &mdash; me dijo mi ginecologa. Han pasado 14 meses. No ha pasado. Cada manana cuento los pelos en la almohada.&rdquo;</p>
+    <div class="attr">&mdash; Sintesis r/FemaleHairLoss</div>
+  </div>
+
+  <div class="small-desc mt-12 mb-16">34 anos. Segundo hijo hace 14 meses. Pelo empezo a caerse a los 3 meses postparto. Ginecologa: 'efluvio telogeno, es normal'. No paso. Ninguna clinica le habla directamente a ELLA.</div>
+
+  <div class="niche-3col">
+    <div class="niche-col card card-accent-pink">
+      <h4 style="color:var(--pink)">POR QUE</h4>
+      <ul>
+        <li>9,6M afectadas en Espana (40%)</li>
+        <li>18% pacientes HC ya mujeres (sin hacer nada)</li>
+        <li>Equipo HC: &ldquo;brutal, facil captacion&rdquo; (10/03)</li>
+        <li>NINGUN competidor segmenta mujeres</li>
+        <li>75% va primero a AP &rarr; ginecologo: &ldquo;es normal&rdquo;</li>
+        <li>Carga emocional: vinculada a identidad femenina</li>
+      </ul>
+    </div>
+    <div class="niche-col card card-accent">
+      <h4 style="color:var(--teal)">QUE LE DECIMOS</h4>
+      <div class="msg">&ldquo;14 meses post-parto y sigue. Eso no es 'normal'.&rdquo;</div>
+      <div class="msg">&ldquo;No es estres &mdash; es un diagnostico que nadie te ha hecho&rdquo;</div>
+      <div class="msg">&ldquo;Si no necesitas tratamiento, te lo decimos&rdquo;</div>
+      <div class="msg">&ldquo;Postparto, menopausia o SOP &mdash; no es lo mismo.&rdquo;</div>
+      <p style="font-size:13px; color:var(--pink); margin-top:8px; font-weight:600;">Quiz segmentado por sexo desde pregunta 1</p>
+    </div>
+    <div class="niche-col card card-accent-purple">
+      <h4 style="color:var(--purple)">DONDE</h4>
+      <ul>
+        <li>Sub-perfiles: postparto, menopausia, SOP, fibrosante</li>
+        <li>IG/TikTok: &ldquo;La almohada&rdquo; (voz off femenina)</li>
+        <li>Google Ads: &ldquo;caida pelo mujer postparto&rdquo;</li>
+        <li>Quiz flujo femenino (ciclo, parto, SOP)</li>
+        <li>Nota: algunas NO tratables pero SI diagnosticables</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="source">Fuente: datos HC 2025, reunion 10/03, Quironsalud, r/FemaleHairLoss</div>
+</div>
+
+<!-- ═══════ SLIDE 17: Posicionamiento ═══════ -->
+<div class="slide slide-scrollable" data-section="04 Posicionamiento">
+  <h2>Posicionamiento: la clinica de la verdad</h2>
+  <div class="small-desc mb-16">El posicionamiento de HC no es un invento de marketing. Es lo que ya son &mdash; puesto en palabras.</div>
+
+  <div class="uvp-box">
+    <div class="uvp-label">UVP Global</div>
+    <div class="uvp-text">&ldquo;La clinica donde un medico te dice la verdad sobre tu pelo &mdash; sin venderte nada.&rdquo;</div>
+  </div>
+
+  <div class="card-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 20px;">
+    <div class="card card-accent">
+      <h3 style="font-size:16px">Autoridad medica</h3>
+      <p>Tricologo, no esteticista. Mismo medico siempre.</p>
+    </div>
+    <div class="card card-accent-orange">
+      <h3 style="font-size:16px">Precision diagnostica</h3>
+      <p>Tricoscopia + analitica hormonal = gold standard.</p>
+    </div>
+    <div class="card card-accent-purple">
+      <h3 style="font-size:16px">Transparencia radical</h3>
+      <p>Publica: &ldquo;ttos NO hacen crecer pelo nuevo&rdquo;.</p>
+    </div>
+    <div class="card card-accent-green">
+      <h3 style="font-size:16px">Pricing sin trampas</h3>
+      <p>&euro;820 bono. Sin packs sorpresa. Ttos primero.</p>
+    </div>
+  </div>
+
+  <h3 class="mt-24 mb-8">Marco legal &mdash; por que la honestidad es la UNICA estrategia sostenible</h3>
+
+  <div class="legal-grid">
+    <div class="card card-accent-red">
+      <h3 style="color:var(--red); font-size:16px">Ley SARA prohibe</h3>
+      <ul>
+        <li>Garantizar resultados</li>
+        <li>Farmacos por nombre</li>
+        <li>Antes/despues sin consentimiento</li>
+        <li>Presion &ldquo;solo hoy&rdquo;</li>
+        <li>Influencers claims salud</li>
+      </ul>
+    </div>
+    <div class="card card-accent-green">
+      <h3 style="color:var(--green); font-size:16px">HC SI puede</h3>
+      <ul>
+        <li>CRT/HRT (inmunes a regulacion)</li>
+        <li>Tricoscopia + analitica</li>
+        <li>Reviews Trustpilot</li>
+        <li>Contenido educacional</li>
+        <li>&ldquo;Procedimiento por medico&rdquo; &middot; Precio claro</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout mt-16">
+    <p>HC gana cuando la regulacion se endurece. CRT/HRT a prueba de regulacion. Competidores ajustan; HC ya cumple.</p>
+  </div>
+
+  <div class="source">Fuente: Ley SARA sept 2024, BOE, AEMPS, Positioning v2.7</div>
+</div>
+
+<!-- ═══════ SLIDE 18: La Propuesta ═══════ -->
+<div class="slide slide-scrollable" data-section="05 La Propuesta">
+  <h2>La Propuesta</h2>
+  <div class="small-desc mb-16">Que hacemos, en que orden, y como testeamos sin asumir nada</div>
+
+  <div class="flex gap-32">
+    <div class="flex-1">
+      <div class="small-desc mb-8" style="font-style:normal; font-weight:600; color:var(--text);">De 14 estrategias TOWS, estas 6 tienen mayor impacto:</div>
+      <div class="table-wrapper">
+        <table class="ice-table">
+          <thead><tr><th>#</th><th>Estrategia</th><th>ICE</th><th>1a accion</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Treatment-First Position.</strong></td><td>8.7</td><td>Landing+quiz</td></tr>
+            <tr><td>2</td><td>Funnel Tratamientos</td><td>8.3</td><td>Quiz+paid &rarr; +&euro;50K/mes</td></tr>
+            <tr><td>3</td><td>Reviews Tratamientos</td><td>8.3</td><td>30 pac. &rarr; 50+ reviews</td></tr>
+            <tr><td>4</td><td>Digital Capture Jovenes</td><td>8.0</td><td>20 videos cortos</td></tr>
+            <tr><td>5</td><td>Contenido Social 50/50</td><td>8.0</td><td>12 posts/mes</td></tr>
+            <tr><td>6</td><td>Medical Authority</td><td>8.0</td><td>Auditoria compliance</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="min-width:320px;">
+      <div class="small-desc mb-12" style="font-style:normal; font-weight:600; color:var(--text);">3 flujos de quiz en TEST paralelo</div>
+      <div class="small-desc mb-16">No sabemos cual es el mejor. Testeamos 3 y los datos deciden.</div>
+      <div class="quiz-test-grid" style="grid-template-columns: 1fr;">
+        <div class="quiz-test-card">
+          <div class="letter" style="color:var(--green)">A</div>
+          <h4>Quiz corto + gratis</h4>
+          <p>4-5 Qs &rarr; asesor &rarr; consulta gratis. Maxima conversion. Riesgo: no-shows.</p>
+        </div>
+        <div class="quiz-test-card">
+          <div class="letter" style="color:var(--orange)">B</div>
+          <h4>Quiz + pago variable</h4>
+          <p>Quiz &rarr; pago &euro;25/&euro;50/&euro;100/&euro;195. Test price sensitivity. Filtra curiosos.</p>
+        </div>
+        <div class="quiz-test-card">
+          <div class="letter" style="color:var(--purple)">C</div>
+          <h4>Quiz largo sin pago</h4>
+          <p>10+ Qs &rarr; filtra por compromiso. Drop-off alto pero leads cualificados.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout mt-16">
+    <p>Objetivo: +&euro;50K/mes facturacion incremental en 6 meses.</p>
+  </div>
+
+  <div class="source">Fuente: SWOT/TOWS v1.0, Company Brief v1.4</div>
+</div>
+
+<!-- ═══════ SLIDE 19: Videos ═══════ -->
+<div class="slide slide-scrollable" data-section="05 La Propuesta">
+  <h2>6 videos cortos &mdash; <span class="teal">1 historia por cada nicho</span></h2>
+  <div class="small-desc mb-8">Patron: gancho visceral (0-3s) &rarr; historia &rarr; tricoscopio (HC brand) &rarr; resultado creible &rarr; CTA quiz</div>
+  <div class="desc" style="font-size:14px; margin-bottom:20px;">El tricoscopio es el elemento que une los 6. Es lo que diferencia HC: un instrumento medico real.</div>
+
+  <div class="video-grid">
+    <div class="video-card">
+      <h4>&#129524; &ldquo;3 anos con gorra&rdquo;</h4>
+      <p>Joven quitandose gorra. &ldquo;Ni fotos, ni citas, ni playa.&rdquo;</p>
+      <div class="platform">TikTok 20-28</div>
+    </div>
+    <div class="video-card">
+      <h4>&#128138; &ldquo;1.200&euro; al bano&rdquo;</h4>
+      <p>POV bano, botes, calculadora. &ldquo;1.247&euro; en cosas que no funcionan.&rdquo;</p>
+      <div class="platform">IG 25-35</div>
+    </div>
+    <div class="video-card">
+      <h4>&#10067; &ldquo;Google no es un medico&rdquo;</h4>
+      <p>Screen recording &rarr; clinica. &ldquo;47M resultados.&rdquo; CTA quiz</p>
+      <div class="platform">TikTok all</div>
+    </div>
+    <div class="video-card">
+      <h4>&#128184; &ldquo;Lo que no me dijeron&rdquo;</h4>
+      <p>Cenital coronilla. &ldquo;3.500&euro; y nadie me dijo esto.&rdquo;</p>
+      <div class="platform">YT 30-45</div>
+    </div>
+    <div class="video-card">
+      <h4>&#127978; &ldquo;5.000&euro; y un vendedor&rdquo;</h4>
+      <p>Storytime confesional. &ldquo;Pague 5.000&euro;. No era medico.&rdquo;</p>
+      <div class="platform">IG/TT 30-40</div>
+    </div>
+    <div class="video-card">
+      <h4>&#128105; &ldquo;Es normal, ya pasara&rdquo;</h4>
+      <p>Almohada, voz off femenina. &ldquo;14 meses 'normales'.&rdquo;</p>
+      <div class="platform">IG mujeres 30-55</div>
+    </div>
+  </div>
+
+  <div class="callout mt-16" style="background: rgba(231,76,60,0.08); border-color: rgba(231,76,60,0.2);">
+    <p style="color: var(--orange);">Sin farmacos, sin competidores, sin garantias. Tricoscopio en los 6. Testimonios reales.</p>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 20: META ADS MOCKUPS ═══════ -->
+<div class="slide slide-scrollable" data-section="05 Ejemplos Reales">
+  <div class="flex items-center gap-16 mb-16">
+    <h2 style="margin-bottom:0">Meta Ads &mdash; Feed</h2>
+    <span class="badge badge-teal">Ejemplos Reales</span>
+  </div>
+  <div class="small-desc mb-24">Asi se verian los anuncios en Instagram/Facebook para los 4 nichos prioritarios.</div>
+
+  <div class="meta-ad-grid">
+    <!-- Ad 1 -->
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div><div class="meta-ad-name">Hospital Capilar</div><div class="meta-ad-sponsored">Patrocinado</div></div>
+      </div>
+      <div class="meta-ad-text-sm"><strong>3 anos con gorra. Hoy me la quite.</strong><br>Si tienes 20-algo y cada manana ves menos pelo en el espejo, no estas solo. El 25% de hombres entre 18-24 ya tiene caida activa.</div>
+      <div class="meta-ad-visual bg-1">
+        <div class="badge-sm">DIAGNOSTICO GRATUITO</div>
+        <div class="emoji">&#129506;</div>
+        <div class="headline">3 anos con gorra.<br>Hoy me la quite.</div>
+        <div class="sub">Un medico de verdad, no un asesor capilar.</div>
+        <div class="cta-btn">Haz el test capilar &mdash; 2 min</div>
+        <div class="logo-sm">HOSPITAL CAPILAR</div>
+      </div>
+      <div class="meta-ad-link-bar">
+        <div><div class="domain">diagnostico.hospitalcapilar.com</div><div class="title">Test Capilar Gratuito | Hospital Capilar</div></div>
+        <div class="btn">Mas info</div>
+      </div>
+    </div>
+
+    <!-- Ad 2 -->
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div><div class="meta-ad-name">Hospital Capilar</div><div class="meta-ad-sponsored">Patrocinado</div></div>
+      </div>
+      <div class="meta-ad-text-sm"><strong>1.200&euro; en productos. 0 diagnosticos.</strong><br>Minoxidil, biotina, champu... Al principio parecia funcionar. Despues no. No necesitas otro producto. Necesitas saber que tienes.</div>
+      <div class="meta-ad-visual bg-2">
+        <div class="badge-sm">TRICOLOGO + ANALITICA</div>
+        <div class="emoji">&#128138;</div>
+        <div class="headline">1.200&euro; al bano.<br>0 diagnosticos.</div>
+        <div class="sub">De "a ver si funciona" a "se que funciona y por que".</div>
+        <div class="cta-btn">Descubre que necesitas realmente</div>
+        <div class="logo-sm">HOSPITAL CAPILAR</div>
+      </div>
+      <div class="meta-ad-link-bar">
+        <div><div class="domain">diagnostico.hospitalcapilar.com</div><div class="title">Diagnostico Capilar Completo</div></div>
+        <div class="btn">Reservar</div>
+      </div>
+    </div>
+
+    <!-- Ad 3 -->
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div><div class="meta-ad-name">Hospital Capilar</div><div class="meta-ad-sponsored">Patrocinado</div></div>
+      </div>
+      <div class="meta-ad-text-sm"><strong>47M resultados en Google. Ninguno te dice que tienes TU.</strong><br>Estres? Hormonas? Genetica? Saber que tienes. Sin compromiso. En 1 semana.</div>
+      <div class="meta-ad-visual bg-3">
+        <div class="badge-sm">CONSULTA DIAGNOSTICA</div>
+        <div class="emoji">&#128269;</div>
+        <div class="headline">Google no es<br>un medico.</div>
+        <div class="sub">Tricoscopia + analitica hormonal en 1 visita.</div>
+        <div class="cta-btn">Haz el test &mdash; descubre tu caso</div>
+        <div class="logo-sm">HOSPITAL CAPILAR</div>
+      </div>
+      <div class="meta-ad-link-bar">
+        <div><div class="domain">diagnostico.hospitalcapilar.com</div><div class="title">Test Capilar Online</div></div>
+        <div class="btn">Empezar</div>
+      </div>
+    </div>
+
+    <!-- Ad 4 -->
+    <div class="meta-ad">
+      <div class="meta-ad-header">
+        <div class="meta-ad-avatar">HC</div>
+        <div><div class="meta-ad-name">Hospital Capilar</div><div class="meta-ad-sponsored">Patrocinado</div></div>
+      </div>
+      <div class="meta-ad-text-sm"><strong>&ldquo;Es normal despues del parto, ya pasara.&rdquo;</strong><br>Te lo dijo tu ginecologa. Han pasado 14 meses. No ha pasado. Si no necesitas tratamiento, te lo decimos.</div>
+      <div class="meta-ad-visual bg-6">
+        <div class="badge-sm">CAIDA CAPILAR FEMENINA</div>
+        <div class="emoji">&#128134;&#8205;&#9792;&#65039;</div>
+        <div class="headline">14 meses<br>&ldquo;normales&rdquo;.</div>
+        <div class="sub">No es estres. Es un diagnostico que nadie te ha hecho.</div>
+        <div class="cta-btn">Test capilar femenino &mdash; 2 min</div>
+        <div class="logo-sm">HOSPITAL CAPILAR</div>
+      </div>
+      <div class="meta-ad-link-bar">
+        <div><div class="domain">diagnostico.hospitalcapilar.com</div><div class="title">Diagnostico Capilar Femenino</div></div>
+        <div class="btn">Mas info</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 21: STORIES MOCKUPS ═══════ -->
+<div class="slide" data-section="05 Ejemplos Reales">
+  <div class="flex items-center gap-16 mb-16">
+    <h2 style="margin-bottom:0">Stories / Reels</h2>
+    <span class="badge badge-teal">6 Videos Cortos</span>
+  </div>
+  <div class="small-desc mb-32">Gancho visceral (0-3s) &rarr; historia &rarr; tricoscopio &rarr; resultado creible &rarr; CTA quiz</div>
+
+  <div class="stories-row">
+    <div class="story-mock sbg-1">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#129506;</div><div class="s-headline">3 anos<br>con gorra.</div><div class="s-sub">Ni fotos. Ni citas. Ni playa.</div></div>
+      <div class="s-cta"><div class="s-cta-text">HAZ EL TEST CAPILAR</div></div>
+    </div>
+    <div class="story-mock sbg-2">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#128138;</div><div class="s-headline">1.247&euro;<br>al bano.</div><div class="s-sub">Minoxidil. Biotina. Champu. Sigo igual.</div></div>
+      <div class="s-cta"><div class="s-cta-text">NECESITAS UN DIAGNOSTICO</div></div>
+    </div>
+    <div class="story-mock sbg-3">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#128269;</div><div class="s-headline">Google no es<br>un medico.</div><div class="s-sub">47M resultados. Ninguno te dice que tienes TU.</div></div>
+      <div class="s-cta"><div class="s-cta-text">DESCUBRE TU CASO</div></div>
+    </div>
+    <div class="story-mock sbg-4">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#128184;</div><div class="s-headline">3.500&euro;.<br>Nadie me<br>dijo esto.</div><div class="s-sub">El trasplantado se queda. El resto no.</div></div>
+      <div class="s-cta"><div class="s-cta-text">PROTEGE TU INVERSION</div></div>
+    </div>
+    <div class="story-mock sbg-5">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#127978;</div><div class="s-headline">5.000&euro;<br>y un<br>vendedor.</div><div class="s-sub">Pague 5.000&euro;. No era medico.</div></div>
+      <div class="s-cta"><div class="s-cta-text">AQUI SI HAY UN MEDICO</div></div>
+    </div>
+    <div class="story-mock sbg-6">
+      <div class="s-top"><div class="s-top-fill"></div></div>
+      <div class="s-account"><div class="s-av">HC</div><div class="s-name">hospitalcapilar</div></div>
+      <div class="s-center"><div class="s-emoji">&#128134;&#8205;&#9792;&#65039;</div><div class="s-headline">14 meses<br>&ldquo;normales&rdquo;.</div><div class="s-sub">Es normal, ya pasara. No paso.</div></div>
+      <div class="s-cta"><div class="s-cta-text">TEST CAPILAR FEMENINO</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 22: GOOGLE ADS MOCKUPS ═══════ -->
+<div class="slide slide-scrollable" data-section="05 Ejemplos Reales">
+  <div class="flex items-center gap-16 mb-16">
+    <h2 style="margin-bottom:0">Google Search Ads</h2>
+    <span class="badge badge-teal">Intent Alto</span>
+  </div>
+  <div class="small-desc mb-24">Keywords de alta intencion. El usuario ya esta buscando solucion.</div>
+
+  <div class="google-ad-grid">
+    <div class="google-ad">
+      <div class="label-sp">Patrocinado</div>
+      <div class="url-line"><div class="favicon">HC</div><div class="url-text">hospitalcapilar.com<br><span>diagnostico.hospitalcapilar.com/rapido</span></div></div>
+      <div class="ad-title">Caida del Pelo a los 20? No Esperes Mas | Hospital Capilar</div>
+      <div class="ad-desc">El 25% de hombres entre 18-24 ya tiene caida activa. <strong>Diagnostico con tricologo real</strong> &mdash; no esteticistas. Tricoscopia + analitica hormonal en 1 visita. 4.8/5 Trustpilot.</div>
+      <div class="ext"><span>Test Capilar Online</span><span>Tratamientos desde 820&euro;</span><span>9 Clinicas</span></div>
+      <div class="callouts">4.8/5 Trustpilot &middot; Mismo medico siempre &middot; Diagnostico en 1 semana</div>
+    </div>
+    <div class="google-ad">
+      <div class="label-sp">Patrocinado</div>
+      <div class="url-line"><div class="favicon">HC</div><div class="url-text">hospitalcapilar.com<br><span>diagnostico.hospitalcapilar.com</span></div></div>
+      <div class="ad-title">El Minoxidil No Funciona? Hay Una Razon | Hospital Capilar</div>
+      <div class="ad-desc">El 84% se auto-trata antes de ver un profesional. <strong>Sin diagnostico, no hay solucion.</strong> Tricoscopia + analitica descubren por que tu tratamiento no funciona.</div>
+      <div class="ext"><span>Diagnostico Completo</span><span>Por Que No Funciona</span><span>Precios Transparentes</span></div>
+      <div class="callouts">Tricologo, no esteticista &middot; Analitica hormonal incluida</div>
+    </div>
+    <div class="google-ad">
+      <div class="label-sp">Patrocinado</div>
+      <div class="url-line"><div class="favicon">HC</div><div class="url-text">hospitalcapilar.com<br><span>diagnostico.hospitalcapilar.com</span></div></div>
+      <div class="ad-title">Se Te Cae el Pelo? Diagnostico en 1 Semana | Hospital Capilar</div>
+      <div class="ad-desc">El 70% con caida capilar no tiene diagnostico medico. <strong>Dermatologo publico: 3-6 meses.</strong> Tricoscopia + analitica hormonal en 1 visita. Sin compromiso.</div>
+      <div class="ext"><span>Test Online 2 Min</span><span>5 Tipos de Alopecia</span><span>Reservar Consulta</span></div>
+      <div class="callouts">Medico en cada consulta &middot; CRT/HRT protocolos propios</div>
+    </div>
+    <div class="google-ad">
+      <div class="label-sp">Patrocinado</div>
+      <div class="url-line"><div class="favicon">HC</div><div class="url-text">hospitalcapilar.com<br><span>hospitalcapilar.com/por-que-hospital-capilar</span></div></div>
+      <div class="ad-title">Buscas Otra Clinica Capilar? Lee Por Que Cambiaron | HC 4.8/5</div>
+      <div class="ad-desc">Siempre el mismo medico. <strong>Nunca un vendedor con bata.</strong> Si con tratamiento basta, te lo decimos. Tu progreso registrado. 4.8 vs 3.8 Trustpilot.</div>
+      <div class="ext"><span>Opiniones Trustpilot</span><span>HC vs Otras Clinicas</span><span>Precios Claros</span></div>
+      <div class="callouts">Tricologo en cada visita &middot; Transparencia radical</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 23: Proximos pasos ═══════ -->
+<div class="slide slide-scrollable" data-section="06 Proximos Pasos">
+  <h2>De aqui al lanzamiento &mdash; <span class="teal">cada dia cuenta</span></h2>
+  <div class="small-desc mb-16">10 dias. 10 acciones. Si cumplimos, el 24/03 hay quiz live, landing nueva y primeros ads.</div>
+
+  <div class="flex gap-40">
+    <div class="flex-1">
+      <div class="timeline">
+        <div class="timeline-item">
+          <h4>14 Mar &mdash; HOY</h4>
+          <p>Validamos nichos, mensajes, prioridades. Dir. medica valida quiz.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>17-21 Mar</h4>
+          <p>Ramiro: 3 quiz GHL. G4U+HC: landing. IT: Stripe+Koibox. 30 reviews.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>24-28 Mar &mdash; LANZAMIENTO</h4>
+          <p>Meta Ads 2-3 nichos. Google Ads ttos. Quiz live.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Abril</h4>
+          <p>Medir: leads, confirmaciones, no-shows, conversiones bono/cirugia.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Mayo+</h4>
+          <p>Escalar: duplicar budget nicho ganador. Mas clinicas. Referidos.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="min-width: 440px;">
+      <h3 class="mb-16">10 acciones antes del 24/03</h3>
+      <table style="font-size:13px;">
+        <thead><tr><th>Accion</th><th>Resp.</th><th>Deadline</th></tr></thead>
+        <tbody>
+          <tr><td>Validar quiz</td><td>Dir. medica</td><td>14 Mar</td></tr>
+          <tr><td>GHL onboarding</td><td>Noemi</td><td>14 Mar</td></tr>
+          <tr><td>Feedback estrategia</td><td>Equipo HC</td><td>14 Mar</td></tr>
+          <tr><td>Quiz MVP 3 flujos</td><td>Ramiro</td><td>21 Mar</td></tr>
+          <tr><td>Landing ttos</td><td>G4U+HC Mkt</td><td>21 Mar</td></tr>
+          <tr><td>Stripe+Koibox</td><td>IT HC</td><td>21 Mar</td></tr>
+          <tr><td>30 reviews ttos</td><td>HC Comercial</td><td>21 Mar</td></tr>
+          <tr><td>Formacion comercial</td><td>Direccion HC</td><td>24 Mar</td></tr>
+          <tr><td>QA landings+quiz</td><td>G4U+HC</td><td>24 Mar</td></tr>
+          <tr><td>Testing tracking</td><td>Miguel Angel</td><td>24 Mar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout-red callout mt-16">
+    <p>El cuadrante esta vacio HOY. Insparya (&euro;20,7M + &euro;2M I+D + CR7) puede pivotar en 12 meses. Cada semana sin lanzar = semana regalada.</p>
+  </div>
+</div>
+
+<!-- ═══════ SLIDE 24: RESUMEN EJECUTIVO ═══════ -->
+<div class="slide" data-section="Resumen Ejecutivo" style="text-align:center; align-items:center;">
+  <div class="label">Resumen ejecutivo</div>
+  <h1 style="font-size:40px; max-width:800px; margin:0 auto 8px;">
+    Hospital Capilar tiene el mejor producto del sector.<br>
+    La mejor reputacion. Los mejores margenes.<br>
+    Lo unico que falta es el sistema para que<br>
+    <span class="teal">la gente los encuentre.</span>
+  </h1>
+
+  <div class="exec-big-numbers">
+    <div class="exec-num"><div class="big" style="color:var(--teal)">6</div><div class="big-label">Nichos definidos<br>con messaging</div></div>
+    <div class="exec-num"><div class="big">14</div><div class="big-label">Estrategias<br>priorizadas</div></div>
+    <div class="exec-num"><div class="big" style="color:var(--orange)">24/03</div><div class="big-label">Lanzamiento<br>primeros tests</div></div>
+  </div>
+
+  <div style="font-size:16px; color:var(--text-dim); margin-bottom:32px;">
+    1. Validar quiz &middot; 2. Landing + Stripe/Koibox &middot; 3. Tests por nicho &middot; 4. Medir &rarr; happy path &rarr; escalar
+  </div>
+
+  <div class="desc" style="text-align:center; max-width:700px; font-size:18px;">
+    La puerta esta abierta. El producto esta listo. Los pacientes estan buscando. Solo falta encender el motor.
+  </div>
+
+  <div style="margin-top:40px; font-size:13px; color:var(--text-dimmer);">Hospital Capilar &times; Growth4U &mdash; Confidencial &mdash; Marzo 2026</div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 100" fill="none" style="height:24px;width:auto;opacity:0.6;">
+      <circle cx="100" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="100" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="140" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="140" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="140" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="180" cy="28" r="18" fill="#6BA89E"/>
+    </svg>
+    <div class="nav-counter"><span id="currentSlide">1</span> / <span id="totalSlides">24</span></div>
+  </div>
+  <div class="nav-progress" id="progressBar"><div class="nav-progress-fill" id="progressFill"></div></div>
+  <div class="nav-section-name" id="sectionName">Portada</div>
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="prevSlide()" title="Anterior">&larr;</button>
+    <button class="nav-btn" onclick="nextSlide()" title="Siguiente">&rarr;</button>
+  </div>
+</div>
+
+<div class="keyboard-hint">
+  <kbd>&larr;</kbd> <kbd>&rarr;</kbd> para navegar &middot; <kbd>F</kbd> pantalla completa
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let current = 0;
+
+  document.getElementById('totalSlides').textContent = totalSlides;
+
+  function showSlide(index, direction) {
+    if (index < 0 || index >= totalSlides) return;
+
+    const prev = current;
+    current = index;
+
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'prev');
+      if (i === current) {
+        s.classList.add('active');
+        s.scrollTop = 0;
+      } else if (i === prev && direction === 'next') {
+        s.classList.add('prev');
+      }
+    });
+
+    document.getElementById('currentSlide').textContent = current + 1;
+    document.getElementById('progressFill').style.width = ((current + 1) / totalSlides * 100) + '%';
+    document.getElementById('sectionName').textContent = slides[current].dataset.section || '';
+  }
+
+  function nextSlide() { showSlide(current + 1, 'next'); }
+  function prevSlide() { showSlide(current - 1, 'prev'); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(totalSlides - 1); }
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // Click on progress bar to jump
+  document.getElementById('progressBar').addEventListener('click', (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const target = Math.round(pct * (totalSlides - 1));
+    showSlide(target);
+  });
+
+  // Touch/swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextSlide();
+      else prevSlide();
+    }
+  });
+
+  showSlide(0);
+</script>
+
+</body>
+</html>
