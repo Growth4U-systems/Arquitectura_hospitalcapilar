@@ -1,6 +1,8 @@
 const crypto = require('crypto');
+const { updateLeadByEmail } = require('./lib/firebase-admin');
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
+const POSTHOG_HOST = 'https://eu.i.posthog.com';
 
 // Opportunity custom field IDs (same as ghl-proxy.js)
 const OPP_CF = {
@@ -45,6 +47,24 @@ exports.handler = async (event) => {
       if (contactId && ghlKey) {
         await addGHLNote(contactId, ghlKey, session);
       }
+
+      // Update Firestore lead: paymentStatus → paid
+      await updateLeadByEmail(session.customer_email, {
+        paymentStatus: 'paid',
+        paymentAmount: session.amount_total / 100,
+        stripeSessionId: session.id,
+        paymentDate: new Date().toISOString(),
+      });
+
+      // Track in PostHog server-side
+      trackServerEvent('payment_completed', {
+        amount: session.amount_total / 100,
+        currency: session.currency,
+        stripe_session_id: session.id,
+        ecp: session.metadata?.ecp || '',
+        ubicacion: session.metadata?.ubicacion || '',
+        ghl_contact_id: contactId || '',
+      }, session.customer_email);
     }
 
     return { statusCode: 200, body: JSON.stringify({ received: true }) };
@@ -167,4 +187,30 @@ async function addGHLNote(contactId, apiKey, session) {
   } catch (err) {
     console.log('[Stripe Webhook] Note creation failed:', err.message);
   }
+}
+
+/**
+ * Track an event server-side to PostHog.
+ * Fire-and-forget: does not block the response.
+ */
+function trackServerEvent(eventName, properties = {}, distinctId = null) {
+  const posthogKey = process.env.VITE_POSTHOG_KEY;
+  if (!posthogKey) return;
+
+  const payload = {
+    api_key: posthogKey,
+    event: eventName,
+    properties: {
+      ...properties,
+      distinct_id: distinctId || 'server-anonymous',
+      $lib: 'server-netlify',
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  fetch(`${POSTHOG_HOST}/capture/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(err => console.log('[PostHog] Server capture failed:', err.message));
 }
