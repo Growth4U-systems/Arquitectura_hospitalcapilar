@@ -12,7 +12,7 @@ export const NICHOS = {
     subheadline: 'El 40% de las mujeres sufre pérdida de pelo. Cruzamos tu perfil hormonal con un estudio capilar completo para encontrar la causa real.',
     ctaQuiz: 'Descubre qué le pasa a tu pelo',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Mujer con caida hormonal',
+    ecp: 'Es Normal',
     stats: [
       { value: '40%', label: 'de mujeres sufren caída capilar' },
       { value: '80%', label: 'mal diagnosticadas la primera vez' },
@@ -46,7 +46,7 @@ export const NICHOS = {
     subheadline: 'La alopecia a los 18-28 años es más común de lo que piensas. Cuanto antes actúes, más pelo conservas. Un diagnóstico a tiempo cambia todo.',
     ctaQuiz: 'Evalúa tu caso en 3 minutos',
     ctaForm: 'SOLICITAR VALORACIÓN GRATUITA',
-    ecp: 'Joven con alopecia temprana',
+    ecp: 'El Espejo',
     stats: [
       { value: '25%', label: 'de hombres notan caída antes de los 25' },
       { value: '95%', label: 'de éxito si se trata a tiempo' },
@@ -80,7 +80,7 @@ export const NICHOS = {
     subheadline: 'El 60% de hombres que usan minoxidil no ven resultados. No porque el producto no sirva — sino porque nunca les diagnosticaron correctamente la causa.',
     ctaQuiz: 'Descubre por qué no funciona',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Hombre con caida sin diagnostico',
+    ecp: '¿Qué Me Pasa?',
     stats: [
       { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
       { value: '20+', label: 'tipos de alopecia con tratamientos distintos' },
@@ -114,7 +114,7 @@ export const NICHOS = {
     subheadline: 'Sabemos que hay clínicas que prometen mucho y entregan poco. Hospital Capilar es un centro médico, no un centro estético. Aquí no hay consultas que son ventas disfrazadas.',
     ctaQuiz: 'Evalúa tu caso sin compromiso',
     ctaForm: 'QUE ME LLAMEN SIN COMPROMISO',
-    ecp: 'Mala experiencia otra clinica',
+    ecp: 'Ya Me Engañaron',
     stats: [
       { value: '35%', label: 'de pacientes vienen de otra clínica' },
       { value: '0', label: 'presión comercial en la consulta' },
@@ -148,7 +148,7 @@ export const NICHOS = {
     subheadline: 'Un trasplante capilar sin plan de mantenimiento pierde resultados con el tiempo. El pelo trasplantado no se cae, pero el nativo sigue sometido a los mismos factores.',
     ctaQuiz: 'Protege tu trasplante',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Post-trasplante mantenimiento',
+    ecp: 'La Inversión',
     stats: [
       { value: '40%', label: 'pierden resultados sin mantenimiento' },
       { value: '12 meses', label: 'críticos post-cirugía' },
@@ -182,7 +182,7 @@ export const NICHOS = {
     subheadline: 'El efluvio postparto afecta al 50% de madres. En la mayoría de casos es temporal, pero en algunas mujeres revela una alopecia subyacente. La única forma de saberlo es con un diagnóstico.',
     ctaQuiz: 'Descubre si es temporal o algo más',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Caida postparto',
+    ecp: 'Lo Que Vino Con el Bebé',
     stats: [
       { value: '50%', label: 'de madres sufren caída postparto' },
       { value: '85%', label: 'se recuperan con tratamiento adecuado' },

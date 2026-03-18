@@ -5,32 +5,32 @@
 
 // ─── OBJECTIONS (myth → truth) ──────────────────────────────
 export const OBJECTIONS_BY_ECP = {
-  'Hombre con caida sin diagnostico': [
+  '¿Qué Me Pasa?': [
     { myth: 'Ya probé minoxidil y no me funcionó', truth: 'El 40-60% no responde a minoxidil. Sin un diagnóstico real, cualquier tratamiento es una apuesta a ciegas.' },
     { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica te da la respuesta en 30 minutos. Sin adivinar.' },
     { myth: 'Me da cosa ir a una clínica capilar', truth: 'No somos un centro estético. Somos un centro médico. Te decimos la verdad, te guste o no.' },
   ],
-  'Mujer con caida hormonal': [
+  'Es Normal': [
     { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica hormonal te da la respuesta en 30 minutos.' },
     { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Cruzamos dermatología capilar con endocrinología. Nadie más mira tu pelo y tus hormonas juntos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'Los 195€ se descuentan íntegros si inicias tratamiento.' },
   ],
-  'Joven con alopecia temprana': [
+  'El Espejo': [
     { myth: 'Soy muy joven, seguro que no es nada grave', truth: 'La alopecia NO espera. Cuanto antes actúes, más opciones tienes y mejores resultados.' },
     { myth: 'Mi médico me dijo que esperara', truth: 'Esperar es la peor decisión con AGA. Cada mes sin actuar es pelo que no vuelve.' },
     { myth: 'No quiero medicarme de por vida', truth: 'Hay opciones sin fármacos orales. Pero primero necesitas saber qué tienes exactamente.' },
   ],
-  'Mala experiencia otra clinica': [
+  'Ya Me Engañaron': [
     { myth: 'Ya me engañaron una vez, no quiero repetir', truth: 'Entendemos. Por eso nuestra primera consulta es sin compromiso — para que nos conozcas antes de decidir nada.' },
     { myth: 'Todas las clínicas prometen lo mismo', truth: 'No prometemos resultados. Diagnosticamos con datos objetivos y te damos opciones honestas.' },
     { myth: 'No quiero que me presionen para operarme', truth: 'Nuestros médicos no cobran comisión. Te recomiendan lo que necesitas, no lo más caro.' },
   ],
-  'Post-trasplante mantenimiento': [
+  'La Inversión': [
     { myth: 'Ya me operé, ¿para qué necesito más?', truth: 'El pelo trasplantado no se cae, pero el nativo sí. Sin mantenimiento perderás densidad alrededor.' },
     { myth: 'Mi cirujano no me habló de mantenimiento', truth: 'Es el error más común. Un trasplante sin plan de mantenimiento pierde resultados con el tiempo.' },
     { myth: '¿No es pronto para preocuparme?', truth: 'El mejor momento para empezar mantenimiento es justo después de la cirugía. Cuanto antes, mejor.' },
   ],
-  'Caida postparto': [
+  'Lo Que Vino Con el Bebé': [
     { myth: 'Me dicen que es normal y que se pasará solo', truth: 'En el 70% de casos sí. Pero si hay AGA subyacente, cada mes sin actuar es pelo que no vuelve.' },
     { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos tratan hormonas. Los dermatólogos tratan pelo. Nosotros cruzamos ambos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'Los 195€ se descuentan íntegros si inicias tratamiento.' },
@@ -39,27 +39,27 @@ export const OBJECTIONS_BY_ECP = {
 
 // ─── TESTIMONIALS ───────────────────────────────────────────
 export const TESTIMONIALS_BY_ECP = {
-  'Hombre con caida sin diagnostico': [
+  '¿Qué Me Pasa?': [
     { name: 'Carlos M.', age: 38, text: 'Llevaba 2 años probando cosas por mi cuenta. En Hospital Capilar me diagnosticaron AGA en 30 minutos y me dieron un plan real. Ojalá hubiera ido antes.', stars: 5 },
     { name: 'Javier R.', age: 42, text: 'Fui pensando que me iban a vender un trasplante. Me dijeron que con tratamiento médico era suficiente. Eso me dio confianza.', stars: 5 },
   ],
-  'Mujer con caida hormonal': [
+  'Es Normal': [
     { name: 'Laura M.', age: 34, text: 'Llevaba 2 años con caída y nadie encontraba la causa. En Hospital Capilar descubrieron que era hormonal. Ahora estoy recuperando densidad.', stars: 5 },
     { name: 'Patricia G.', age: 41, text: 'Después del embarazo no paraba de caer. Me hicieron una analítica completa cruzada con tricoscopía. Por fin un diagnóstico real.', stars: 5 },
   ],
-  'Joven con alopecia temprana': [
+  'El Espejo': [
     { name: 'Alejandro P.', age: 23, text: 'Tenía 22 años y ya se me notaban las entradas. En HC me dijeron exactamente qué hacer y en 6 meses recuperé densidad. Actuar pronto fue clave.', stars: 5 },
     { name: 'Daniel S.', age: 26, text: 'Fui con miedo a que me dijeran que necesitaba cirugía. Solo necesitaba tratamiento médico. Me quitaron un peso de encima.', stars: 5 },
   ],
-  'Mala experiencia otra clinica': [
+  'Ya Me Engañaron': [
     { name: 'Roberto L.', age: 35, text: 'Después de una mala experiencia en otra clínica, estaba muy escéptico. En HC me explicaron todo con datos objetivos. Cero presión.', stars: 5 },
     { name: 'Ana B.', age: 39, text: 'Me operaron en el extranjero y quedó mal. En HC me hicieron un plan de recuperación realista y honesto. Agradecida.', stars: 5 },
   ],
-  'Post-trasplante mantenimiento': [
+  'La Inversión': [
     { name: 'Miguel F.', age: 44, text: 'Me operé hace 2 años y el pelo de alrededor empezaba a caer. En HC me dieron un plan de mantenimiento que funciona. No pierdo más.', stars: 5 },
     { name: 'Fernando D.', age: 37, text: 'Nadie me dijo que necesitaba mantenimiento después del trasplante. En HC me lo explicaron todo claro. Ojalá hubiera ido antes.', stars: 5 },
   ],
-  'Caida postparto': [
+  'Lo Que Vino Con el Bebé': [
     { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
     { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],

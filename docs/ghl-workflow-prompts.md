@@ -68,7 +68,7 @@
 >
 > ---
 >
-> ### RAMA 1 — ECP = "No candidato - cuero cabelludo"
+> ### RAMA 1 — ECP = "No Candidato"
 > *(Perfil: problema dermatológico, no capilar. Fuera del funnel comercial.)*
 >
 > 1. Actualizar `tratamiento_status` = `no_candidate`
@@ -91,7 +91,7 @@
 >
 > ---
 >
-> ### RAMA 3 — ECP = "Mala experiencia otra clinica" (perfil "Ya Me Engañaron")
+> ### RAMA 3 — ECP = "Ya Me Engañaron" (perfil "Ya Me Engañaron")
 > *(Dolor: "Pagué miles de euros y cero resultados. No me fío de nadie." NUNCA ofrecer pago directo en esta rama.)*
 >
 > 1. Añadir tag: `mala-experiencia`
@@ -113,7 +113,7 @@
 >
 > ---
 >
-> ### RAMA 4 — ECP = "Mujer con caida hormonal" (perfil "Es Normal") + lead_priority = HOT o WARM
+> ### RAMA 4 — ECP = "Es Normal" (perfil "Es Normal") + lead_priority = HOT o WARM
 > *(Dolor: "El médico me dice que es normal a mi edad. Llevo años con esto y nadie me ayuda.")*
 >
 > 1. Actualizar `tratamiento_status` = `not_paid`
@@ -141,7 +141,7 @@
 >
 > ---
 >
-> ### RAMA 5 — ECP = "Caida postparto" (perfil "Lo Que Vino Con el Bebé") + lead_priority = HOT o WARM
+> ### RAMA 5 — ECP = "Lo Que Vino Con el Bebé" (perfil "Lo Que Vino Con el Bebé") + lead_priority = HOT o WARM
 > *(Dolor: "Han pasado 8 meses desde el parto y sigo perdiendo pelo. No sé si es normal o no.")*
 >
 > 1. Actualizar `tratamiento_status` = `not_paid`
@@ -169,7 +169,7 @@
 >
 > ---
 >
-> ### RAMA 6 — ECP = "Mujer con caida hormonal" O "Caida postparto" + lead_priority = COLD
+> ### RAMA 6 — ECP = "Es Normal" O "Lo Que Vino Con el Bebé" + lead_priority = COLD
 > *(Perfil fuera de zona operativa o puntuación muy baja)*
 >
 > 1. Actualizar `tratamiento_status` = `not_paid`
@@ -180,7 +180,7 @@
 >
 > ---
 >
-> ### RAMA 7 — ECP = "Hombre con caida sin diagnostico" (perfil "¿Qué Me Pasa?") + lead_priority = HOT o WARM
+> ### RAMA 7 — ECP = "¿Qué Me Pasa?" (perfil "¿Qué Me Pasa?") + lead_priority = HOT o WARM
 > *(Dolor: "¿Es estrés? ¿Es genético? Google me asusta." El 70% del mercado.)*
 >
 > 1. Actualizar `tratamiento_status` = `free_consult`
@@ -203,7 +203,7 @@
 >
 > ---
 >
-> ### RAMA 8 — ECP = "Joven con alopecia temprana" (perfil "El Espejo") + lead_priority = HOT o WARM
+> ### RAMA 8 — ECP = "El Espejo" (perfil "El Espejo") + lead_priority = HOT o WARM
 > *(Dolor: "Tengo 24 años y cada mañana veo las entradas. Me da pánico quedarme calvo.")*
 >
 > 1. Actualizar `tratamiento_status` = `free_consult`
@@ -225,7 +225,7 @@
 >
 > ---
 >
-> ### RAMA 9 — ECP = "Post-trasplante mantenimiento" (perfil "La Inversión") + lead_priority = HOT o WARM
+> ### RAMA 9 — ECP = "La Inversión" (perfil "La Inversión") + lead_priority = HOT o WARM
 > *(Dolor: "Me operé en Turquía y nadie me dijo que tenía que hacer mantenimiento. El pelo nativo sigue cayendo.")*
 >
 > 1. Actualizar `tratamiento_status` = `free_consult`

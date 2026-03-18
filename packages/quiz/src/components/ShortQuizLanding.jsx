@@ -43,43 +43,43 @@ const UbicacionSelect = ({ value, onChange, className }) => (
 
 // ECP mapping from situacion answer
 const SITUACION_ECP = {
-  'caida-sin-diagnostico': 'Hombre con caida sin diagnostico',
-  'entradas-coronilla': 'Hombre con caida sin diagnostico',
-  'joven-perdida': 'Joven con alopecia temprana',
-  'postparto': 'Caida postparto',
-  'hormonal': 'Mujer con caida hormonal',
-  'post-cirugia': 'Post-trasplante mantenimiento',
-  'mala-experiencia': 'Mala experiencia otra clinica',
-  'cuero-cabelludo': 'No candidato - cuero cabelludo',
+  'caida-sin-diagnostico': '¿Qué Me Pasa?',
+  'entradas-coronilla': '¿Qué Me Pasa?',
+  'joven-perdida': 'El Espejo',
+  'postparto': 'Lo Que Vino Con el Bebé',
+  'hormonal': 'Es Normal',
+  'post-cirugia': 'La Inversión',
+  'mala-experiencia': 'Ya Me Engañaron',
+  'cuero-cabelludo': 'No Candidato',
 };
 
 // ECP result messages (short version)
 const ECP_MESSAGES = {
-  'Hombre con caida sin diagnostico': {
+  '¿Qué Me Pasa?': {
     title: 'Tu caída necesita un diagnóstico profesional',
     body: 'Sin una tricoscopía y analítica, cualquier tratamiento es una apuesta. En 30 minutos sabrás exactamente qué tienes.',
   },
-  'Joven con alopecia temprana': {
+  'El Espejo': {
     title: 'Actuar temprano es la mejor decisión',
     body: 'Cuanto antes se diagnostica, más opciones tienes. La caída no se frena sola — pero con diagnóstico a tiempo, los resultados son excelentes.',
   },
-  'Mujer con caida hormonal': {
+  'Es Normal': {
     title: 'Tu caída puede estar conectada a un desbalance hormonal',
     body: 'Necesitas una analítica hormonal cruzada con estudio capilar. Es la pieza que falta entre tu pelo y tu salud.',
   },
-  'Caida postparto': {
+  'Lo Que Vino Con el Bebé': {
     title: 'Necesitas saber si es temporal o algo más',
     body: 'El efluvio postparto es temporal en la mayoría de casos. Pero a veces revela una alopecia subyacente. Un diagnóstico te saca de dudas.',
   },
-  'Post-trasplante mantenimiento': {
+  'La Inversión': {
     title: 'Tu trasplante necesita un plan de mantenimiento',
     body: 'El pelo trasplantado no se cae, pero el nativo sí. Un diagnóstico evalúa tu situación actual y protege tu inversión.',
   },
-  'Mala experiencia otra clinica': {
+  'Ya Me Engañaron': {
     title: 'Entendemos que tengas dudas',
     body: 'Hospital Capilar es un centro médico, no estético. Médicos que diagnostican con datos y te dicen la verdad. Sin presión.',
   },
-  'No candidato - cuero cabelludo': {
+  'No Candidato': {
     title: 'Tu caso requiere un dermatólogo',
     body: 'Lo que describes parece un problema dermatológico del cuero cabelludo. Te recomendamos visitar un dermatólogo especializado.',
   },
@@ -279,8 +279,8 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
   // ==========================================
   if (phase === 'results') {
     const ecp = SITUACION_ECP[answers.situacion] || config.ecp;
-    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['Hombre con caida sin diagnostico'];
-    const isDerivacion = ecp === 'No candidato - cuero cabelludo';
+    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['¿Qué Me Pasa?'];
+    const isDerivacion = ecp === 'No Candidato';
     const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
       `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de completar el diagnóstico rápido en Hospital Capilar. Me gustaría recibir más información.`

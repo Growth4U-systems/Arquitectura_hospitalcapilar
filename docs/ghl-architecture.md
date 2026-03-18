@@ -70,13 +70,13 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 
 | Valor ECP | Perfil | Flujo comercial |
 |---|---|---|
-| `Hombre con caida sin diagnostico` | Hombre adulto | Consulta gratuita → comercial agenda |
-| `Joven con alopecia temprana` | Hombre joven | Consulta gratuita → comercial agenda |
-| `Post-trasplante mantenimiento` | Post-trasplante | Consulta gratuita → comercial agenda |
-| `Mujer con caida hormonal` | Mujer hormonal | Pago 195€ o 70€ → agenda en Koibox |
-| `Caida postparto` | Postparto | Pago 195€ o 70€ → agenda en Koibox |
-| `Mala experiencia otra clinica` | Segunda opinión | Siempre llamada, nunca pago directo |
-| `No candidato - cuero cabelludo` | Dermatológico | Artículo educativo, fuera del funnel |
+| `¿Qué Me Pasa?` | Hombre adulto | Consulta gratuita → comercial agenda |
+| `El Espejo` | Hombre joven | Consulta gratuita → comercial agenda |
+| `La Inversión` | Post-trasplante | Consulta gratuita → comercial agenda |
+| `Es Normal` | Mujer hormonal | Pago 195€ o 70€ → agenda en Koibox |
+| `Lo Que Vino Con el Bebé` | Postparto | Pago 195€ o 70€ → agenda en Koibox |
+| `Ya Me Engañaron` | Segunda opinión | Siempre llamada, nunca pago directo |
+| `No Candidato` | Dermatológico | Artículo educativo, fuera del funnel |
 
 > Ciudad sin clínica: se detecta por `ubicacion_clinica`, no por ECP.
 

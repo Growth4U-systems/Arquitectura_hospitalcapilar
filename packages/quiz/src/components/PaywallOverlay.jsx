@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { Check, X, Star, ChevronDown, Lock, Phone } from 'lucide-react';
 
 const TESTIMONIALS_BY_ECP = {
-  'Mujer con caida hormonal': [
+  'Es Normal': [
     { name: 'Laura M.', age: 34, text: 'Llevaba 2 años con caída y nadie encontraba la causa. En Hospital Capilar descubrieron que era hormonal. Ahora estoy recuperando densidad.', stars: 5 },
     { name: 'Patricia G.', age: 41, text: 'Después del embarazo no paraba de caer. Me hicieron una analítica completa cruzada con tricoscopía. Por fin un diagnóstico real.', stars: 5 },
   ],
-  'Caida postparto': [
+  'Lo Que Vino Con el Bebé': [
     { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
     { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],
 };
 
 const OBJECTIONS = {
-  'Mujer con caida hormonal': [
+  'Es Normal': [
     { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica hormonal te da la respuesta en 30 minutos.' },
     { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Cruzamos dermatología capilar con endocrinología. Nadie más mira tu pelo y tus hormonas juntos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'Los 195€ se descuentan íntegros si inicias tratamiento.' },
   ],
-  'Caida postparto': [
+  'Lo Que Vino Con el Bebé': [
     { myth: 'Me dicen que es normal y que se pasará solo', truth: 'En el 70% de casos sí. Pero si hay AGA subyacente, cada mes sin actuar es pelo que no vuelve.' },
     { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos tratan hormonas. Los dermatólogos tratan pelo. Nosotros cruzamos ambos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'Los 195€ se descuentan íntegros si inicias tratamiento.' },
@@ -33,8 +33,8 @@ const FAQS = [
 
 const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest }) => {
   const [openFaq, setOpenFaq] = useState(null);
-  const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Mujer con caida hormonal'];
-  const objections = OBJECTIONS[ecp] || OBJECTIONS['Mujer con caida hormonal'];
+  const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
+  const objections = OBJECTIONS[ecp] || OBJECTIONS['Es Normal'];
   const firstName = (nombre || 'Paciente').split(' ')[0];
 
   return (
@@ -58,7 +58,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest }) => {
             {firstName}, descubre qué le pasa a tu pelo
           </h2>
           <p className="text-gray-500 text-sm">
-            {ecp === 'Caida postparto'
+            {ecp === 'Lo Que Vino Con el Bebé'
               ? 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal postparto con un estudio capilar completo.'
               : 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.'}
           </p>
