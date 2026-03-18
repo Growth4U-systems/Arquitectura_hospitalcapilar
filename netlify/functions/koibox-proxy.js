@@ -317,7 +317,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     hora_inicio,
     hora_fin,
     user: employeeId,
-    servicios: [{ id: SERVICES.primera_consulta_diagnostico }],
+    servicios: [SERVICES.primera_consulta_diagnostico],
     notas: notas || 'Reserva desde quiz online — Bono Diagnóstico 195€ pagado',
   };
   if (clientId) {
