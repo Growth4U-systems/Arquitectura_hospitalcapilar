@@ -503,7 +503,7 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
 
   try {
     const searchRes = await fetch(
-      `${GHL_BASE}/opportunities/search?contact_id=${contactId}&status=open`,
+      `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${contactId}&status=open`,
       { headers: ghlHeaders }
     );
     const searchData = await searchRes.json();
