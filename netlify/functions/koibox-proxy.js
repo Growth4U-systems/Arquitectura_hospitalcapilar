@@ -451,9 +451,9 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   // 3. Save appointment date/time as contact custom fields (for workflow triggers)
   // Custom field IDs created via GHL API:
   const APPOINTMENT_CF = {
-    fecha_cita:   'OGEyZPAoKCfGWiMvE1Kn',  // DATE
-    hora_cita:    '2i68Q5xxEg9RAxrayb0r',  // TEXT
-    clinica_cita: 'MOe2rGlgFH51Lm1cYqTQ',  // TEXT
+    fecha_cita:   'yEjha5MpjAeDrrUfFmur',  // DATE
+    hora_cita:    'KX7eyTmYQKbi0937Wj9I',  // TEXT
+    clinica_cita: 'upGgK5yc0bSDwqC99DkZ',  // TEXT
   };
 
   try {
@@ -494,9 +494,9 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   // Opportunity custom field IDs
   const OPP_CF_BOOKING = {
     tratamiento_status: 'Hk81fRW2HaTqlry4I1L0',
-    koibox_id:          'x1MAP0Om3rUW3a10ZiUe',
-    fecha_cita:         'MbxjAvp2tpx2nUMCjX9L',
-    hora_cita:          'AAvG0Rn1uWZ3LEpacKuZ',
+    koibox_id:          'EDiHi8YfC913Mve0DRsv',
+    fecha_cita:         '6SmcwU7myCOv7FsNPkX8',
+    hora_cita:          'xI1E3qSGLVgJdBujrWcI',
   };
 
   try {

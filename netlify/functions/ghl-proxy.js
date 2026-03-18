@@ -8,10 +8,9 @@ const OPP_CF = {
   lead_priority:       'l99Opesqh9cJBLxSPs4z',
   agent_message:       'cVtN5KboKd2R1cf1s7QA',
   tratamiento_status:  'Hk81fRW2HaTqlry4I1L0',
-  // TODO: fill IDs once Philippe creates these fields in GHL
-  fecha_cita:          'PENDING_ID',
-  hora_cita:           'PENDING_ID',
-  koibox_booking_id:   'PENDING_ID',
+  fecha_cita:          '6SmcwU7myCOv7FsNPkX8',
+  hora_cita:           'xI1E3qSGLVgJdBujrWcI',
+  koibox_booking_id:   'EDiHi8YfC913Mve0DRsv',
 };
 
 // Salesforce Web-To-Lead field mapping
