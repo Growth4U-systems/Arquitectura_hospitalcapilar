@@ -40,21 +40,25 @@ function generateAgentMessage(answers, result, labels) {
   else if (frame === 'FRAME_D' || score < 30) urgencia = 'baja';
 
   let intro = '';
-  if (ecp === '¿Qué Me Pasa?') intro = `${nombre} es un hombre que lleva ${tiempoLabel} con caída capilar. Ya probó ${probadoLabels} sin resultado. No tiene diagnóstico formal.`;
-  else if (ecp === 'Es Normal') intro = `${nombre} es una mujer con caída probablemente hormonal. Lleva ${tiempoLabel} con el problema.`;
-  else if (ecp === 'El Espejo') intro = `${nombre} es un joven (${edadLabel}) que está empezando a notar caída. Tiene poco o ningún tratamiento previo.`;
-  else if (ecp === 'Ya Me Engañaron') intro = `${nombre} tuvo mala experiencia en ${labels.clinica_previa || 'otra clínica'}. Viene con desconfianza.`;
-  else if (ecp === 'La Inversión') intro = `${nombre} ya se hizo un trasplante (${labels.cirugia_lugar || 'no especificado'}) y necesita mantenimiento.`;
-  else if (ecp === 'Lo Que Vino Con el Bebé') intro = `${nombre} tiene caída desde el embarazo/parto. Lleva ${tiempoLabel} con el problema.`;
-  else if (ecp === 'La Farmacia') intro = `${nombre} lleva ${tiempoLabel} gastando en productos de farmacia sin resultado. Nunca ha tenido un diagnóstico médico real.`;
+  if (ecp === 'Hombre con caida sin diagnostico') intro = `${nombre} es un hombre que lleva ${tiempoLabel} con caída capilar. Ya probó ${probadoLabels} sin resultado. No tiene diagnóstico formal.`;
+  else if (ecp === 'Mujer con caida hormonal') intro = `${nombre} es una mujer con caída probablemente hormonal. Lleva ${tiempoLabel} con el problema.`;
+  else if (ecp === 'Joven con alopecia temprana') intro = `${nombre} es un joven (${edadLabel}) que está empezando a notar caída. Tiene poco o ningún tratamiento previo.`;
+  else if (ecp === 'Mala experiencia otra clinica') intro = `${nombre} tuvo mala experiencia en ${labels.clinica_previa || 'otra clínica'}. Viene con desconfianza.`;
+  else if (ecp === 'Post-trasplante mantenimiento') intro = `${nombre} ya se hizo un trasplante (${labels.cirugia_lugar || 'no especificado'}) y necesita mantenimiento.`;
+  else if (ecp === 'Caida postparto') intro = `${nombre} tiene caída desde el embarazo/parto. Lleva ${tiempoLabel} con el problema.`;
+  else if (ecp === 'Sin diagnostico gateway') intro = `${nombre} nota caída capilar y no sabe la causa. No tiene diagnóstico. Lleva ${tiempoLabel} preocupado/a. Gateway — clasificar tras diagnóstico.`;
+  else if (ecp === 'OTC frustrado sin resultado') intro = `${nombre} lleva ${tiempoLabel} usando productos OTC (champús, suplementos, minoxidil) sin resultado. Punto de inflexión: necesita diagnóstico real.`;
   else intro = `${nombre} tiene problemas de cuero cabelludo (caspa, irritación). NO es candidato/a — derivar a dermatología.`;
 
-  const condicionesText = answers.sexo === 'mujer' && answers.condicion?.length > 0 && !answers.condicion.includes('desconocida')
-    ? `\nCondiciones: ${answers.condicion.map(v => labels[`condicion_${v}`] || v).join(', ')}.`
+  const factoresText = (answers.factores_recientes || []).length > 0 && !(answers.factores_recientes || []).includes('ninguno')
+    ? `\nFactores recientes: ${answers.factores_recientes.map(v => labels[`factores_recientes_${v}`] || v).join(', ')}.`
     : '';
 
+  const patronLabel = labels.patron_perdida || answers.patron_perdida || 'no indicado';
+  const inicioLabel = labels.inicio_caida || answers.inicio_caida || 'no indicado';
+  const antecedentesLabel = labels.antecedentes || answers.antecedentes || 'no indicado';
+  const diagnosticoPrevioLabel = labels.diagnostico_previo || answers.diagnostico_previo || 'no';
   const motivacionLabel = labels.motivacion || answers.motivacion;
-  const conocimientoLabel = labels.conocimiento || answers.conocimiento;
 
   // Source info
   const sourceInfo = labels._utm_source
@@ -63,45 +67,50 @@ function generateAgentMessage(answers, result, labels) {
 
   // Objeciones anticipadas por perfil
   let objeciones = '';
-  if (ecp === '¿Qué Me Pasa?') {
+  if (ecp === 'Hombre con caida sin diagnostico') {
     objeciones = `- "Ya probé minoxidil y no funcionó" → El 40-60% no responde a minoxidil sin saber la causa. Sin diagnóstico, es como tomar pastillas a ciegas. Nosotros primero diagnosticamos y luego tratamos.
 - "Es muy caro" → La consulta de 195€ incluye tricoscopia digital + análisis hormonal + plan personalizado. En farmacias gastarás más sin resultado.
 - "No sé si es el momento" → Cuanto más esperas, más folículos se pierden. Los que se van no vuelven. Hoy tienes más pelo que mañana.`;
-  } else if (ecp === 'Es Normal') {
-    objeciones = `- "Mi dermatólogo dice que es estrés" → El 70% de alopecias femeninas tienen componente hormonal. Nosotros cruzamos dermatología con endocrinología — algo que nadie más hace.
+  } else if (ecp === 'Mujer con caida hormonal') {
+    objeciones = `- "Mi médico dice que es estrés" → El 70% de alopecias femeninas tienen componente hormonal. Nuestro equipo médico especializado en salud capilar cruza tu perfil hormonal con un estudio capilar completo — algo que nadie más hace.
 - "¿Y si es temporal?" → Si lleva más de 6 meses, no es temporal. Un diagnóstico a tiempo evita que se convierta en algo permanente.
 - "Ya me hicieron análisis y salió todo bien" → Los análisis estándar no miden los marcadores capilares específicos. Nuestro estudio es diferente.`;
-  } else if (ecp === 'El Espejo') {
+  } else if (ecp === 'Joven con alopecia temprana') {
     objeciones = `- "Todavía no es tan grave" → Exacto, y por eso es el MEJOR momento. Tratar alopecia temprana tiene un 90% de éxito vs 40% cuando ya es avanzada.
 - "Soy muy joven para esto" → La alopecia androgenética puede empezar a los 18. No es cuestión de edad, es genética. Actuar ahora = mantener tu pelo.
 - "Mis amigos me dicen que es normal" → Perder pelo NO es normal a tu edad. Una consulta te saca de dudas en 30 minutos.`;
-  } else if (ecp === 'Ya Me Engañaron') {
+  } else if (ecp === 'Mala experiencia otra clinica') {
     objeciones = `- "Ya me gastó dinero en otra clínica y no funcionó" → Entiendo perfectamente. Por eso nosotros NO vendemos tratamientos en la primera cita. Primero diagnóstico, luego opciones. Sin presión.
-- "¿Cómo sé que ustedes son diferentes?" → Somos el único centro en España que combina tricología + endocrinología + cirugía bajo un mismo equipo médico. Te damos un diagnóstico completo, no solo un presupuesto.
+- "¿Cómo sé que ustedes son diferentes?" → Somos un centro con un equipo médico profesional experto en salud capilar. Te damos un diagnóstico completo, no solo un presupuesto.
 - "No quiero que me vendan nada" → En la consulta diagnóstica te explicamos qué tienes y qué opciones existen. Tú decides si y cuándo actuar.`;
-  } else if (ecp === 'La Inversión') {
+  } else if (ecp === 'Post-trasplante mantenimiento') {
     objeciones = `- "Ya me hice el trasplante, ¿necesito más?" → El trasplante mueve pelo, pero no frena la caída del pelo nativo. Sin mantenimiento, en 3-5 años puedes perder más de lo que ganaste.
 - "En la clínica donde me operé no me dijeron nada de esto" → Muchas clínicas solo hacen la cirugía. Nosotros protegemos tu inversión con un plan de mantenimiento personalizado.
 - "¿Cuánto cuesta el mantenimiento?" → Depende de tu caso, pero es una fracción de lo que costó el trasplante. La consulta diagnóstica de 195€ incluye el plan completo.`;
-  } else if (ecp === 'Lo Que Vino Con el Bebé') {
+  } else if (ecp === 'Caida postparto') {
     objeciones = `- "Me dicen que es normal después del parto" → Sí, es común. El 50% de madres lo sufren. Pero si pasan más de 6 meses y no se recupera, puede haber una alopecia subyacente que el embarazo activó.
 - "Estoy dando el pecho, ¿puedo tratarme?" → Sí, hay tratamientos compatibles con la lactancia. En la consulta evaluamos opciones seguras para ti y tu bebé.
 - "Ya se me pasará sola" → Ojalá, pero mejor descartarlo con un diagnóstico. Si hay AGA de fondo, cada mes sin tratar cuenta.`;
-  } else if (ecp === 'La Farmacia') {
-    objeciones = `- "Ya gasté mucho en productos y no quiero gastar más" → Un diagnóstico médico real (195€) te ahorra años de productos que no funcionan. Y esos 195€ se descuentan si inicias tratamiento.
-- "¿Por qué no me funcionan los productos de farmacia?" → Porque están diseñados para el caso genérico, no para el tuyo. Sin saber tu tipo de alopecia exacto, cualquier producto es una apuesta.
-- "Con más paciencia igual funciona" → La alopecia sin tratar empeora progresivamente. Cuanto antes se diagnostica, más folículos se pueden recuperar.`;
+  } else if (ecp === 'Sin diagnostico gateway') {
+    objeciones = `- "Seguro que no es nada" → Puede ser estrés temporal o el inicio de una alopecia. Solo un diagnóstico diferencia una cosa de otra. No busques más en Google.
+- "No sé a quién ir" → Un centro especializado en salud capilar combina tricoscopía + analítica + médico. Es el diagnóstico más completo que existe.
+- "Me da miedo saber qué tengo" → El 70% de personas con caída no tienen diagnóstico. Saber qué tienes es el primer paso para poder actuar.`;
+  } else if (ecp === 'OTC frustrado sin resultado') {
+    objeciones = `- "Ya gasté €500+ en productos y nada funciona" → El problema no son los productos — es que nunca te diagnosticaron. Sin saber la causa, todo es una apuesta.
+- "El minoxidil no me hizo nada" → El 60% no responde a minoxidil sin diagnóstico. Puede que necesites otro tratamiento completamente distinto.
+- "Ya no creo en nada" → Entendemos la frustración. Un diagnóstico con datos objetivos (microscopio + analítica) te dice exactamente qué necesitas. Sin adivinar.`;
   }
 
   // Descripción natural del problema según ECP (para usar en el guión)
   let problemaNatural = 'la caída de pelo';
-  if (ecp === '¿Qué Me Pasa?') problemaNatural = 'la caída de pelo sin tener un diagnóstico claro';
-  else if (ecp === 'Es Normal') problemaNatural = 'la pérdida de densidad capilar';
-  else if (ecp === 'El Espejo') problemaNatural = 'los primeros signos de caída';
-  else if (ecp === 'Ya Me Engañaron') problemaNatural = 'tu experiencia anterior y la caída de pelo';
-  else if (ecp === 'La Inversión') problemaNatural = 'el mantenimiento después del trasplante';
-  else if (ecp === 'Lo Que Vino Con el Bebé') problemaNatural = 'la caída de pelo desde el embarazo';
-  else if (ecp === 'La Farmacia') problemaNatural = 'la caída que no responde a los productos de farmacia';
+  if (ecp === 'Hombre con caida sin diagnostico') problemaNatural = 'la caída de pelo sin tener un diagnóstico claro';
+  else if (ecp === 'Mujer con caida hormonal') problemaNatural = 'la pérdida de densidad capilar';
+  else if (ecp === 'Joven con alopecia temprana') problemaNatural = 'los primeros signos de caída';
+  else if (ecp === 'Mala experiencia otra clinica') problemaNatural = 'tu experiencia anterior y la caída de pelo';
+  else if (ecp === 'Post-trasplante mantenimiento') problemaNatural = 'el mantenimiento después del trasplante';
+  else if (ecp === 'Caida postparto') problemaNatural = 'la caída de pelo desde el embarazo';
+  else if (ecp === 'Sin diagnostico gateway') problemaNatural = 'la caída de pelo sin saber la causa';
+  else if (ecp === 'OTC frustrado sin resultado') problemaNatural = 'la caída de pelo tras años probando productos sin resultado';
 
   // Guión de apertura personalizado
   let apertura = '';
@@ -114,7 +123,7 @@ function generateAgentMessage(answers, result, labels) {
   } else if (frame === 'WAITLIST') {
     apertura = `"Hola ${nombre}, gracias por hacer el diagnóstico online. Ahora mismo no tenemos consulta cerca de ${ubicacionLabel}, pero estamos abriendo nuevas sedes. Te apunto en la lista prioritaria para que seas de los primeros en enterarte. ¿Te parece bien?"`;
   } else if (frame === 'DERIVACION') {
-    apertura = `Enviar email informativo: "Hola ${nombre}, gracias por usar nuestra herramienta de diagnóstico. Según tus respuestas, te recomendamos consultar con un dermatólogo para una evaluación completa del cuero cabelludo. Te adjuntamos información útil."`;
+    apertura = `Enviar email informativo: "Hola ${nombre}, gracias por usar nuestra herramienta de diagnóstico. Según tus respuestas, te recomendamos consultar con un especialista para una evaluación completa del cuero cabelludo. Te adjuntamos información útil."`;
   }
 
   const message = `GUION DE APERTURA
@@ -148,10 +157,13 @@ ${frame === 'FRAME_A' ? `CIERRE DIRECTO: Este lead quiere actuar YA. No divagar 
 - Sexo: ${labels.sexo || answers.sexo || 'N/A'}
 - Edad: ${edadLabel}
 - Problema: ${problemLabel}
+- Patrón de pérdida: ${patronLabel}
+- Inicio de caída: ${inicioLabel}
+- Antecedentes familiares: ${antecedentesLabel}
 - Tiempo: ${tiempoLabel}
-- Tratamientos probados: ${probadoLabels}
+- Tratamientos probados: ${probadoLabels}${factoresText}
+- Diagnóstico previo: ${diagnosticoPrevioLabel}
 - Impacto emocional: ${impactoLabel}
-- Conocimiento: ${conocimientoLabel}
 - Motivacion: ${motivacionLabel}
 - Inversion: ${inversionLabel}
 - Formato preferido: ${formatoLabel}
@@ -213,7 +225,7 @@ const NICHO_WELCOME = {
 // ============================================
 const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const [stepIndex, setStepIndex] = useState(skipIntro ? 0 : -1);
-  const [answers, setAnswers] = useState({ probado: [], condicion: [], consentPrivacidad: false, consentComunicaciones: false });
+  const [answers, setAnswers] = useState({ probado: [], factores_recientes: [], consentPrivacidad: false, consentComunicaciones: false });
   const [showMicroTip, setShowMicroTip] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -223,6 +235,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const ghlContactIdRef = useRef(null);
   const [paymentStep, setPaymentStep] = useState(null); // null | 'paying' | 'paid'
   const [openFaq, setOpenFaq] = useState(null);
+  const [disqualified, setDisqualified] = useState(null); // null | { reason: 'cuero-cabelludo' | 'alopecia-rara' }
 
   // Analytics
   const analytics = useAnalytics();
@@ -301,15 +314,16 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       title: '¿Cuál es tu principal preocupación con tu pelo?',
       type: 'single',
       optionsFn: (ans) => ans.sexo === 'hombre' ? [
-        { label: 'Se me cae el pelo / pierdo densidad', value: 'caida-densidad' },
+        { label: 'Se me cae mucho el pelo', value: 'caida' },
+        { label: 'Noto que pierdo densidad (se me transparenta)', value: 'densidad' },
         { label: 'Las entradas retroceden', value: 'entradas' },
         { label: 'Me operé y el pelo sigue cayendo', value: 'post-cirugia' },
         { label: 'Tuve mala experiencia en otra clínica', value: 'mala-experiencia' },
         { label: 'Problemas en el cuero cabelludo (caspa, granos, irritación)', value: 'cuero-cabelludo' }
       ] : [
+        { label: 'Se me cae mucho el pelo', value: 'caida' },
         { label: 'Noto que pierdo densidad / se me ve el cuero cabelludo', value: 'densidad-mujer' },
         { label: 'Se me cae desde el embarazo / parto', value: 'postparto' },
-        { label: 'Creo que es hormonal (tiroides, ovarios, menopausia, píldora)', value: 'hormonal' },
         { label: 'Se me cae mucho más de lo normal (estrés, cambio de estación)', value: 'caida-general' },
         { label: 'Problemas en el cuero cabelludo (caspa, granos, irritación)', value: 'cuero-cabelludo' }
       ]
@@ -323,6 +337,45 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         { label: '3 - 12 meses', value: '3-12m' },
         { label: '1 - 3 años', value: '1-3a' },
         { label: 'Más de 3 años', value: '3a+' }
+      ]
+    },
+    {
+      id: 'patron_perdida', block: 1,
+      title: '¿Dónde notas principalmente la pérdida de pelo?',
+      type: 'single',
+      dependsOn: (ans) => ans.problema !== 'post-cirugia' && ans.problema !== 'mala-experiencia',
+      options: [
+        { label: 'Entradas / línea frontal', value: 'entradas' },
+        { label: 'Coronilla', value: 'coronilla' },
+        { label: 'Difusa en toda la cabeza', value: 'difusa' },
+        { label: 'Zonas concretas (placas) sin pelo', value: 'placas' },
+        { label: 'En "diadema" con pérdida también de las cejas', value: 'diadema' },
+        { label: 'No lo sé', value: 'no-se' }
+      ]
+    },
+    {
+      id: 'inicio_caida', block: 1,
+      title: '¿Cómo empezó la caída del pelo?',
+      subtitle: 'Esto nos ayuda a distinguir el tipo de caída.',
+      type: 'single',
+      dependsOn: (ans) => ans.problema !== 'post-cirugia' && ans.problema !== 'mala-experiencia',
+      options: [
+        { label: 'De forma progresiva (meses o años)', value: 'progresiva' },
+        { label: 'De forma brusca (en pocas semanas)', value: 'brusca' },
+        { label: 'No estoy seguro/a', value: 'no-seguro' }
+      ]
+    },
+    {
+      id: 'antecedentes', block: 1,
+      title: '¿Tienes antecedentes de alopecia en tu familia?',
+      subtitle: 'Padre, madre, abuelos, tíos...',
+      type: 'single',
+      options: [
+        { label: 'Sí, por parte de padre', value: 'padre' },
+        { label: 'Sí, por parte de madre', value: 'madre' },
+        { label: 'Sí, ambos lados', value: 'ambos' },
+        { label: 'No que yo sepa', value: 'no' },
+        { label: 'No estoy seguro/a', value: 'no-seguro' }
       ]
     },
     {
@@ -342,18 +395,18 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     },
     // CONDICIONALES BLOQUE 1
     {
-      id: 'condicion', block: 1,
-      title: '¿Tienes alguna de estas condiciones?',
-      subtitle: 'Puedes marcar varias.',
-      dependsOn: (ans) => ans.sexo === 'mujer' && ['hormonal', 'densidad-mujer', 'caida-general'].includes(ans.problema),
+      id: 'factores_recientes', block: 1,
+      title: '¿Has tenido alguno de estos factores en los últimos 6 meses?',
+      subtitle: 'Puedes marcar varios. Esto nos ayuda a distinguir el tipo de caída.',
+      dependsOn: (ans) => ['caida', 'densidad', 'densidad-mujer', 'caida-general', 'postparto'].includes(ans.problema),
       type: 'multiple',
       options: [
-        { label: 'Ovarios poliquísticos (SOP/PCOS)', value: 'pcos' },
-        { label: 'Problemas de tiroides', value: 'tiroides' },
-        { label: 'Menopausia o perimenopausia', value: 'menopausia' },
-        { label: 'Dejé anticonceptivos recientemente', value: 'post-aco' },
-        { label: 'Anemia o déficit de hierro', value: 'anemia' },
-        { label: 'Ninguna de estas / No lo sé', value: 'desconocida', exclusive: true }
+        { label: 'Cirugía o enfermedad importante', value: 'cirugia-enfermedad' },
+        { label: 'Dieta estricta o pérdida rápida de peso', value: 'dieta' },
+        { label: 'Estrés intenso (laboral, personal, duelo...)', value: 'estres' },
+        { label: 'COVID u otra infección fuerte', value: 'covid' },
+        { label: 'Cambios hormonales (menopausia, tiroides, píldora...)', value: 'hormonales' },
+        { label: 'Ninguno de estos', value: 'ninguno', exclusive: true }
       ]
     },
     {
@@ -396,14 +449,16 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       ]
     },
     {
-      id: 'conocimiento', block: 2,
-      title: '¿Sabes qué tipo de alopecia tienes?',
+      id: 'diagnostico_previo', block: 2,
+      title: '¿Tienes alguna alopecia diagnosticada?',
       type: 'single',
-      microTip: 'Existen más de 20 tipos de alopecia con tratamientos distintos. Sin un diagnóstico preciso, cualquier tratamiento es una apuesta.',
+      microTip: 'Existen más de 20 tipos de alopecia con tratamientos distintos. Saber si ya tienes un diagnóstico nos ayuda a orientarte mejor.',
       options: [
-        { label: 'Sí, me lo diagnosticó un médico', value: 'diagnosticado' },
-        { label: 'Creo saberlo pero no tengo diagnóstico formal', value: 'sospecha' },
-        { label: 'No tengo ni idea', value: 'ninguno' }
+        { label: 'No, no tengo diagnóstico', value: 'no' },
+        { label: 'Sí, alopecia androgénica (la más común)', value: 'androgenica' },
+        { label: 'Sí, alopecia frontal fibrosante', value: 'frontal-fibrosante' },
+        { label: 'Sí, alopecia areata', value: 'areata' },
+        { label: 'Sí, otro tipo de alopecia', value: 'otra' }
       ]
     },
     {
@@ -416,31 +471,6 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         { label: 'Ver resultados de personas como yo', value: 'prueba-social' },
         { label: 'Que un médico me explique mi caso sin presión', value: 'confianza' },
         { label: 'Que el precio sea razonable', value: 'precio' }
-      ]
-    },
-    {
-      id: 'efectos', block: 2,
-      title: '¿Te preocupan los efectos secundarios de los tratamientos capilares?',
-      dependsOn: (ans) => ans.sexo === 'hombre' || (ans.probado || []).includes('minoxidil') || (ans.probado || []).includes('finasteride'),
-      type: 'single',
-      microTip: 'Los efectos secundarios de tipo sexual del finasteride oral se dan en un porcentaje mínimo de pacientes y son reversibles. Además, existen alternativas sin esos efectos. Un médico especialista te puede explicar todas las opciones.',
-      options: [
-        { label: 'Sí, mucho — es lo que me frena', value: 'preocupado' },
-        { label: 'Algo, pero estoy dispuesto/a si hay supervisión médica', value: 'moderado' },
-        { label: 'No especialmente', value: 'no-preocupado' }
-      ]
-    },
-    {
-      id: 'profesional', block: 2,
-      title: '¿Has visitado algún profesional por este tema?',
-      dependsOn: (ans) => !(ans.sexo === 'hombre' || (ans.probado || []).includes('minoxidil') || (ans.probado || []).includes('finasteride')),
-      type: 'single',
-      microTip: 'El 80% de las personas que consultan por caída de pelo reciben una receta genérica de minoxidil en menos de 5 minutos. Un diagnóstico integral lleva 30 minutos porque hay mucho más que mirar.',
-      options: [
-        { label: 'No, es la primera vez que busco ayuda profesional', value: 'nunca' },
-        { label: 'Sí, un dermatólogo general', value: 'dermatologo' },
-        { label: 'Sí, otra clínica capilar', value: 'clinica' },
-        { label: 'Sí, mi médico de cabecera', value: 'cabecera' }
       ]
     },
     // BLOQUE 3: DISPOSICION
@@ -556,24 +586,41 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // SCORING ENGINE
   // ============================================
   const processResults = (finalAnswers) => {
-    let ecp = '¿Qué Me Pasa?';
+    let ecp = 'Hombre con caida sin diagnostico';
     let score = 0;
 
-    if (finalAnswers.problema === 'cuero-cabelludo') ecp = 'No Candidato';
-    else if (finalAnswers.problema === 'post-cirugia' || (finalAnswers.probado || []).includes('trasplante')) ecp = 'La Inversión';
-    else if (finalAnswers.problema === 'mala-experiencia') ecp = 'Ya Me Engañaron';
-    else if (finalAnswers.sexo === 'mujer' && finalAnswers.problema === 'postparto') ecp = 'Lo Que Vino Con el Bebé';
-    else if (finalAnswers.sexo === 'mujer' && ['hormonal', 'densidad-mujer', 'caida-general'].includes(finalAnswers.problema)) ecp = 'Es Normal';
-    else if (finalAnswers.sexo === 'hombre' && finalAnswers.edad === '18-25' && ((finalAnswers.probado || []).includes('nada') || (finalAnswers.probado || []).includes('otc'))) ecp = 'El Espejo';
+    // ECP assignment using new clinical questions
+    if (finalAnswers.problema === 'cuero-cabelludo') ecp = 'No candidato - cuero cabelludo';
+    else if (finalAnswers.problema === 'post-cirugia' || (finalAnswers.probado || []).includes('trasplante')) ecp = 'Post-trasplante mantenimiento';
+    else if (finalAnswers.problema === 'mala-experiencia') ecp = 'Mala experiencia otra clinica';
+    else if (finalAnswers.sexo === 'mujer' && finalAnswers.problema === 'postparto') ecp = 'Caida postparto';
+    else if (finalAnswers.sexo === 'mujer' && ['densidad-mujer', 'caida-general', 'caida'].includes(finalAnswers.problema)) ecp = 'Mujer con caida hormonal';
+    else if (finalAnswers.sexo === 'hombre' && finalAnswers.edad === '18-25' && ((finalAnswers.probado || []).includes('nada') || (finalAnswers.probado || []).includes('otc'))) ecp = 'Joven con alopecia temprana';
 
+    // Refine ECP using clinical pattern data
+    // Efluvio telógeno signals: brusca onset + recent factors → likely temporary
+    const hasRecentFactors = (finalAnswers.factores_recientes || []).length > 0 && !(finalAnswers.factores_recientes || []).includes('ninguno');
+    const isBrusca = finalAnswers.inicio_caida === 'brusca';
+    const hasAntecedentes = ['padre', 'madre', 'ambos'].includes(finalAnswers.antecedentes);
+
+    // Time-based scoring
     if (finalAnswers.tiempo === '3a+') score += 30;
     else if (finalAnswers.tiempo === '1-3a') score += 20;
     else if (finalAnswers.tiempo === '<3m' && (finalAnswers.probado || []).includes('nada')) score -= 15;
 
+    // Treatment history scoring
     if ((finalAnswers.probado || []).includes('minoxidil') || (finalAnswers.probado || []).includes('finasteride')) score += 15;
     if ((finalAnswers.probado || []).includes('clinica')) score += 20;
     if ((finalAnswers.probado || []).includes('trasplante')) score += 25;
-    if (finalAnswers.sexo === 'mujer' && finalAnswers.condicion?.length > 0 && !finalAnswers.condicion.includes('desconocida')) score += 15;
+
+    // Clinical pattern scoring
+    if (hasAntecedentes) score += 10; // Family history = likely AGA = treatable
+    if (hasRecentFactors && isBrusca) score -= 5; // Likely efluvio = may resolve on its own
+    if (['entradas', 'coronilla'].includes(finalAnswers.patron_perdida)) score += 10; // Classic AGA pattern
+    if (finalAnswers.patron_perdida === 'placas') score -= 5; // Possible areata
+    if (finalAnswers.diagnostico_previo === 'androgenica') score += 15; // Already diagnosed AGA = ready for treatment
+    if (finalAnswers.diagnostico_previo === 'no') score += 10; // No diagnosis = needs one
+
     if (['26-35', '36-45'].includes(finalAnswers.edad)) score += 10;
 
     const ubi = finalAnswers.ubicacion || '';
@@ -582,9 +629,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     else score -= 20;
 
     if (['alto', 'critico'].includes(finalAnswers.impacto)) score += 15;
-    if (finalAnswers.conocimiento === 'sospecha' || finalAnswers.conocimiento === 'ninguno') score += 10;
     if (finalAnswers.motivacion === 'diagnostico') score += 10;
-    if (finalAnswers.efectos === 'moderado') score += 5;
     if (['50-150', '150-300'].includes(finalAnswers.inversion)) score += 10;
     if (finalAnswers.inversion === 'abierto') score += 20;
     if (finalAnswers.formato === 'presencial') score += 15;
@@ -592,9 +637,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     if (finalAnswers.formato === 'info') score -= 10;
 
     let frame = '';
-    if (ecp === 'No Candidato') frame = 'DERIVACION';
+    if (ecp === 'No candidato - cuero cabelludo') frame = 'DERIVACION';
     else if (!['madrid', 'murcia', 'pontevedra'].includes(ubi) && ubi !== '') frame = 'WAITLIST';
-    else if (finalAnswers.formato === 'llamada' || ecp === 'Ya Me Engañaron') frame = 'FRAME_C';
+    else if (finalAnswers.formato === 'llamada' || ecp === 'Mala experiencia otra clinica') frame = 'FRAME_C';
     else if (finalAnswers.formato === 'info' || score < 40) frame = 'FRAME_D';
     else frame = 'FRAME_A';
 
@@ -761,13 +806,13 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // CTA CONFIG BY ECP + PERFIL
   // ============================================
   const TREATABLE_ECPS = [
-    '¿Qué Me Pasa?',
-    'El Espejo',
-    'La Inversión',
+    'Hombre con caida sin diagnostico',
+    'Joven con alopecia temprana',
+    'Post-trasplante mantenimiento',
   ];
   const UNCERTAIN_ECPS = [
-    'Es Normal',
-    'Lo Que Vino Con el Bebé',
+    'Mujer con caida hormonal',
+    'Caida postparto',
   ];
 
   const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04'; // Fallback — Payment Link estático 195€
@@ -779,7 +824,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         primary: { type: 'articulo_derivacion', label: 'Ir a leer el artículo', icon: 'FileText', style: 'amber' },
         secondary: null,
         heading: 'Información enviada',
-        description: 'Te hemos enviado a tu email información educativa sobre cómo manejar problemas del cuero cabelludo antes de visitar a tu dermatólogo.',
+        description: 'Te hemos enviado a tu email información educativa sobre cómo manejar problemas del cuero cabelludo.',
       };
     }
 
@@ -794,7 +839,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     }
 
     // MALA EXPERIENCIA — siempre llamada, nunca pago directo
-    if (ecp === 'Ya Me Engañaron') {
+    if (ecp === 'Mala experiencia otra clinica') {
       if (perfil === 'C') {
         return {
           primary: { type: 'descarga_guia', label: 'Descarga tu Guía (PDF)', icon: 'Download', style: 'primary' },
@@ -821,12 +866,12 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           description: 'Un asesor médico te llamará en menos de 24h para resolver tus dudas. Sin compromiso, sin presión.',
         };
       }
-      // Perfil A o B → agendar consulta gratis (van a convertir en clínica)
+      // Perfil A o B → WhatsApp como vía principal de contacto
       return {
-        primary: { type: 'agendar_consulta', label: 'Agendar Consulta Gratuita', icon: 'Calendar', style: 'primary', badge: 'PASO RECOMENDADO' },
-        secondary: { type: 'whatsapp', label: 'Escríbenos por WhatsApp', icon: 'WhatsApp', style: 'text' },
+        primary: { type: 'whatsapp', label: 'Agendar cita por WhatsApp', icon: 'WhatsApp', style: 'primary', badge: 'PASO RECOMENDADO' },
+        secondary: { type: 'solicitar_llamada', label: 'Prefiero que me llamen', icon: 'PhoneCall', style: 'text' },
         heading: 'Reserva tu diagnóstico presencial',
-        description: 'El siguiente paso es confirmar el pre-diagnóstico con un médico en clínica. Sin coste de consulta.',
+        description: 'El siguiente paso es confirmar el pre-diagnóstico con un médico en clínica. Escríbenos por WhatsApp y te agendamos.',
       };
     }
 
@@ -949,7 +994,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         probado: data.probado || [],
         motivacion: data.motivacion || '',
         formato: data.formato || '',
-        condicion: data.condicion || [],
+        factores_recientes: data.factores_recientes || [],
         ubicacion: data.ubicacion || '',
         consentPrivacidad: !!data.consentPrivacidad,
         consentComunicaciones: !!data.consentComunicaciones,
@@ -1028,6 +1073,16 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         question_id: currentQ.id,
         time_spent_ms: timeSpent,
       });
+
+      // Early disqualification checks
+      if (currentQ.id === 'problema' && value === 'cuero-cabelludo') {
+        setTimeout(() => setDisqualified({ reason: 'cuero-cabelludo' }), 350);
+        return;
+      }
+      if (currentQ.id === 'diagnostico_previo' && ['frontal-fibrosante', 'areata'].includes(value)) {
+        setTimeout(() => setDisqualified({ reason: 'alopecia-rara', tipo: value }), 350);
+        return;
+      }
 
       setTimeout(() => {
         setShowMicroTip(false);
@@ -1157,6 +1212,41 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               Quiero que me contacten
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // PANTALLA DE DESCARTE TEMPRANO
+  if (disqualified) {
+    const isCueroCabelludo = disqualified.reason === 'cuero-cabelludo';
+    return (
+      <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-400"></div>
+        <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-14 mb-12" />
+        <div className="max-w-xl text-center">
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 mb-6">
+            <div className="text-4xl mb-4">{isCueroCabelludo ? '🩺' : '📋'}</div>
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-3">
+              {isCueroCabelludo
+                ? 'Tu caso requiere atención dermatológica'
+                : 'Tu caso requiere seguimiento especializado'}
+            </h2>
+            <p className="text-gray-600 leading-relaxed">
+              {isCueroCabelludo
+                ? 'Los problemas del cuero cabelludo (caspa, granos, irritación) requieren un tratamiento dermatológico específico que no ofrecemos en Hospital Capilar. Te recomendamos consultar con un dermatólogo especializado.'
+                : `La ${disqualified.tipo === 'frontal-fibrosante' ? 'alopecia frontal fibrosante' : 'alopecia areata'} es una condición que requiere seguimiento por un dermatólogo especializado. En Hospital Capilar no tratamos este tipo de alopecia, pero queremos asegurarnos de que recibas la atención adecuada.`}
+            </p>
+          </div>
+          <p className="text-sm text-gray-400 mb-6">
+            Gracias por tu tiempo. Esperamos haberte orientado.
+          </p>
+          <button
+            onClick={() => { setDisqualified(null); setStepIndex(-1); setAnswers({ probado: [], factores_recientes: [], consentPrivacidad: false, consentComunicaciones: false }); }}
+            className="text-sm text-gray-500 underline hover:text-gray-700"
+          >
+            Volver al inicio
+          </button>
         </div>
       </div>
     );
@@ -1311,12 +1401,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
     // ECP-specific subtitle for the header
     const ecpSubtitles = {
-      '¿Qué Me Pasa?': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
-      'Es Normal': 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.',
-      'El Espejo': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
-      'Ya Me Engañaron': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
-      'La Inversión': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
-      'Lo Que Vino Con el Bebé': 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal con un estudio capilar completo.',
+      'Hombre con caida sin diagnostico': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
+      'Mujer con caida hormonal': 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.',
+      'Joven con alopecia temprana': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
+      'Mala experiencia otra clinica': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
+      'Post-trasplante mantenimiento': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
+      'Caida postparto': 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal con un estudio capilar completo.',
+      'Sin diagnostico gateway': 'Google no puede diagnosticarte. Un diagnóstico profesional te dice exactamente qué ocurre.',
+      'OTC frustrado sin resultado': 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
     };
 
     return (

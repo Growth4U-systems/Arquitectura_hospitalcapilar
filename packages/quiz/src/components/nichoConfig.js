@@ -4,46 +4,13 @@
 // ============================================
 
 export const NICHOS = {
-  mujeres: {
-    slug: 'mujeres',
-    door: 'landing_mujeres',
-    badge: 'Especialistas en Alopecia Femenina',
-    headline: '¿Tu pelo pierde densidad y nadie te da una respuesta clara?',
-    subheadline: 'El 40% de las mujeres sufre pérdida de pelo. Cruzamos tu perfil hormonal con un estudio capilar completo para encontrar la causa real.',
-    ctaQuiz: 'Descubre qué le pasa a tu pelo',
-    ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Es Normal',
-    stats: [
-      { value: '40%', label: 'de mujeres sufren caída capilar' },
-      { value: '80%', label: 'mal diagnosticadas la primera vez' },
-      { value: '30 min', label: 'diagnóstico integral completo' },
-    ],
-    painPoints: [
-      '¿Notas que se te ve el cuero cabelludo?',
-      '¿Llevas meses probando champús y suplementos sin resultado?',
-      '¿Te dijeron que "es normal" pero tú sabes que no lo es?',
-      '¿Crees que puede ser hormonal pero nadie lo ha evaluado?',
-    ],
-    testimonials: [
-      { name: 'Laura M.', age: 34, text: 'Llevaba 2 años con caída y nadie encontraba la causa. En Hospital Capilar descubrieron que era hormonal. Ahora estoy recuperando densidad.', stars: 5 },
-      { name: 'Patricia G.', age: 41, text: 'Después del embarazo no paraba de caer. Me hicieron una analítica completa cruzada con tricoscopía. Por fin un diagnóstico real.', stars: 5 },
-    ],
-    solution: 'Somos el único centro que cruza dermatología capilar con endocrinología. Tu pelo y tus hormonas están conectados — y nadie los mira juntos.',
-    faqs: [
-      { q: '¿Es normal que se me caiga el pelo?', a: 'Perder entre 50-100 cabellos al día es normal. Si notas que pierdes más, se te ven claros, o el pelo no crece como antes, es momento de hacer un diagnóstico profesional.' },
-      { q: '¿La caída por hormonas tiene solución?', a: 'En la mayoría de casos, sí. Pero necesitamos una analítica hormonal cruzada con un estudio capilar para identificar la causa exacta y diseñar el tratamiento correcto.' },
-      { q: '¿Qué incluye la valoración?', a: 'Tricoscopía digital (microscopio capilar), revisión de tu historial hormonal, valoración médica personalizada y plan de acción. Todo en 30 minutos.' },
-      { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican y te explican tus opciones. Si no necesitas tratamiento, te lo decimos. Sin presión comercial.' },
-    ],
-    tags: ['nicho-mujeres'],
-  },
-
+  // ─── El Espejo — Joven 20-28 ──────────────────────────────
   jovenes: {
     slug: 'jovenes',
     door: 'landing_jovenes',
     badge: 'Alopecia Temprana: Actúa Antes',
-    headline: '¿Notas que tus entradas retroceden antes de tiempo?',
-    subheadline: 'La alopecia a los 18-28 años es más común de lo que piensas. Cuanto antes actúes, más pelo conservas. Un diagnóstico a tiempo cambia todo.',
+    headline: '¿Cada mañana ves las entradas avanzar?',
+    subheadline: 'Tienes 20-28 años y ya notas que el pelo retrocede. Tu padre es calvo y temes que te pase lo mismo. Cuanto antes actúes, más pelo conservas.',
     ctaQuiz: 'Evalúa tu caso en 3 minutos',
     ctaForm: 'SOLICITAR VALORACIÓN GRATUITA',
     ecp: 'El Espejo',
@@ -55,11 +22,11 @@ export const NICHOS = {
     painPoints: [
       '¿Las entradas cada vez más atrás?',
       '¿Tu padre o abuelo perdió el pelo y temes que te pase igual?',
-      '¿Has buscado en internet pero no sabes qué es fiable?',
+      '¿Has buscado en TikTok o Reddit pero no sabes qué es fiable?',
       '¿Te da cosa ir a una clínica porque crees que te van a vender algo?',
     ],
     testimonials: [
-      { name: 'Alejandro R.', age: 22, text: 'Empecé a notar las entradas a los 20. Me dijeron que era genético y no había nada que hacer. En HC me explicaron todas las opciones reales.', stars: 5 },
+      { name: 'Alejandro R.', age: 22, text: 'Tenía 20 años y cada mañana veía las entradas peor. Mi padre es calvo. En HC me explicaron todas las opciones reales sin presión.', stars: 5 },
       { name: 'Daniel P.', age: 26, text: 'No quería acabar como mi padre. Fui a tiempo, me hicieron un diagnóstico completo y ahora tengo un plan que funciona.', stars: 5 },
     ],
     solution: 'No vendemos cirugías a jóvenes que no las necesitan. Primero diagnosticamos con microscopio + analítica. Después te explicamos todas las opciones reales — sin presión.',
@@ -72,6 +39,217 @@ export const NICHOS = {
     tags: ['nicho-jovenes'],
   },
 
+  // ─── Es Normal — Mujer menopausia/perimenopausia 45-55 ────
+  mujeres: {
+    slug: 'mujeres',
+    door: 'landing_mujeres',
+    badge: 'Especialistas en Alopecia Femenina',
+    headline: '¿Tu médica dice que tu caída es "normal"?',
+    subheadline: 'Desde la menopausia se te cae a puñados. Llevas un año y cada vez peor. El 40% de las mujeres sufre pérdida de pelo — y el 80% está mal diagnosticada.',
+    ctaQuiz: 'Descubre qué le pasa a tu pelo',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'Mujer con caida hormonal',
+    stats: [
+      { value: '40%', label: 'de mujeres sufren caída capilar' },
+      { value: '80%', label: 'mal diagnosticadas la primera vez' },
+      { value: '30 min', label: 'diagnóstico integral completo' },
+    ],
+    painPoints: [
+      '¿Notas que se te ve el cuero cabelludo?',
+      '¿Llevas meses probando champús y suplementos sin resultado?',
+      '¿Te dijeron que "es normal" pero tú sabes que no lo es?',
+      '¿Crees que puede ser hormonal (menopausia, SOP, tiroides) pero nadie lo ha evaluado?',
+    ],
+    testimonials: [
+      { name: 'Laura M.', age: 52, text: 'Desde la menopausia se me caía a puñados. Mi médica decía que era normal. En Hospital Capilar cruzaron mi perfil hormonal con tricoscopía y encontraron la causa real.', stars: 5 },
+      { name: 'Patricia G.', age: 48, text: 'Llevaba un año con caída brutal. Me dijeron que era por la edad. En HC descubrieron un desbalance hormonal tratable. Por fin alguien me escuchó.', stars: 5 },
+    ],
+    solution: 'Tu pelo y tus hormonas están conectados — y nuestro equipo los analiza juntos. Cruzamos tu perfil hormonal (menopausia, SOP, Hashimoto) con un estudio capilar completo.',
+    faqs: [
+      { q: '¿Es normal que se me caiga el pelo en la menopausia?', a: 'Es frecuente, pero NO es "normal" y no tienes que aceptarlo. Un diagnóstico con analítica hormonal + tricoscopía identifica la causa exacta y las opciones de tratamiento.' },
+      { q: '¿La caída por hormonas tiene solución?', a: 'En la mayoría de casos, sí. Pero necesitamos una analítica hormonal cruzada con un estudio capilar para identificar la causa exacta y diseñar el tratamiento correcto.' },
+      { q: '¿Qué incluye la valoración?', a: 'Tricoscopía digital (microscopio capilar), revisión de tu historial hormonal, valoración médica personalizada y plan de acción. Todo en 30 minutos.' },
+      { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican y te explican tus opciones. Si no necesitas tratamiento, te lo decimos. Sin presión comercial.' },
+    ],
+    tags: ['nicho-mujeres'],
+  },
+
+  // ─── Lo Que Vino Con el Bebé — Postparto 28-38 ───────────
+  postparto: {
+    slug: 'postparto',
+    door: 'landing_postparto',
+    badge: 'Caída Capilar Postparto',
+    headline: '¿Se te cae el pelo desde el embarazo y nadie te da respuestas?',
+    subheadline: 'Han pasado más de 6 meses y sigue cayendo. Tu ginecóloga dice que es normal. El efluvio postparto afecta al 50% de madres — pero a veces revela algo más.',
+    ctaQuiz: 'Descubre si es temporal o algo más',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'Caida postparto',
+    stats: [
+      { value: '50%', label: 'de madres sufren caída postparto' },
+      { value: '85%', label: 'se recuperan con tratamiento adecuado' },
+      { value: '6 meses', label: 'clave para actuar a tiempo' },
+    ],
+    painPoints: [
+      '¿Pierdes mechones de pelo desde que diste a luz?',
+      '¿Han pasado +6 meses y sigue sin recuperarse?',
+      '¿Te dijeron que es normal pero tú ves que cada vez va a peor?',
+      '¿Sientes que las clínicas capilares son "para hombres"?',
+    ],
+    testimonials: [
+      { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
+      { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
+    ],
+    solution: 'Cruzamos tu perfil hormonal postparto con un estudio capilar completo. Si es efluvio temporal, te lo decimos. Si hay una alopecia subyacente, actuamos a tiempo.',
+    faqs: [
+      { q: '¿Es normal perder pelo después del parto?', a: 'Sí, el efluvio postparto es muy común. Pero si la caída persiste más de 6 meses, puede haber una alopecia subyacente que necesita tratamiento.' },
+      { q: '¿Cuándo debería preocuparme?', a: 'Si llevas más de 4-6 meses con caída intensa, si notas zonas con menos densidad, o si el pelo no vuelve a crecer, es momento de hacer un diagnóstico.' },
+      { q: '¿Los tratamientos son compatibles con la lactancia?', a: 'Sí. Existen tratamientos seguros durante la lactancia. Nuestros médicos te indican opciones que no afectan al bebé.' },
+      { q: '¿Mi pelo volverá a ser como antes?', a: 'En la mayoría de casos, sí. Si es efluvio temporal, se recupera solo o con ayuda. Si hay AGA, el tratamiento temprano frena la caída y recupera densidad.' },
+    ],
+    tags: ['nicho-postparto'],
+  },
+
+  // ─── ¿Qué Me Pasa? — Gateway sin diagnóstico ─────────────
+  'que-me-pasa': {
+    slug: 'que-me-pasa',
+    door: 'landing_que_me_pasa',
+    badge: '¿Por Qué Se Me Cae el Pelo?',
+    headline: 'Se te cae el pelo y no sabes por qué',
+    subheadline: 'Google te asusta más de lo que te ayuda. No sabes si es estrés, genético o algo peor. El 70% de las personas con caída no tienen diagnóstico. Tú puedes ser una de ellas.',
+    ctaQuiz: '¿Qué me pasa? Descúbrelo en 3 min',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'Sin diagnostico gateway',
+    stats: [
+      { value: '70%', label: 'de afectados no tiene diagnóstico' },
+      { value: '20+', label: 'tipos de alopecia con tratamientos distintos' },
+      { value: '3 min', label: 'para orientar tu caso' },
+    ],
+    painPoints: [
+      '¿Se te cae el pelo y no sabes si es grave?',
+      '¿Has buscado en Google y cada página te asusta más?',
+      '¿No sabes si es estrés, genético, hormonal o algo peor?',
+      '¿No sabes a qué profesional acudir ni por dónde empezar?',
+    ],
+    testimonials: [
+      { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer. El alivio fue enorme.', stars: 5 },
+      { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y la consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
+    ],
+    solution: 'No necesitas buscar más en Google. Un diagnóstico profesional con tricoscopía + analítica en 30 minutos te dice exactamente qué tienes y qué opciones hay.',
+    faqs: [
+      { q: '¿Cómo sé si mi caída es normal o grave?', a: 'Perder 50-100 cabellos al día es fisiológico. Si notas más caída de lo habitual, claros, o menos densidad, un diagnóstico profesional te saca de dudas en 30 minutos.' },
+      { q: '¿Puede ser estrés?', a: 'Sí, el estrés puede causar efluvio telógeno. Pero también puede coincidir con alopecia genética u hormonal. Solo un diagnóstico diferencia una cosa de otra.' },
+      { q: '¿Necesito ir al dermatólogo o a una clínica capilar?', a: 'Un centro especializado en salud capilar combina tricoscopía + analítica + valoración médica. Es el diagnóstico más completo que existe para caída capilar.' },
+      { q: '¿El diagnóstico duele?', a: 'No. La tricoscopía es un microscopio que se apoya en el cuero cabelludo. Es completamente indoloro y dura 15-20 minutos.' },
+    ],
+    tags: ['nicho-que-me-pasa'],
+  },
+
+  // ─── Ya Me Engañaron — Insatisfecho otra clínica ──────────
+  'segunda-opinion': {
+    slug: 'segunda-opinion',
+    door: 'landing_segunda_opinion',
+    badge: 'Segunda Opinión Capilar',
+    headline: '¿Pagaste miles de euros y no viste resultados?',
+    subheadline: 'En Svenson te presionaron. En Insparya no funcionó. Ya no te fías de nadie. Lo entendemos. Hospital Capilar es un centro médico, no un centro estético.',
+    ctaQuiz: 'Evalúa tu caso sin compromiso',
+    ctaForm: 'QUE ME LLAMEN SIN COMPROMISO',
+    ecp: 'Mala experiencia otra clinica',
+    stats: [
+      { value: '35%', label: 'de pacientes vienen de otra clínica' },
+      { value: '0', label: 'presión comercial en la consulta' },
+      { value: '100%', label: 'transparencia con tu diagnóstico' },
+    ],
+    painPoints: [
+      '¿Te prometieron resultados que nunca llegaron?',
+      '¿Sientes que te vendieron un tratamiento sin diagnosticarte bien?',
+      '¿Pagaste €1.000-5.000 y no viste cambio?',
+      '¿Necesitas una opinión médica real, sin compromiso ni presión?',
+    ],
+    testimonials: [
+      { name: 'Miguel A.', age: 42, text: 'Pagué €3.500 en Svenson, cero resultados. En Insparya me presionaron para operar. En HC me explicaron por qué falló y qué opciones reales tenía. Por primera vez la verdad.', stars: 5 },
+      { name: 'Roberto S.', age: 35, text: 'Fui a 3 clínicas antes. Todas me vendían lo mismo sin hacerme un estudio serio. En Hospital Capilar me hicieron tricoscopía, analítica y me explicaron todo con datos.', stars: 5 },
+    ],
+    solution: 'No hacemos consultas comerciales. Nuestros médicos no cobran comisión. Te diagnostican con datos (tricoscopía + analítica) y te dicen la verdad sobre tu caso, te guste o no.',
+    faqs: [
+      { q: '¿Puedo arreglar un trasplante mal hecho?', a: 'En muchos casos sí. Primero evaluamos el estado actual con tricoscopía y determinamos qué opciones hay. Cada caso es diferente.' },
+      { q: '¿Me van a intentar vender otra cirugía?', a: 'No. Nuestros médicos te explican qué se puede y qué no se puede hacer. Si la mejor opción es no intervenir, te lo decimos.' },
+      { q: '¿Es confidencial?', a: 'Absolutamente. Todo lo que compartas con nuestro equipo médico es confidencial. No necesitas decirnos dónde te operaste si no quieres.' },
+      { q: '¿Cuánto cuesta la segunda opinión?', a: 'Te llamamos sin compromiso para entender tu caso. La consulta presencial incluye un diagnóstico completo con datos objetivos.' },
+    ],
+    tags: ['nicho-segunda-opinion'],
+  },
+
+  // ─── La Farmacia Sin Salida — OTC frustrado 2-4 años ─────
+  'farmacia-sin-salida': {
+    slug: 'farmacia-sin-salida',
+    door: 'landing_farmacia_sin_salida',
+    badge: 'Cuando los Productos No Funcionan',
+    headline: '¿Llevas años gastando en champús anticaída y nada funciona?',
+    subheadline: 'Olistic, Iraltone, Pilexil, minoxidil... €500+ tirados. El problema no son los productos — es que nunca te diagnosticaron por qué se te cae el pelo.',
+    ctaQuiz: 'Descubre por qué no funciona',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'OTC frustrado sin resultado',
+    stats: [
+      { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
+      { value: '€500+', label: 'gasto medio antes del diagnóstico' },
+      { value: '30 min', label: 'para saber qué necesitas realmente' },
+    ],
+    painPoints: [
+      '¿Llevas +2 años con champús y suplementos anticaída?',
+      '¿Has gastado €500+ en productos que no funcionan?',
+      '¿Minoxidil, finasteride... y sigue cayendo?',
+      '¿Estás en el punto de "o hago algo de verdad o lo dejo"?',
+    ],
+    testimonials: [
+      { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. Cambiaron el tratamiento y en 6 meses noté la diferencia.', stars: 5 },
+      { name: 'Andrea L.', age: 33, text: 'Probé todo lo de la farmacia durante 2 años. Nada. En Hospital Capilar me dijeron exactamente por qué no funcionaba y qué sí iba a funcionar.', stars: 5 },
+    ],
+    solution: 'Sin diagnóstico, cualquier producto es una apuesta. Hacemos tricoscopía + analítica para identificar tu tipo exacto de alopecia y diseñar un tratamiento que funcione de verdad.',
+    faqs: [
+      { q: '¿Por qué el minoxidil no me funciona?', a: 'Hay más de 20 tipos de alopecia. Si no sabes cuál tienes, el tratamiento puede no ser el adecuado. Un diagnóstico preciso es el primer paso.' },
+      { q: '¿Los suplementos anticaída sirven para algo?', a: 'Algunos pueden complementar un tratamiento médico, pero por sí solos no resuelven una alopecia androgenética ni hormonal. Primero diagnóstico, después tratamiento.' },
+      { q: '¿Necesito trasplante o tratamiento médico?', a: 'Depende de tu tipo de alopecia, tu edad y el grado de pérdida. Nuestros médicos te lo explican con datos reales después del diagnóstico.' },
+      { q: '¿Cuánto cuesta dejar de adivinar?', a: 'Un diagnóstico completo cuesta 195€ y se descuenta íntegro si inicias tratamiento. Compáralo con los €500+ que ya has gastado sin resultado.' },
+    ],
+    tags: ['nicho-farmacia-sin-salida'],
+  },
+
+  // ─── La Inversión — Post-trasplante sin mantenimiento ─────
+  'post-trasplante': {
+    slug: 'post-trasplante',
+    door: 'landing_post_trasplante',
+    badge: 'Mantenimiento Post-Trasplante',
+    headline: 'Ya te operaste. ¿Quién protege tu inversión?',
+    subheadline: 'Te gastaste €4.000+ en un trasplante y nadie te dijo que necesitabas mantenimiento. El pelo trasplantado no se cae, pero el nativo sigue cayendo.',
+    ctaQuiz: 'Protege tu trasplante',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'Post-trasplante mantenimiento',
+    stats: [
+      { value: '40%', label: 'pierden resultados sin mantenimiento' },
+      { value: '12 meses', label: 'críticos post-cirugía' },
+      { value: '€4.000+', label: 'invertidos que hay que proteger' },
+    ],
+    painPoints: [
+      '¿Te operaste pero el pelo nativo sigue cayendo?',
+      '¿Nadie te habló de mantenimiento después de la cirugía?',
+      '¿Tu clínica no te hizo seguimiento post-trasplante?',
+      '¿Quieres que los resultados de tu trasplante duren para siempre?',
+    ],
+    testimonials: [
+      { name: 'Fernando G.', age: 39, text: 'Me gasté €4.000 en Turquía y nadie me dijo que necesitaba mantenimiento. En HC me diseñaron un plan y ahora tengo todo controlado.', stars: 5 },
+      { name: 'Andrés M.', age: 44, text: 'Me operé en HC y el seguimiento post-operatorio es otro nivel. Tricoscopía cada 6 meses, tratamiento personalizado, y siempre disponibles.', stars: 5 },
+    ],
+    solution: 'Diseñamos planes de mantenimiento personalizados que protegen tanto el pelo trasplantado como el nativo. Tricoscopía de control + tratamiento médico adaptado a tu caso.',
+    faqs: [
+      { q: '¿El pelo trasplantado se puede caer?', a: 'El pelo trasplantado es permanente. Pero el pelo nativo (no trasplantado) sigue sometido a la alopecia y necesita protección con tratamiento médico.' },
+      { q: '¿Cuándo debo empezar el mantenimiento?', a: 'Lo ideal es empezar desde el primer mes post-cirugía. Pero nunca es tarde — incluso años después podemos diseñar un plan que proteja tus resultados.' },
+      { q: '¿Puedo hacer mantenimiento aunque me operé en otra clínica?', a: 'Sí. Evaluamos el estado actual de tu trasplante y del pelo nativo, y diseñamos un plan personalizado independientemente de dónde te operaste.' },
+      { q: '¿En qué consiste el seguimiento?', a: 'Tricoscopía de control cada 6 meses, ajuste de tratamiento médico según evolución, y acceso a nuestro equipo para cualquier duda.' },
+    ],
+    tags: ['nicho-post-trasplante'],
+  },
+
+  // ─── LEGACY: hombres-caida (redirect/fallback) ───────────
   'hombres-caida': {
     slug: 'hombres-caida',
     door: 'landing_hombres_caida',
@@ -104,141 +282,5 @@ export const NICHOS = {
       { q: '¿Los resultados son permanentes?', a: 'Los tratamientos médicos requieren seguimiento. Los trasplantes son permanentes en la zona implantada, pero el pelo nativo necesita mantenimiento.' },
     ],
     tags: ['nicho-hombres-caida'],
-  },
-
-  'segunda-opinion': {
-    slug: 'segunda-opinion',
-    door: 'landing_segunda_opinion',
-    badge: 'Segunda Opinión Capilar',
-    headline: '¿Tuviste una mala experiencia en otra clínica capilar?',
-    subheadline: 'Sabemos que hay clínicas que prometen mucho y entregan poco. Hospital Capilar es un centro médico, no un centro estético. Aquí no hay consultas que son ventas disfrazadas.',
-    ctaQuiz: 'Evalúa tu caso sin compromiso',
-    ctaForm: 'QUE ME LLAMEN SIN COMPROMISO',
-    ecp: 'Ya Me Engañaron',
-    stats: [
-      { value: '35%', label: 'de pacientes vienen de otra clínica' },
-      { value: '0', label: 'presión comercial en la consulta' },
-      { value: '100%', label: 'transparencia con tu diagnóstico' },
-    ],
-    painPoints: [
-      '¿Te prometieron resultados que nunca llegaron?',
-      '¿Sientes que te vendieron un tratamiento sin diagnosticarte bien?',
-      '¿Desconfías de las clínicas capilares después de tu experiencia?',
-      '¿Necesitas una opinión médica real, sin compromiso ni presión?',
-    ],
-    testimonials: [
-      { name: 'Miguel A.', age: 42, text: 'Me operaron en otra clínica y el resultado fue desastroso. En HC me explicaron por qué falló y qué opciones reales tenía. Por primera vez sentí que alguien me decía la verdad.', stars: 5 },
-      { name: 'Roberto S.', age: 35, text: 'Fui a 3 clínicas antes. Todas me vendían lo mismo sin hacerme un estudio serio. En Hospital Capilar me hicieron tricoscopía, analítica y me explicaron todo con datos.', stars: 5 },
-    ],
-    solution: 'No hacemos consultas comerciales. Nuestros médicos te diagnostican con datos (tricoscopía + analítica) y te dicen la verdad sobre tu caso, te guste o no.',
-    faqs: [
-      { q: '¿Puedo arreglar un trasplante mal hecho?', a: 'En muchos casos sí. Primero evaluamos el estado actual con tricoscopía y determinamos qué opciones hay. Cada caso es diferente.' },
-      { q: '¿Me van a intentar vender otra cirugía?', a: 'No. Nuestros médicos te explican qué se puede y qué no se puede hacer. Si la mejor opción es no intervenir, te lo decimos.' },
-      { q: '¿Es confidencial?', a: 'Absolutamente. Todo lo que compartas con nuestro equipo médico es confidencial. No necesitas decirnos dónde te operaste si no quieres.' },
-      { q: '¿Cuánto cuesta la segunda opinión?', a: 'Te llamamos sin compromiso para entender tu caso. La consulta presencial incluye un diagnóstico completo con datos objetivos.' },
-    ],
-    tags: ['nicho-segunda-opinion'],
-  },
-
-  'post-trasplante': {
-    slug: 'post-trasplante',
-    door: 'landing_post_trasplante',
-    badge: 'Mantenimiento Post-Trasplante',
-    headline: 'Ya te operaste. ¿Quién protege tu inversión?',
-    subheadline: 'Un trasplante capilar sin plan de mantenimiento pierde resultados con el tiempo. El pelo trasplantado no se cae, pero el nativo sigue sometido a los mismos factores.',
-    ctaQuiz: 'Protege tu trasplante',
-    ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'La Inversión',
-    stats: [
-      { value: '40%', label: 'pierden resultados sin mantenimiento' },
-      { value: '12 meses', label: 'críticos post-cirugía' },
-      { value: '3.000€+', label: 'invertidos que hay que proteger' },
-    ],
-    painPoints: [
-      '¿Te operaste pero el pelo nativo sigue cayendo?',
-      '¿No tienes un plan de mantenimiento post-trasplante?',
-      '¿Tu clínica no te hizo seguimiento después de la cirugía?',
-      '¿Quieres que los resultados de tu trasplante duren para siempre?',
-    ],
-    testimonials: [
-      { name: 'Fernando G.', age: 39, text: 'Me operé en Turquía hace 2 años. El trasplante se ve bien, pero el resto del pelo seguía cayendo. En HC me diseñaron un plan de mantenimiento y ahora tengo todo controlado.', stars: 5 },
-      { name: 'Andrés M.', age: 44, text: 'Me operé en HC y el seguimiento post-operatorio es otro nivel. Tricoscopía cada 6 meses, tratamiento personalizado, y siempre disponibles.', stars: 5 },
-    ],
-    solution: 'Diseñamos planes de mantenimiento personalizados que protegen tanto el pelo trasplantado como el nativo. Tricoscopía de control + tratamiento médico adaptado a tu caso.',
-    faqs: [
-      { q: '¿El pelo trasplantado se puede caer?', a: 'El pelo trasplantado es permanente. Pero el pelo nativo (no trasplantado) sigue sometido a la alopecia y necesita protección con tratamiento médico.' },
-      { q: '¿Cuándo debo empezar el mantenimiento?', a: 'Lo ideal es empezar desde el primer mes post-cirugía. Pero nunca es tarde — incluso años después podemos diseñar un plan que proteja tus resultados.' },
-      { q: '¿Puedo hacer mantenimiento aunque me operé en otra clínica?', a: 'Sí. Evaluamos el estado actual de tu trasplante y del pelo nativo, y diseñamos un plan personalizado independientemente de dónde te operaste.' },
-      { q: '¿En qué consiste el seguimiento?', a: 'Tricoscopía de control cada 6 meses, ajuste de tratamiento médico según evolución, y acceso a nuestro equipo para cualquier duda.' },
-    ],
-    tags: ['nicho-post-trasplante'],
-  },
-
-  farmacia: {
-    slug: 'farmacia',
-    door: 'landing_farmacia',
-    badge: 'Tratamiento Capilar Médico Personalizado',
-    headline: '¿Llevas años gastando en productos y el pelo sigue cayendo?',
-    subheadline: 'El minoxidil, los suplementos y los champús sin diagnóstico son disparos al aire. Un protocolo médico personalizado es lo que marca la diferencia.',
-    ctaQuiz: 'Descubre por qué no funciona',
-    ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'La Farmacia',
-    stats: [
-      { value: '3 años', label: 'de media gastando en productos sin resultado' },
-      { value: '60%', label: 'no responden a productos sin diagnóstico previo' },
-      { value: '195€', label: 'diagnóstico que sustituye años de prueba-error' },
-    ],
-    painPoints: [
-      '¿Llevas meses o años probando productos de farmacia sin resultado?',
-      '¿Gastas dinero en suplementos pero el pelo sigue igual o peor?',
-      '¿Sientes que ningún producto te funciona como prometen?',
-      '¿Nunca te han hecho un diagnóstico médico real de tu caída?',
-    ],
-    testimonials: [
-      { name: 'Marta S.', age: 36, text: 'Llevaba 3 años con Olistic, minoxidil y champús especiales. Gastaba 80€ al mes y nada. En HC descubrieron que tenía déficit de hierro y AGA. En 4 meses noté la diferencia.', stars: 5 },
-      { name: 'Tomás R.', age: 44, text: 'Probé todo lo de farmacia. Me hice la consulta diagnóstica y resultó que los productos que usaba eran incorrectos para mi tipo de alopecia. Ahora tengo un plan que funciona.', stars: 5 },
-    ],
-    solution: 'Un protocolo médico personalizado — HRT (Hair Restoration Treatment) — diseñado específicamente para tu caso tras un diagnóstico real con tricoscopía y analítica.',
-    faqs: [
-      { q: '¿Por qué no me funcionan los productos de farmacia?', a: 'Porque los productos genéricos no están diseñados para tu tipo de alopecia concreta. Sin diagnóstico, es imposible saber qué necesitas exactamente.' },
-      { q: '¿Qué es un protocolo HRT personalizado?', a: 'Es un plan de tratamiento médico diseñado específicamente para ti, basado en tu diagnóstico capilar y analítica. Combina los activos más efectivos para tu caso.' },
-      { q: '¿Es muy diferente a lo que compro en farmacia?', a: 'Completamente diferente. Los tratamientos médicos personalizados tienen concentraciones y combinaciones que los productos de farmacia no pueden igualar.' },
-      { q: '¿Los 195€ del diagnóstico se descuentan?', a: 'Sí. Si inicias tratamiento en Hospital Capilar, los 195€ se descuentan íntegros del coste del protocolo.' },
-    ],
-    tags: ['nicho-farmacia'],
-  },
-
-  postparto: {
-    slug: 'postparto',
-    door: 'landing_postparto',
-    badge: 'Caída Capilar Postparto',
-    headline: '¿Se te cae el pelo desde el embarazo o el parto?',
-    subheadline: 'El efluvio postparto afecta al 50% de madres. En la mayoría de casos es temporal, pero en algunas mujeres revela una alopecia subyacente. La única forma de saberlo es con un diagnóstico.',
-    ctaQuiz: 'Descubre si es temporal o algo más',
-    ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Lo Que Vino Con el Bebé',
-    stats: [
-      { value: '50%', label: 'de madres sufren caída postparto' },
-      { value: '85%', label: 'se recuperan con tratamiento adecuado' },
-      { value: '6 meses', label: 'clave para actuar a tiempo' },
-    ],
-    painPoints: [
-      '¿Pierdes mechones de pelo desde que diste a luz?',
-      '¿Te dijeron que es normal pero llevas meses así?',
-      '¿No sabes si es temporal o algo más serio?',
-      '¿Te preocupa que no vuelva a crecer como antes?',
-    ],
-    testimonials: [
-      { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
-      { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
-    ],
-    solution: 'Cruzamos tu perfil hormonal postparto con un estudio capilar completo. Si es efluvio temporal, te lo decimos. Si hay una alopecia subyacente, actuamos a tiempo.',
-    faqs: [
-      { q: '¿Es normal perder pelo después del parto?', a: 'Sí, el efluvio postparto es muy común. Pero si la caída persiste más de 6 meses, puede haber una alopecia subyacente que necesita tratamiento.' },
-      { q: '¿Cuándo debería preocuparme?', a: 'Si llevas más de 4-6 meses con caída intensa, si notas zonas con menos densidad, o si el pelo no vuelve a crecer, es momento de hacer un diagnóstico.' },
-      { q: '¿Los tratamientos son compatibles con la lactancia?', a: 'Sí. Existen tratamientos seguros durante la lactancia. Nuestros médicos te indican opciones que no afectan al bebé.' },
-      { q: '¿Mi pelo volverá a ser como antes?', a: 'En la mayoría de casos, sí. Si es efluvio temporal, se recupera solo o con ayuda. Si hay AGA, el tratamiento temprano frena la caída y recupera densidad.' },
-    ],
-    tags: ['nicho-postparto'],
   },
 };

@@ -43,46 +43,55 @@ const UbicacionSelect = ({ value, onChange, className }) => (
 
 // ECP mapping from situacion answer
 const SITUACION_ECP = {
-  'caida-sin-diagnostico': '¿Qué Me Pasa?',
-  'entradas-coronilla': '¿Qué Me Pasa?',
-  'joven-perdida': 'El Espejo',
-  'postparto': 'Lo Que Vino Con el Bebé',
-  'hormonal': 'Es Normal',
-  'post-cirugia': 'La Inversión',
-  'mala-experiencia': 'Ya Me Engañaron',
-  'cuero-cabelludo': 'No Candidato',
-  'farmacia-sin-resultado': 'La Farmacia',
+  'caida-sin-diagnostico': 'Hombre con caida sin diagnostico',
+  'entradas-coronilla': 'Hombre con caida sin diagnostico',
+  'joven-perdida': 'Joven con alopecia temprana',
+  'postparto': 'Caida postparto',
+  'hormonal': 'Mujer con caida hormonal',
+  'post-cirugia': 'Post-trasplante mantenimiento',
+  'mala-experiencia': 'Mala experiencia otra clinica',
+  'no-se-que-tengo': 'Sin diagnostico gateway',
+  'otc-frustrado': 'OTC frustrado sin resultado',
+  'cuero-cabelludo': 'No candidato - cuero cabelludo',
 };
 
 // ECP result messages (short version)
 const ECP_MESSAGES = {
-  '¿Qué Me Pasa?': {
+  'Hombre con caida sin diagnostico': {
     title: 'Tu caída necesita un diagnóstico profesional',
     body: 'Sin una tricoscopía y analítica, cualquier tratamiento es una apuesta. En 30 minutos sabrás exactamente qué tienes.',
   },
-  'El Espejo': {
+  'Joven con alopecia temprana': {
     title: 'Actuar temprano es la mejor decisión',
     body: 'Cuanto antes se diagnostica, más opciones tienes. La caída no se frena sola — pero con diagnóstico a tiempo, los resultados son excelentes.',
   },
-  'Es Normal': {
+  'Mujer con caida hormonal': {
     title: 'Tu caída puede estar conectada a un desbalance hormonal',
     body: 'Necesitas una analítica hormonal cruzada con estudio capilar. Es la pieza que falta entre tu pelo y tu salud.',
   },
-  'Lo Que Vino Con el Bebé': {
+  'Caida postparto': {
     title: 'Necesitas saber si es temporal o algo más',
     body: 'El efluvio postparto es temporal en la mayoría de casos. Pero a veces revela una alopecia subyacente. Un diagnóstico te saca de dudas.',
   },
-  'La Inversión': {
+  'Post-trasplante mantenimiento': {
     title: 'Tu trasplante necesita un plan de mantenimiento',
     body: 'El pelo trasplantado no se cae, pero el nativo sí. Un diagnóstico evalúa tu situación actual y protege tu inversión.',
   },
-  'Ya Me Engañaron': {
+  'Mala experiencia otra clinica': {
     title: 'Entendemos que tengas dudas',
     body: 'Hospital Capilar es un centro médico, no estético. Médicos que diagnostican con datos y te dicen la verdad. Sin presión.',
   },
-  'No Candidato': {
-    title: 'Tu caso requiere un dermatólogo',
-    body: 'Lo que describes parece un problema dermatológico del cuero cabelludo. Te recomendamos visitar un dermatólogo especializado.',
+  'Sin diagnostico gateway': {
+    title: 'El primer paso es saber qué tienes',
+    body: 'Google no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te dice exactamente qué ocurre y qué opciones hay. Sin adivinar.',
+  },
+  'OTC frustrado sin resultado': {
+    title: 'No es que los productos no sirvan — es que necesitas un diagnóstico',
+    body: 'El 60% de personas no responden a minoxidil porque nunca les diagnosticaron correctamente. Un diagnóstico cambia todo.',
+  },
+  'No candidato - cuero cabelludo': {
+    title: 'Tu caso requiere atención especializada',
+    body: 'Lo que describes parece un problema del cuero cabelludo que requiere atención dermatológica especializada.',
   },
   'La Farmacia': {
     title: 'Los productos solos no son suficientes',
@@ -284,7 +293,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
   // ==========================================
   if (phase === 'results') {
     const ecp = SITUACION_ECP[answers.situacion] || config.ecp;
-    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['¿Qué Me Pasa?'];
+    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['Hombre con caida sin diagnostico'];
     const isDerivacion = ecp === 'No Candidato';
     const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
@@ -294,11 +303,13 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
     // Readable labels for what the user answered
     const situacionLabels = {
+      'no-se-que-tengo': 'No sé qué me pasa',
       'caida-sin-diagnostico': answers.sexo === 'mujer' ? 'Pierdo densidad / se me cae mucho' : 'Caída sin diagnóstico',
       'entradas-coronilla': 'Entradas / coronilla',
       'joven-perdida': 'Pérdida temprana de pelo',
       'postparto': 'Caída desde embarazo/parto',
       'hormonal': 'Caída hormonal',
+      'otc-frustrado': 'Productos sin resultado',
       'post-cirugia': 'Post-trasplante',
       'mala-experiencia': 'Mala experiencia previa',
       'cuero-cabelludo': 'Problema de cuero cabelludo',
@@ -435,7 +446,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border-2 border-amber-300 p-5 mb-6 shadow-sm">
-              <h4 className="font-bold text-lg text-amber-900 mb-1">Te recomendamos visitar un dermatólogo</h4>
+              <h4 className="font-bold text-lg text-amber-900 mb-1">Tu caso requiere atención especializada</h4>
               <p className="text-sm text-amber-800">Los problemas de cuero cabelludo requieren atención dermatológica especializada.</p>
             </div>
           )}
@@ -592,16 +603,18 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
               </div>
               <div className="grid gap-2">
                 {(answers.sexo === 'mujer' ? [
-                  { label: 'Pierdo densidad / se me cae mucho', value: 'caida-sin-diagnostico' },
+                  { label: 'Se me cae y no sé por qué', value: 'no-se-que-tengo' },
+                  { label: 'Pierdo densidad / caída hormonal (menopausia, SOP, tiroides)', value: 'hormonal' },
                   { label: 'Pierdo pelo desde el embarazo/parto', value: 'postparto' },
-                  { label: 'Creo que mi caída es hormonal', value: 'hormonal' },
-                  { label: 'Ya me operé pero sigo perdiendo', value: 'post-cirugia' },
+                  { label: 'Llevo años con productos y nada funciona', value: 'otc-frustrado' },
                   { label: 'Tuve mala experiencia en otra clínica', value: 'mala-experiencia' },
+                  { label: 'Ya me operé pero sigo perdiendo', value: 'post-cirugia' },
                   { label: 'Problemas en el cuero cabelludo', value: 'cuero-cabelludo' },
                 ] : [
-                  { label: 'Se me cae el pelo y no sé por qué', value: 'caida-sin-diagnostico' },
+                  { label: 'Se me cae y no sé por qué', value: 'no-se-que-tengo' },
                   { label: 'Noto las entradas / la coronilla', value: 'entradas-coronilla' },
                   { label: 'Soy joven y ya estoy perdiendo pelo', value: 'joven-perdida' },
+                  { label: 'Llevo años con productos y nada funciona', value: 'otc-frustrado' },
                   { label: 'Ya me operé pero sigo perdiendo', value: 'post-cirugia' },
                   { label: 'Tuve mala experiencia en otra clínica', value: 'mala-experiencia' },
                   { label: 'Problemas en el cuero cabelludo', value: 'cuero-cabelludo' },

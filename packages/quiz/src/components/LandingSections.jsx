@@ -56,7 +56,7 @@ export const SolutionSection = ({ solution }) => (
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <Users size={28} className="text-[#4CA994] mb-3" />
           <h3 className="font-bold text-gray-900 mb-2">Equipo médico</h3>
-          <p className="text-sm text-gray-500">Dermatólogos, tricólogos y endocrinólogos trabajando juntos en tu caso.</p>
+          <p className="text-sm text-gray-500">Un equipo médico profesional experto en salud capilar trabajando juntos en tu caso.</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <ShieldCheck size={28} className="text-[#4CA994] mb-3" />
