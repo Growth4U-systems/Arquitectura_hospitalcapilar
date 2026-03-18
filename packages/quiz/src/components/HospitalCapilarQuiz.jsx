@@ -46,6 +46,7 @@ function generateAgentMessage(answers, result, labels) {
   else if (ecp === 'Ya Me Engañaron') intro = `${nombre} tuvo mala experiencia en ${labels.clinica_previa || 'otra clínica'}. Viene con desconfianza.`;
   else if (ecp === 'La Inversión') intro = `${nombre} ya se hizo un trasplante (${labels.cirugia_lugar || 'no especificado'}) y necesita mantenimiento.`;
   else if (ecp === 'Lo Que Vino Con el Bebé') intro = `${nombre} tiene caída desde el embarazo/parto. Lleva ${tiempoLabel} con el problema.`;
+  else if (ecp === 'La Farmacia') intro = `${nombre} lleva ${tiempoLabel} gastando en productos de farmacia sin resultado. Nunca ha tenido un diagnóstico médico real.`;
   else intro = `${nombre} tiene problemas de cuero cabelludo (caspa, irritación). NO es candidato/a — derivar a dermatología.`;
 
   const condicionesText = answers.sexo === 'mujer' && answers.condicion?.length > 0 && !answers.condicion.includes('desconocida')
@@ -86,6 +87,10 @@ function generateAgentMessage(answers, result, labels) {
     objeciones = `- "Me dicen que es normal después del parto" → Sí, es común. El 50% de madres lo sufren. Pero si pasan más de 6 meses y no se recupera, puede haber una alopecia subyacente que el embarazo activó.
 - "Estoy dando el pecho, ¿puedo tratarme?" → Sí, hay tratamientos compatibles con la lactancia. En la consulta evaluamos opciones seguras para ti y tu bebé.
 - "Ya se me pasará sola" → Ojalá, pero mejor descartarlo con un diagnóstico. Si hay AGA de fondo, cada mes sin tratar cuenta.`;
+  } else if (ecp === 'La Farmacia') {
+    objeciones = `- "Ya gasté mucho en productos y no quiero gastar más" → Un diagnóstico médico real (195€) te ahorra años de productos que no funcionan. Y esos 195€ se descuentan si inicias tratamiento.
+- "¿Por qué no me funcionan los productos de farmacia?" → Porque están diseñados para el caso genérico, no para el tuyo. Sin saber tu tipo de alopecia exacto, cualquier producto es una apuesta.
+- "Con más paciencia igual funciona" → La alopecia sin tratar empeora progresivamente. Cuanto antes se diagnostica, más folículos se pueden recuperar.`;
   }
 
   // Descripción natural del problema según ECP (para usar en el guión)
@@ -96,6 +101,7 @@ function generateAgentMessage(answers, result, labels) {
   else if (ecp === 'Ya Me Engañaron') problemaNatural = 'tu experiencia anterior y la caída de pelo';
   else if (ecp === 'La Inversión') problemaNatural = 'el mantenimiento después del trasplante';
   else if (ecp === 'Lo Que Vino Con el Bebé') problemaNatural = 'la caída de pelo desde el embarazo';
+  else if (ecp === 'La Farmacia') problemaNatural = 'la caída que no responde a los productos de farmacia';
 
   // Guión de apertura personalizado
   let apertura = '';

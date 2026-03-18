@@ -35,6 +35,11 @@ export const OBJECTIONS_BY_ECP = {
     { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos tratan hormonas. Los dermatólogos tratan pelo. Nosotros cruzamos ambos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'Los 195€ se descuentan íntegros si inicias tratamiento.' },
   ],
+  'La Farmacia': [
+    { myth: 'Ya probé minoxidil, suplementos y champús — nada funciona', truth: 'Los productos genéricos no están diseñados para tu alopecia concreta. Sin diagnóstico, es un disparo al aire.' },
+    { myth: 'He gastado mucho dinero y no quiero gastar más', truth: 'Un diagnóstico médico real (195€) te ahorra años de productos que no funcionan. Y esos 195€ se descuentan si inicias tratamiento.' },
+    { myth: 'Con más tiempo se solucionará solo', truth: 'La alopecia sin tratar empeora. Cuanto antes se diagnostica, más opciones de tratamiento efectivo hay.' },
+  ],
 };
 
 // ─── TESTIMONIALS ───────────────────────────────────────────
@@ -62,6 +67,10 @@ export const TESTIMONIALS_BY_ECP = {
   'Lo Que Vino Con el Bebé': [
     { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
     { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
+  ],
+  'La Farmacia': [
+    { name: 'Marta S.', age: 36, text: 'Llevaba 3 años con Olistic, minoxidil y champús especiales. Gastaba 80€ al mes y nada. En HC descubrieron déficit de hierro y AGA. En 4 meses noté la diferencia.', stars: 5 },
+    { name: 'Tomás R.', age: 44, text: 'Probé todo lo de farmacia. Me hice la consulta diagnóstica y resultó que los productos que usaba eran incorrectos para mi tipo de alopecia. Ahora tengo un plan que funciona.', stars: 5 },
   ],
 };
 

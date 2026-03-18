@@ -51,6 +51,7 @@ const SITUACION_ECP = {
   'post-cirugia': 'La Inversión',
   'mala-experiencia': 'Ya Me Engañaron',
   'cuero-cabelludo': 'No Candidato',
+  'farmacia-sin-resultado': 'La Farmacia',
 };
 
 // ECP result messages (short version)
@@ -82,6 +83,10 @@ const ECP_MESSAGES = {
   'No Candidato': {
     title: 'Tu caso requiere un dermatólogo',
     body: 'Lo que describes parece un problema dermatológico del cuero cabelludo. Te recomendamos visitar un dermatólogo especializado.',
+  },
+  'La Farmacia': {
+    title: 'Los productos solos no son suficientes',
+    body: 'Sin un diagnóstico médico real, cualquier producto es un disparo al aire. Un protocolo personalizado tras tricoscopía y analítica es lo que marca la diferencia.',
   },
 };
 

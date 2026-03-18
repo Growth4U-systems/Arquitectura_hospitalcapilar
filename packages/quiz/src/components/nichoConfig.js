@@ -174,6 +174,40 @@ export const NICHOS = {
     tags: ['nicho-post-trasplante'],
   },
 
+  farmacia: {
+    slug: 'farmacia',
+    door: 'landing_farmacia',
+    badge: 'Tratamiento Capilar Médico Personalizado',
+    headline: '¿Llevas años gastando en productos y el pelo sigue cayendo?',
+    subheadline: 'El minoxidil, los suplementos y los champús sin diagnóstico son disparos al aire. Un protocolo médico personalizado es lo que marca la diferencia.',
+    ctaQuiz: 'Descubre por qué no funciona',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'La Farmacia',
+    stats: [
+      { value: '3 años', label: 'de media gastando en productos sin resultado' },
+      { value: '60%', label: 'no responden a productos sin diagnóstico previo' },
+      { value: '195€', label: 'diagnóstico que sustituye años de prueba-error' },
+    ],
+    painPoints: [
+      '¿Llevas meses o años probando productos de farmacia sin resultado?',
+      '¿Gastas dinero en suplementos pero el pelo sigue igual o peor?',
+      '¿Sientes que ningún producto te funciona como prometen?',
+      '¿Nunca te han hecho un diagnóstico médico real de tu caída?',
+    ],
+    testimonials: [
+      { name: 'Marta S.', age: 36, text: 'Llevaba 3 años con Olistic, minoxidil y champús especiales. Gastaba 80€ al mes y nada. En HC descubrieron que tenía déficit de hierro y AGA. En 4 meses noté la diferencia.', stars: 5 },
+      { name: 'Tomás R.', age: 44, text: 'Probé todo lo de farmacia. Me hice la consulta diagnóstica y resultó que los productos que usaba eran incorrectos para mi tipo de alopecia. Ahora tengo un plan que funciona.', stars: 5 },
+    ],
+    solution: 'Un protocolo médico personalizado — HRT (Hair Restoration Treatment) — diseñado específicamente para tu caso tras un diagnóstico real con tricoscopía y analítica.',
+    faqs: [
+      { q: '¿Por qué no me funcionan los productos de farmacia?', a: 'Porque los productos genéricos no están diseñados para tu tipo de alopecia concreta. Sin diagnóstico, es imposible saber qué necesitas exactamente.' },
+      { q: '¿Qué es un protocolo HRT personalizado?', a: 'Es un plan de tratamiento médico diseñado específicamente para ti, basado en tu diagnóstico capilar y analítica. Combina los activos más efectivos para tu caso.' },
+      { q: '¿Es muy diferente a lo que compro en farmacia?', a: 'Completamente diferente. Los tratamientos médicos personalizados tienen concentraciones y combinaciones que los productos de farmacia no pueden igualar.' },
+      { q: '¿Los 195€ del diagnóstico se descuentan?', a: 'Sí. Si inicias tratamiento en Hospital Capilar, los 195€ se descuentan íntegros del coste del protocolo.' },
+    ],
+    tags: ['nicho-farmacia'],
+  },
+
   postparto: {
     slug: 'postparto',
     door: 'landing_postparto',

@@ -247,7 +247,45 @@
 >
 > ---
 >
-> ### RAMA 10 — ECP = "Hombre / Joven / Post-trasplante" + lead_priority = COLD
+> ### RAMA 10 — ECP = "La Farmacia" + lead_priority = HOT o WARM
+> *(Dolor: "Llevo 3 años gastando en Olistic, minoxidil y champús. Nada funciona.")*
+>
+> 1. Actualizar `tratamiento_status` = `not_paid`
+> 2. **Notificación interna al comercial** (prioridad ALTA, vence en 4h):
+>    - **Título:** "Llamar — La Farmacia HOT/WARM"
+>    - **Descripción:** "{{contact.firstName}} lleva tiempo gastando en productos sin resultado. Score: {{contact.contact_score}}. Ciudad: {{contact.ubicacion_clinica}}. Mensaje clave: los productos genéricos no están diseñados para su alopecia concreta. CTA: bono 195€."
+> 3. Esperar 15 minutos →
+> 4. Enviar **WhatsApp 1:**
+>    - "Hola {{contact.firstName}} 👋 Hemos recibido tu diagnóstico. Si llevas tiempo probando productos de farmacia sin resultado, hay una razón: el minoxidil, los suplementos y los champús están diseñados para el caso genérico, no para el tuyo. Sin saber exactamente qué tipo de alopecia tienes, cualquier producto es una apuesta. En Hospital Capilar hacemos un diagnóstico médico real con tricoscopía y analítica — y diseñamos un protocolo personalizado para tu caso concreto. El bono diagnóstico es de 195€, que se descuentan si sigues con el tratamiento. ¿Damos el paso? 👉 [link pago]"
+> 5. Esperar 1 hora — [sin pago] →
+> 6. Enviar **Email 1:**
+>    - **Asunto:** `{{contact.firstName}}, ¿sabes por qué no te funciona el minoxidil?`
+>    - **Cuerpo:** "Hola {{contact.firstName}}, el 60% de personas que usan minoxidil no ven resultados. No porque el producto no sirva, sino porque su alopecia es de un tipo que no responde a ese tratamiento. Y la única forma de saberlo es con un diagnóstico médico real. En Hospital Capilar hacemos tricoscopía digital + analítica hormonal completa para identificar exactamente qué tipo de alopecia tienes y diseñar el protocolo que de verdad funciona. 195€ que se descuentan si inicias tratamiento. [BOTÓN: Quiero saber por qué no me funciona] — Equipo Médico Hospital Capilar"
+> 7. Esperar 24 horas — [sin pago] →
+> 8. Enviar **WhatsApp 2:**
+>    - "Hola {{contact.firstName}}, muchos de nuestros pacientes llegaron después de años gastando en productos sin resultado. Lo que descubrieron es que nunca habían tenido un diagnóstico correcto. En 45 minutos puedes salir sabiendo exactamente qué tienes y qué protocolo funciona para ti. ¿Tienes alguna duda antes de dar el paso? 💙"
+> 9. Esperar 3 días — [sin pago] →
+> 10. **Notificación interna al comercial:**
+>     - **Título:** "Llamar — La Farmacia sin convertir (3 días)"
+>     - **Descripción:** "{{contact.firstName}} no ha pagado. Score: {{contact.contact_score}}. Objeción probable: ya gastó mucho y no quiere gastar más. Argumento: 195€ se descuentan del tratamiento y evitan años de prueba-error."
+> 11. Esperar 7 días — [sin pago] →
+> 12. Enviar **WhatsApp 3** (último intento):
+>     - "Hola {{contact.firstName}}, último mensaje 🙏 Si algún día decides parar de probar productos y quieres saber de una vez qué está pasando realmente con tu pelo, aquí estaremos. Un diagnóstico médico real, sin rodeos. — Hospital Capilar"
+> 13. Añadir tag: `cold-lead` → FIN
+>
+> ---
+>
+> ### RAMA 11 — ECP = "La Farmacia" + lead_priority = COLD
+>
+> 1. Actualizar `tratamiento_status` = `not_paid`
+> 2. **Notificación interna al comercial** (prioridad MEDIA):
+>    - **Título:** "Llamar — La Farmacia COLD"
+>    - **Descripción:** "{{contact.firstName}} está en {{contact.ubicacion_clinica}}, fuera de zona operativa o con score bajo. Valorar videoconsulta médica online."
+> 3. FIN del workflow
+>
+> ---
+>
+> ### RAMA 12 — ECP = "Hombre / Joven / Post-trasplante" + lead_priority = COLD
 >
 > 1. Actualizar `tratamiento_status` = `free_consult`
 > 2. **Notificación interna al comercial** (prioridad BAJA):
