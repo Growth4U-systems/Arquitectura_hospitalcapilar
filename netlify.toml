@@ -15,6 +15,10 @@
 [functions."sync-ad-spend"]
   schedule = "0 6 * * *"
 
+# Sync GHL pipeline data → PostHog every hour
+[functions."sync-ghl-posthog"]
+  schedule = "17 * * * *"
+
 [[redirects]]
   from = "/ingest/static/*"
   to = "https://eu-assets.i.posthog.com/static/:splat"

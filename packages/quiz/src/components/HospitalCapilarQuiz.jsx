@@ -648,6 +648,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     const result = { ecp, score, frame, nombre: finalAnswers.nombre || 'Paciente' };
     setFinalResult(result);
 
+    // Track ECP classification for PostHog dashboard
+    analytics.trackEvent('lead_classified', { ecp, frame });
+
     // Generate labels and agent message FIRST (needed by GHL and Firestore)
     let agentMessage = '';
     let quizAnswersText = '';
