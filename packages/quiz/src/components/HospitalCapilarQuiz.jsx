@@ -5,7 +5,7 @@ import {
   Check, X, Star, ChevronDown, Lock, Phone
 } from 'lucide-react';
 import { useAnalytics } from '@hospital-capilar/shared/analytics';
-import { getUTMParams } from '@hospital-capilar/shared/analytics';
+import { getUTMParams, classifyTrafficSource, detectFunnelType, detectNicho } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import PaymentConfirmation from './PaymentConfirmation';
@@ -232,6 +232,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const [finalResult, setFinalResult] = useState(null);
   const [returningLead, setReturningLead] = useState(null);
   const [utmParams] = useState(() => getUTMParams());
+  const [funnelType] = useState(() => detectFunnelType());
+  const [trafficSource] = useState(() => classifyTrafficSource());
+  const [nicho] = useState(() => detectNicho());
   const ghlContactIdRef = useRef(null);
   const [paymentStep, setPaymentStep] = useState(null); // null | 'paying' | 'paid'
   const [openFaq, setOpenFaq] = useState(null);
@@ -748,6 +751,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         // Attribution / UTMs
         source: {
           channel: sourceChannel,
+          traffic_source: trafficSource,
+          funnel_type: funnelType,
+          nicho: nicho,
           utm_source: utmParams.utm_source || null,
           utm_medium: utmParams.utm_medium || null,
           utm_campaign: utmParams.utm_campaign || null,
@@ -1193,6 +1199,20 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       score: finalResult?.score,
       perfil,
     });
+
+    // When user requests a call, tag + note the contact in GHL
+    if (ctaType === 'solicitar_llamada' && ghlContactIdRef.current) {
+      const contactId = ghlContactIdRef.current;
+      fetch('/.netlify/functions/ghl-call-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactId,
+          ecp: finalResult?.ecp || '',
+          nombre: answers.nombre || '',
+        }),
+      }).catch(() => {}); // silent — PostHog already tracked it
+    }
   };
 
   // ============================================
@@ -1399,6 +1419,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       handleCTAClick(ctaType);
       if (ctaType === 'pagar_bono') {
         handleStartPayment();
+      } else if (ctaType === 'whatsapp') {
+        window.open(waUrl, '_blank');
       }
     };
 
