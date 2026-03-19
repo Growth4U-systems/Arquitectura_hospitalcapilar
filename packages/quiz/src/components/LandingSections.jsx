@@ -122,6 +122,38 @@ export const FAQSection = ({ faqs }) => {
   );
 };
 
+const CLINIC_IMAGES = [
+  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/Recepcion_ywqbi8.jpg', alt: 'Recepción Hospital Capilar' },
+  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/hrt_d1vm3u.jpg', alt: 'Tratamiento capilar avanzado' },
+  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/mejores_cirujanos_de_injerto_capilar_w5ppmh.jpg', alt: 'Equipo médico Hospital Capilar' },
+  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/tratamientos_mujer_crt_gpxgxm.jpg', alt: 'Consulta capilar personalizada' },
+];
+
+export const ClinicGallerySection = () => (
+  <section className="py-16 bg-white">
+    <div className="max-w-5xl mx-auto px-6">
+      <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3 text-center">
+        Conoce nuestras instalaciones
+      </h2>
+      <p className="text-gray-500 text-center mb-10 max-w-2xl mx-auto">
+        Tecnología de última generación en un entorno diseñado para tu comodidad.
+      </p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {CLINIC_IMAGES.map((img, i) => (
+          <div key={i} className="overflow-hidden rounded-2xl aspect-[4/3]">
+            <img
+              src={img.src}
+              alt={img.alt}
+              loading="lazy"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 export const Footer = () => (
   <footer className="py-8 border-t border-gray-100">
     <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">

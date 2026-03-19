@@ -7,6 +7,7 @@ import {
   StatsSection,
   PainPointsSection,
   SolutionSection,
+  ClinicGallerySection,
   TestimonialsSection,
   FAQSection,
   Footer,
@@ -55,6 +56,7 @@ const NichoLanding = ({ nicho, onStartQuiz }) => {
       <StatsSection stats={config.stats} />
       <PainPointsSection painPoints={config.painPoints} />
       <SolutionSection solution={config.solution} />
+      <ClinicGallerySection />
       <TestimonialsSection testimonials={config.testimonials} />
       <FAQSection faqs={config.faqs} />
 
