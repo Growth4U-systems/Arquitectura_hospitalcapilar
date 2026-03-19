@@ -62,6 +62,7 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 | `fecha_cita` | *Crear en GHL* | Date | Fecha de la cita | koibox-webhook.js (pendiente) |
 | `hora_cita` | *Crear en GHL* | Text | Hora de la cita (ej: "10:30") | koibox-webhook.js (pendiente) |
 | `koibox_booking_id` | *Crear en GHL* | Text | ID reserva en Koibox | koibox-webhook.js (pendiente) |
+| `link_reagendar` | `FuAgIVjPvnlMyIybL8fX` | Text | URL para cancelar/reagendar cita | koibox-proxy.js (auto al agendar) |
 | `motivo_perdida` | *Crear en GHL* | Dropdown | `precio` / `sin_respuesta` / `no_candidato` / `otra_clinica` / `no_contesta` | Comercial manual |
 
 ---
@@ -168,9 +169,10 @@ Cuando llega booking de Koibox → Stage → Booked → W3 arranca
 [Stage = Booked]
 │
 → 0min         WhatsApp: confirmación fecha + hora + clínica + qué llevar
-→ [fecha_cita - 24h]  WhatsApp: recordatorio completo
+                         + link reagendar: {{ opportunity.link_reagendar }}
+→ [fecha_cita - 24h]  WhatsApp: recordatorio completo + link reagendar
 → Stage → Reminder Sent
-→ [fecha_cita - 2h]   WhatsApp: recordatorio breve
+→ [fecha_cita - 2h]   WhatsApp: recordatorio breve + link reagendar
 ```
 
 ---

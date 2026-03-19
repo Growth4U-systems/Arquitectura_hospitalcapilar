@@ -85,10 +85,18 @@ exports.handler = async (event) => {
       return await cancelAppointment(body, koiboxHeaders, headers);
     }
 
+    if (action === 'reschedule_appointment') {
+      return await rescheduleAppointment(body, koiboxHeaders, headers);
+    }
+
+    if (action === 'get_appointment') {
+      return await getAppointment(body, koiboxHeaders, headers);
+    }
+
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment, cancel_appointment` }),
+      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment, cancel_appointment, reschedule_appointment, get_appointment` }),
     };
   } catch (err) {
     console.log('[Koibox] Exception:', err.message);
@@ -614,6 +622,126 @@ async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
 }
 
 /**
+ * Get appointment details from Koibox by ID.
+ * Used by the reagendar page to show current appointment info.
+ */
+async function getAppointment(body, koiboxHeaders, corsHeaders) {
+  const { koibox_id } = body;
+
+  if (!koibox_id) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id required' }) };
+  }
+
+  try {
+    const res = await fetch(`${KOIBOX_BASE}/agenda/${koibox_id}/`, { headers: koiboxHeaders });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      return { statusCode: res.status, headers: corsHeaders, body: JSON.stringify({ error: 'Appointment not found', details: errData }) };
+    }
+    const data = await res.json();
+    // Return only the fields the frontend needs
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        id: data.id,
+        fecha: data.fecha,
+        hora_inicio: data.hora_inicio,
+        hora_fin: data.hora_fin,
+        estado: data.estado, // 1=pending, 2=confirmed, 5=cancelled
+        titulo: data.titulo,
+        cliente: data.cliente ? { nombre: data.cliente_nombre || data.cliente?.nombre, id: data.cliente } : null,
+      }),
+    };
+  } catch (err) {
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: err.message }) };
+  }
+}
+
+/**
+ * Reschedule: cancel old appointment + create new one + update GHL.
+ * Expects: koibox_id (old), ghl_contact_id, clinica, fecha, hora_inicio, hora_fin, nombre, email, movil
+ */
+async function rescheduleAppointment(body, koiboxHeaders, corsHeaders) {
+  const { koibox_id, ghl_contact_id, clinica, fecha, hora_inicio, email } = body;
+
+  if (!koibox_id || !fecha || !hora_inicio) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id, fecha, hora_inicio required' }) };
+  }
+
+  // 1. Cancel old appointment in Koibox (estado 5)
+  let cancelResult = { status: 'skipped' };
+  try {
+    const cancelRes = await fetch(`${KOIBOX_BASE}/agenda/${koibox_id}/`, {
+      method: 'PATCH',
+      headers: koiboxHeaders,
+      body: JSON.stringify({ estado: 5 }),
+    });
+    cancelResult = cancelRes.ok ? { status: 'cancelled' } : { status: 'error', code: cancelRes.status };
+    console.log('[Reschedule] Old appointment cancelled:', koibox_id, cancelResult.status);
+  } catch (err) {
+    cancelResult = { status: 'error', error: err.message };
+    console.log('[Reschedule] Cancel failed:', err.message);
+  }
+
+  // 2. Create new appointment via the existing flow
+  const createResult = await createAppointment(
+    { ...body, action: 'create_appointment' },
+    koiboxHeaders,
+    corsHeaders,
+  );
+
+  const createData = JSON.parse(createResult.body);
+
+  // 3. Track reschedule event
+  trackServerEvent('appointment_rescheduled', {
+    old_koibox_id: koibox_id,
+    new_koibox_id: createData.appointmentId || '',
+    clinica,
+    fecha,
+    hora_inicio,
+    ghl_contact_id: ghl_contact_id || '',
+  }, email);
+
+  // 4. Add reschedule note to GHL
+  const ghlKey = process.env.VITE_GHL_API_KEY;
+  if (ghl_contact_id && ghlKey && createData.success) {
+    try {
+      const ghlHeaders = {
+        'Authorization': `Bearer ${ghlKey}`,
+        'Content-Type': 'application/json',
+        'Version': '2021-07-28',
+      };
+      const noteBody = `🔄 CITA REAGENDADA\nCita anterior (Koibox #${koibox_id}) cancelada.\nNueva cita: ${fecha} a las ${hora_inicio} — ${clinica || ''}\nNuevo Koibox ID: ${createData.appointmentId}\nReagendado por el paciente: ${new Date().toISOString()}`;
+      await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}/notes`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify({ body: noteBody }),
+      });
+      console.log('[Reschedule→GHL] Reschedule note added');
+    } catch (err) {
+      console.log('[Reschedule→GHL] Note failed:', err.message);
+    }
+  }
+
+  return {
+    statusCode: createResult.statusCode,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: createData.success,
+      rescheduled: true,
+      oldAppointmentId: koibox_id,
+      oldCancelStatus: cancelResult.status,
+      newAppointmentId: createData.appointmentId,
+      fecha,
+      hora_inicio,
+      clinica,
+      ghlSync: createData.ghlSync,
+    }),
+  };
+}
+
+/**
  * After creating a Koibox appointment, sync status to GHL:
  * - Find contact by email/phone (or use provided ghl_contact_id)
  * - Update contact custom fields (fecha_cita, hora_cita, clinica_cita)
@@ -720,6 +848,7 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     appointment_hour:   'ftEDr8jnG1GEe5dObXCl',  // Appointment hour (TEXT)
     fecha_cita_opp:     'RXAkzlyYHnz4MjYuYaml',  // fecha_cita_opp (DATE) - mirrors contact.fecha_cita
     hora_cita_opp:      'age1q0r6Ek0PQztGZ4FJ',   // hora_cita_opp (TEXT) - mirrors contact.hora_cita
+    link_reagendar:     'FuAgIVjPvnlMyIybL8fX',  // link_reagendar (TEXT) - patient self-service reschedule/cancel
   };
 
   try {
@@ -734,12 +863,18 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
       const opp = opportunities[0];
       // Note: tratamiento_status is NOT updated here — it tracks payment (not_paid/paid_195/paid_70),
       // booking state is tracked via pipelineStageId
+      // Generate reagendar link: base64(koibox_id:contact_id:opp_id:clinica)
+      const SITE_BASE = process.env.SITE_URL || 'https://diagnostico.hospitalcapilar.com';
+      const token = Buffer.from(`${koiboxId}:${contactId}:${opp.id}:${clinica}`).toString('base64url');
+      const linkReagendar = `${SITE_BASE}/reagendar?t=${token}`;
+
       const customFields = [
         { id: OPP_CF_BOOKING.koibox_id, field_value: koiboxId || '' },
         { id: OPP_CF_BOOKING.appointment_date, field_value: fecha || '' },
         { id: OPP_CF_BOOKING.appointment_hour, field_value: hora_inicio || '' },
         { id: OPP_CF_BOOKING.fecha_cita_opp, field_value: fecha || '' },
         { id: OPP_CF_BOOKING.hora_cita_opp, field_value: hora_inicio || '' },
+        { id: OPP_CF_BOOKING.link_reagendar, field_value: linkReagendar },
       ];
       await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
         method: 'PUT',
@@ -749,7 +884,7 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
           customFields,
         }),
       });
-      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'koiboxId:', koiboxId);
+      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'koiboxId:', koiboxId, 'linkReagendar:', linkReagendar);
     }
   } catch (err) {
     console.log('[Koibox→GHL] Opportunity update failed:', err.message);

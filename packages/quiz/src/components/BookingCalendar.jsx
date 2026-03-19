@@ -10,7 +10,7 @@ const CLINICS = {
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBooked, onBack }) => {
+const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBooked, onBack, rescheduleFrom }) => {
   const [selectedClinic, setSelectedClinic] = useState(ubicacion || null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -58,20 +58,22 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     setBooking(true);
 
     try {
+      const payload = {
+        action: rescheduleFrom ? 'reschedule_appointment' : 'create_appointment',
+        nombre: nombre || '',
+        email: email || '',
+        movil: telefono || '',
+        fecha: selectedDate,
+        hora_inicio: selectedSlot.hora_inicio,
+        hora_fin: selectedSlot.hora_fin,
+        clinica: selectedClinic,
+        ...(contactId && { ghl_contact_id: contactId }),
+        ...(rescheduleFrom && { koibox_id: rescheduleFrom }),
+      };
       const res = await fetch('/.netlify/functions/koibox-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create_appointment',
-          nombre: nombre || '',
-          email: email || '',
-          movil: telefono || '',
-          fecha: selectedDate,
-          hora_inicio: selectedSlot.hora_inicio,
-          hora_fin: selectedSlot.hora_fin,
-          clinica: selectedClinic,
-          ...(contactId && { ghl_contact_id: contactId }),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
