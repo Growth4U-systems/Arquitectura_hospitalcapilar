@@ -154,6 +154,47 @@ export const ClinicGallerySection = () => (
   </section>
 );
 
+export const CEOSection = () => (
+  <section className="py-16 bg-white">
+    <div className="max-w-5xl mx-auto px-6">
+      <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 text-center mb-2">
+        Óscar Mendoza Sanmartín
+      </h2>
+      <p className="text-sm text-gray-400 uppercase tracking-widest text-center mb-10">
+        CEO de Hospital Capilar
+      </p>
+
+      <div className="flex flex-col md:flex-row items-center gap-10">
+        {/* Quote + bio */}
+        <div className="flex-1 space-y-6">
+          <blockquote className="text-xl md:text-2xl italic text-[#4CA994] font-medium leading-relaxed">
+            "Yo antes era calvo, ahora ayudo a personas como tú a que vuelvan a sentirse ellos mismos".
+          </blockquote>
+          <p className="text-sm text-[#4CA994] font-semibold">Óscar Mendoza Sanmartín</p>
+          <p className="text-gray-600 leading-relaxed">
+            Al igual que muchas otras personas, yo también empecé a sufrir en mi día a día las consecuencias de la alopecia.
+            Comencé a sentirme pequeño delante de los demás, a no reconocer a quien veía en el espejo.
+            En 2017 viajé a Turquía para realizar mi trasplante capilar. Durante mi experiencia como paciente pude observar
+            y vivir de primera mano las carencias del sistema turco, y decidí apostar por la calidad de la sanidad española
+            para lanzar este proyecto. Quiero que recuperes tu pelo y tu confianza, y que tu injerto capilar sea toda una
+            grata experiencia con Hospital Capilar.
+          </p>
+        </div>
+
+        {/* CEO photo */}
+        <div className="w-64 md:w-80 shrink-0">
+          <img
+            src="https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_600/v1773946149/Oscar_Mendoza_srrd84.webp"
+            alt="Óscar Mendoza Sanmartín — CEO Hospital Capilar"
+            loading="lazy"
+            className="w-full rounded-2xl shadow-lg object-cover"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 export const Footer = () => (
   <footer className="py-8 border-t border-gray-100">
     <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">

@@ -9,6 +9,7 @@ import {
   SolutionSection,
   ClinicGallerySection,
   TestimonialsSection,
+  CEOSection,
   FAQSection,
   Footer,
 } from './LandingSections';
@@ -58,6 +59,7 @@ const NichoLanding = ({ nicho, onStartQuiz }) => {
       <SolutionSection solution={config.solution} />
       <ClinicGallerySection />
       <TestimonialsSection testimonials={config.testimonials} />
+      <CEOSection />
       <FAQSection faqs={config.faqs} />
 
       {/* Final CTA */}
