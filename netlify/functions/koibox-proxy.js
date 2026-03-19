@@ -93,10 +93,14 @@ exports.handler = async (event) => {
       return await getAppointment(body, koiboxHeaders, headers);
     }
 
+    if (action === 'get_contact_appointment') {
+      return await getContactAppointment(body, koiboxHeaders, headers);
+    }
+
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment, cancel_appointment, reschedule_appointment, get_appointment` }),
+      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment, cancel_appointment, reschedule_appointment, get_appointment, get_contact_appointment` }),
     };
   } catch (err) {
     console.log('[Koibox] Exception:', err.message);
@@ -562,8 +566,9 @@ async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
         body: JSON.stringify({
           pipelineStageId: PIPELINE_STAGE_CANCELLED,
           customFields: [
-            { id: 'RXAkzlyYHnz4MjYuYaml', field_value: '' },  // fecha_cita_opp
-            { id: 'age1q0r6Ek0PQztGZ4FJ', field_value: '' },   // hora_cita_opp
+            { key: 'fecha_cita_opp', field_value: '' },
+            { key: 'hora_cita_opp', field_value: '' },
+            { key: 'koibox_id', field_value: '' },
           ],
         }),
       });
@@ -651,6 +656,125 @@ async function getAppointment(body, koiboxHeaders, corsHeaders) {
         estado: data.estado, // 1=pending, 2=confirmed, 5=cancelled
         titulo: data.titulo,
         cliente: data.cliente ? { nombre: data.cliente_nombre || data.cliente?.nombre, id: data.cliente } : null,
+      }),
+    };
+  } catch (err) {
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: err.message }) };
+  }
+}
+
+/**
+ * Look up a contact's active appointment via GHL opportunity → Koibox.
+ * Used by /mi-cita page: pass ghl_contact_id, get back appointment details + clinica.
+ */
+async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
+  const { ghl_contact_id } = body;
+
+  if (!ghl_contact_id) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'ghl_contact_id required' }) };
+  }
+
+  const ghlKey = process.env.VITE_GHL_API_KEY;
+  if (!ghlKey) {
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'GHL API key not configured' }) };
+  }
+
+  const ghlHeaders = {
+    'Authorization': `Bearer ${ghlKey}`,
+    'Content-Type': 'application/json',
+    'Version': '2021-07-28',
+  };
+  const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
+
+  // 1. Get contact name from GHL
+  let contactName = '';
+  try {
+    const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
+    if (contactRes.ok) {
+      const contactData = await contactRes.json();
+      contactName = contactData?.contact?.firstName || contactData?.contact?.name || '';
+    }
+  } catch (err) {
+    console.log('[GetContactAppt] Contact fetch failed:', err.message);
+  }
+
+  // 2. Find open opportunity with koibox_id
+  let koiboxId = '';
+  let clinica = '';
+  try {
+    const searchRes = await fetch(
+      `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${ghl_contact_id}&status=open`,
+      { headers: ghlHeaders }
+    );
+    const searchData = await searchRes.json();
+    const opp = (searchData?.opportunities || [])[0];
+
+    if (opp?.id) {
+      const oppDetailRes = await fetch(`${GHL_BASE}/opportunities/${opp.id}`, { headers: ghlHeaders });
+      if (oppDetailRes.ok) {
+        const oppDetail = await oppDetailRes.json();
+        const cfs = oppDetail?.opportunity?.customFields || [];
+        const koiboxField = cfs.find(f => f.id === 'x1MAP0Om3rUW3a10ZiUe');
+        koiboxId = koiboxField?.fieldValue || koiboxField?.value || '';
+
+        // Get clinica from contact custom fields
+        const contactRes2 = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
+        if (contactRes2.ok) {
+          const cData = await contactRes2.json();
+          const contactCfs = cData?.contact?.customFields || [];
+          const clinicaField = contactCfs.find(f => f.id === 'upGgK5yc0bSDwqC99DkZ');
+          clinica = (clinicaField?.value || '').toLowerCase();
+        }
+      }
+    }
+  } catch (err) {
+    console.log('[GetContactAppt] Opportunity search failed:', err.message);
+  }
+
+  if (!koiboxId) {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({ hasAppointment: false, contactName }),
+    };
+  }
+
+  // 3. Get appointment from Koibox
+  try {
+    const res = await fetch(`${KOIBOX_BASE}/agenda/${koiboxId}/`, { headers: koiboxHeaders });
+    if (!res.ok) {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ hasAppointment: false, contactName }),
+      };
+    }
+    const data = await res.json();
+
+    // estado 5 = cancelled
+    if (data.estado === 5) {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ hasAppointment: false, contactName, previouslyCancelled: true }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        hasAppointment: true,
+        contactName,
+        koibox_id: koiboxId,
+        clinica: clinica || '',
+        appointment: {
+          id: data.id,
+          fecha: data.fecha,
+          hora_inicio: data.hora_inicio,
+          hora_fin: data.hora_fin,
+          estado: data.estado,
+        },
       }),
     };
   } catch (err) {
@@ -863,18 +987,15 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
       const opp = opportunities[0];
       // Note: tratamiento_status is NOT updated here — it tracks payment (not_paid/paid_195/paid_70),
       // booking state is tracked via pipelineStageId
-      // Generate reagendar link: base64(koibox_id:contact_id:opp_id:clinica)
+      // Generate reagendar link: uses contact_id directly (auto-detects appointment)
       const SITE_BASE = process.env.SITE_URL || 'https://diagnostico.hospitalcapilar.com';
-      const token = Buffer.from(`${koiboxId}:${contactId}:${opp.id}:${clinica}`).toString('base64url');
-      const linkReagendar = `${SITE_BASE}/reagendar?t=${token}`;
+      const linkReagendar = `${SITE_BASE}/mi-cita?c=${contactId}`;
 
       const customFields = [
-        { id: OPP_CF_BOOKING.koibox_id, field_value: koiboxId || '' },
-        { id: OPP_CF_BOOKING.appointment_date, field_value: fecha || '' },
-        { id: OPP_CF_BOOKING.appointment_hour, field_value: hora_inicio || '' },
-        { id: OPP_CF_BOOKING.fecha_cita_opp, field_value: fecha || '' },
-        { id: OPP_CF_BOOKING.hora_cita_opp, field_value: hora_inicio || '' },
-        { id: OPP_CF_BOOKING.link_reagendar, field_value: linkReagendar },
+        { key: 'koibox_id', field_value: koiboxId || '' },
+        { key: 'fecha_cita_opp', field_value: fecha || '' },
+        { key: 'hora_cita_opp', field_value: hora_inicio || '' },
+        { key: 'link_reagendar', field_value: linkReagendar },
       ];
       await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
         method: 'PUT',

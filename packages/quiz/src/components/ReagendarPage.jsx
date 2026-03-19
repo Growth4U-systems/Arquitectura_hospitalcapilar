@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Clock, MapPin, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, AlertTriangle, CheckCircle, XCircle, Loader2, CalendarX } from 'lucide-react';
 import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
@@ -17,29 +17,21 @@ function formatFecha(fecha) {
 }
 
 export default function ReagendarPage() {
-  const tokenData = useMemo(() => {
+  const contactId = useMemo(() => {
     const sp = new URLSearchParams(window.location.search);
-    const t = sp.get('t');
-    if (!t) return null;
-    try {
-      const decoded = atob(t.replace(/-/g, '+').replace(/_/g, '/'));
-      const [koibox_id, contact_id, opp_id, clinica] = decoded.split(':');
-      return { koibox_id, contact_id, opp_id, clinica };
-    } catch {
-      return null;
-    }
+    return sp.get('c') || null;
   }, []);
 
-  const [appointment, setAppointment] = useState(null);
+  const [contactData, setContactData] = useState(null); // { hasAppointment, contactName, koibox_id, clinica, appointment }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState(null); // null | 'reschedule' | 'cancel'
   const [cancelling, setCancelling] = useState(false);
-  const [result, setResult] = useState(null); // { type: 'cancelled' | 'rescheduled', data }
+  const [result, setResult] = useState(null); // { type: 'cancelled' | 'rescheduled' }
 
-  // Fetch current appointment
+  // Fetch contact appointment status
   useEffect(() => {
-    if (!tokenData) {
+    if (!contactId) {
       setError('Link no válido. Contacta con nosotros al 623 457 218.');
       setLoading(false);
       return;
@@ -48,21 +40,19 @@ export default function ReagendarPage() {
     fetch('/.netlify/functions/koibox-proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_appointment', koibox_id: tokenData.koibox_id }),
+      body: JSON.stringify({ action: 'get_contact_appointment', ghl_contact_id: contactId }),
     })
       .then(res => res.json())
       .then(data => {
         if (data.error) {
-          setError('No se encontró la cita. Es posible que ya haya sido cancelada.');
-        } else if (data.estado === 5) {
-          setError('Esta cita ya fue cancelada.');
+          setError('Error al cargar los datos. Inténtalo de nuevo.');
         } else {
-          setAppointment(data);
+          setContactData(data);
         }
       })
-      .catch(() => setError('Error al cargar los datos. Inténtalo de nuevo.'))
+      .catch(() => setError('Error de conexión. Inténtalo de nuevo.'))
       .finally(() => setLoading(false));
-  }, [tokenData]);
+  }, [contactId]);
 
   const handleCancel = async () => {
     if (!confirm('¿Estás seguro de que quieres cancelar tu cita? Esta acción no se puede deshacer.')) return;
@@ -74,9 +64,9 @@ export default function ReagendarPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'cancel_appointment',
-          koibox_id: tokenData.koibox_id,
-          ghl_contact_id: tokenData.contact_id,
-          reason: 'Cancelado por el paciente desde link de reagendar',
+          koibox_id: contactData.koibox_id,
+          ghl_contact_id: contactId,
+          reason: 'Cancelado por el paciente desde link mi-cita',
         }),
       });
       const data = await res.json();
@@ -92,11 +82,11 @@ export default function ReagendarPage() {
     }
   };
 
-  const handleRescheduled = (data) => {
-    setResult({ type: 'rescheduled', data });
+  const handleRescheduled = () => {
+    setResult({ type: 'rescheduled' });
   };
 
-  // Error / invalid token
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
@@ -120,7 +110,7 @@ export default function ReagendarPage() {
     );
   }
 
-  // Success result
+  // Success result (cancelled or rescheduled)
   if (result) {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
@@ -150,9 +140,35 @@ export default function ReagendarPage() {
     );
   }
 
-  const clinicName = CLINICS[tokenData.clinica]?.name || tokenData.clinica || '';
+  // No appointment found
+  if (!contactData.hasAppointment) {
+    return (
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
+          <CalendarX className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          {contactData.contactName && (
+            <p className="text-sm text-gray-500 mb-2">Hola {contactData.contactName},</p>
+          )}
+          <h2 className="text-lg font-extrabold text-gray-900 mb-2">
+            {contactData.previouslyCancelled ? 'Tu cita fue cancelada' : 'No tienes cita programada'}
+          </h2>
+          <p className="text-gray-600 text-sm mb-4">
+            {contactData.previouslyCancelled
+              ? 'Si quieres volver a reservar, llámanos y te ayudamos.'
+              : 'No encontramos una cita activa asociada a tu perfil.'}
+          </p>
+          <a href="tel:+34623457218" className="inline-block bg-[#4CA994] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#3d9482] transition-colors">
+            Llamar al 623 457 218
+          </a>
+        </div>
+      </div>
+    );
+  }
 
-  // Main view: show appointment + options
+  // Has appointment — show details + actions
+  const appt = contactData.appointment;
+  const clinicName = CLINICS[contactData.clinica]?.name || contactData.clinica || '';
+
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
       <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold">
@@ -160,17 +176,22 @@ export default function ReagendarPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
+        {/* Greeting */}
+        {contactData.contactName && (
+          <p className="text-gray-500 text-sm mb-3">Hola {contactData.contactName},</p>
+        )}
+
         {/* Current appointment card */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 shadow-sm">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tu cita actual</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-gray-800">
               <Calendar className="w-4 h-4 text-[#4CA994]" />
-              <span className="font-semibold">{formatFecha(appointment.fecha)}</span>
+              <span className="font-semibold">{formatFecha(appt.fecha)}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-800">
               <Clock className="w-4 h-4 text-[#4CA994]" />
-              <span className="font-semibold">{appointment.hora_inicio}h</span>
+              <span className="font-semibold">{appt.hora_inicio}h</span>
             </div>
             {clinicName && (
               <div className="flex items-center gap-2 text-gray-800">
@@ -181,7 +202,7 @@ export default function ReagendarPage() {
           </div>
         </div>
 
-        {/* Action buttons (when no mode selected) */}
+        {/* Action buttons */}
         {!mode && (
           <div className="space-y-3">
             <button
@@ -241,12 +262,12 @@ export default function ReagendarPage() {
             </div>
             <div className="bg-[#4CA994]/5 border border-[#4CA994]/20 rounded-2xl p-5">
               <BookingCalendar
-                ubicacion={tokenData.clinica}
+                ubicacion={contactData.clinica}
                 nombre=""
                 email=""
                 telefono=""
-                contactId={tokenData.contact_id}
-                rescheduleFrom={tokenData.koibox_id}
+                contactId={contactId}
+                rescheduleFrom={contactData.koibox_id}
                 onBooked={handleRescheduled}
               />
             </div>
