@@ -4,7 +4,7 @@
 
 [build]
   base = "."
-  command = "cd packages/shared && npm install --legacy-peer-deps && cd ../quiz && npm install --legacy-peer-deps && npm run build"
+  command = "cd packages/shared && npm install && cd ../quiz && npm install && npm run build"
   publish = "packages/quiz/dist"
 
 [build.environment]
