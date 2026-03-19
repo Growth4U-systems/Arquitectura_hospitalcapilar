@@ -106,3 +106,66 @@ export const getUTMParams = () => {
     gclid: urlParams.get('gclid') || undefined,
   };
 };
+
+// Clasificar fuente de tráfico desde UTM params
+export const classifyTrafficSource = (utmParams = null) => {
+  const params = utmParams || getUTMParams();
+
+  if (params.fbclid) return 'meta';
+  if (params.gclid) return 'google_ads';
+
+  const source = (params.utm_source || '').toLowerCase();
+  const medium = (params.utm_medium || '').toLowerCase();
+
+  // Meta (Facebook / Instagram)
+  if (['facebook', 'fb', 'instagram', 'ig', 'meta'].includes(source)) return 'meta';
+
+  // Google Ads
+  if (source === 'google' && ['cpc', 'ppc', 'paid'].includes(medium)) return 'google_ads';
+
+  // SEO (Google orgánico)
+  if (source === 'google' && ['organic', ''].includes(medium)) return 'seo';
+  if (medium === 'organic') return 'seo';
+
+  // TikTok
+  if (['tiktok', 'tt'].includes(source)) return 'tiktok';
+
+  // Directo (sin UTMs ni referrer con info)
+  if (!source && !medium) return 'direct';
+
+  return 'other';
+};
+
+// Detectar tipo de funnel desde la URL
+export const detectFunnelType = () => {
+  if (typeof window === 'undefined') return 'quiz_largo';
+
+  const path = window.location.pathname;
+
+  if (path.startsWith('/form/')) return 'formulario_directo';
+  if (path.startsWith('/rapido/')) return 'quiz_corto';
+  return 'quiz_largo';
+};
+
+// Detectar nicho desde la URL
+export const detectNicho = () => {
+  if (typeof window === 'undefined') return undefined;
+
+  const path = window.location.pathname;
+  // Remove prefix (/form/, /rapido/) and trailing slash
+  const slug = path.replace(/^\/(form|rapido)\//, '/').replace(/^\//, '').replace(/\/$/, '');
+
+  if (!slug || slug === 'index') return 'general';
+  return slug;
+};
+
+// Obtener todas las propiedades de contexto para enriquecer eventos
+export const getEventContext = () => {
+  const utmParams = getUTMParams();
+  return {
+    ...utmParams,
+    traffic_source: classifyTrafficSource(utmParams),
+    funnel_type: detectFunnelType(),
+    nicho: detectNicho(),
+  };
+};

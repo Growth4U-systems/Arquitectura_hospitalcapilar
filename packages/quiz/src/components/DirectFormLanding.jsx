@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Phone, CheckCircle2, Loader2, Clock, ShieldCheck } from 'lucide-react';
-import { useAnalytics, getUTMParams } from '@hospital-capilar/shared/analytics';
+import { useAnalytics, getUTMParams, classifyTrafficSource } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { NICHOS } from './nichoConfig';
@@ -191,6 +191,9 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
         behavior: { sessionId: analytics.sessionId || null },
         source: {
           channel: sourceChannel,
+          traffic_source: classifyTrafficSource(utmParams),
+          funnel_type: 'formulario_directo',
+          nicho,
           utm_source: utmParams.utm_source || null,
           utm_medium: utmParams.utm_medium || null,
           utm_campaign: utmParams.utm_campaign || null,

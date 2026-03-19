@@ -69,4 +69,34 @@ async function updateLeadByEmail(email, updateData) {
   }
 }
 
-module.exports = { getFirestore, updateLeadByEmail };
+/**
+ * Get source attribution data from a lead by email.
+ * Returns { funnel_type, traffic_source, nicho } or empty object.
+ */
+async function getLeadSourceByEmail(email) {
+  const firestore = getFirestore();
+  if (!firestore || !email) return {};
+
+  try {
+    const snapshot = await firestore
+      .collection('quiz_leads')
+      .where('email', '==', email)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return {};
+
+    const source = snapshot.docs[0].data()?.source || {};
+    return {
+      funnel_type: source.funnel_type || null,
+      traffic_source: source.traffic_source || null,
+      nicho: source.nicho || null,
+    };
+  } catch (err) {
+    console.log('[Firestore] getLeadSource error:', err.message);
+    return {};
+  }
+}
+
+module.exports = { getFirestore, updateLeadByEmail, getLeadSourceByEmail };

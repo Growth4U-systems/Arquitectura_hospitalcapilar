@@ -1,4 +1,4 @@
-const { updateLeadByEmail } = require('./lib/firebase-admin');
+const { updateLeadByEmail, getLeadSourceByEmail } = require('./lib/firebase-admin');
 
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
@@ -81,10 +81,14 @@ exports.handler = async (event) => {
       return await createAppointment(body, koiboxHeaders, headers);
     }
 
+    if (action === 'cancel_appointment') {
+      return await cancelAppointment(body, koiboxHeaders, headers);
+    }
+
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment` }),
+      body: JSON.stringify({ error: `Unknown action: ${action}. Supported: sync_lead, search_client, get_availability, create_appointment, cancel_appointment` }),
     };
   } catch (err) {
     console.log('[Koibox] Exception:', err.message);
@@ -412,7 +416,8 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     appointmentBookedAt: new Date().toISOString(),
   });
 
-  // 5. Track in PostHog server-side
+  // 5. Track in PostHog server-side (enrich with lead attribution)
+  const leadSource = await getLeadSourceByEmail(email);
   trackServerEvent('appointment_booked', {
     clinica,
     fecha,
@@ -422,6 +427,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     has_phone: !!movil,
     koibox_appointment_id: appointmentData.id,
     koibox_client_id: clientId,
+    ...leadSource,
   }, email);
 
   return {
@@ -438,6 +444,174 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
       ghlSync,
     }),
   };
+}
+
+/**
+ * Cancel an appointment in Koibox and update GHL accordingly.
+ * Called when patient confirms they can't attend (48h reminder flow).
+ * - PATCH Koibox appointment estado=5 (cancelled)
+ * - Update GHL opportunity: tratamiento_status → cancelled, stage → cancelled
+ * - Clear contact fecha_cita/hora_cita
+ * - Add cancellation note
+ */
+async function cancelAppointment(body, koiboxHeaders, corsHeaders) {
+  const { koibox_id, ghl_contact_id, reason } = body;
+
+  if (!koibox_id) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id required' }) };
+  }
+
+  // 1. Cancel in Koibox (estado 5 = cancelled)
+  let koiboxResult = { status: 'skipped' };
+  try {
+    const cancelRes = await fetch(`${KOIBOX_BASE}/agenda/${koibox_id}/`, {
+      method: 'PATCH',
+      headers: koiboxHeaders,
+      body: JSON.stringify({ estado: 5 }),
+    });
+    if (cancelRes.ok) {
+      koiboxResult = { status: 'cancelled' };
+      console.log('[Koibox] Appointment cancelled:', koibox_id);
+    } else {
+      const errData = await cancelRes.json().catch(() => ({}));
+      koiboxResult = { status: 'error', code: cancelRes.status, details: errData };
+      console.log('[Koibox] Cancel failed:', cancelRes.status, JSON.stringify(errData));
+    }
+  } catch (err) {
+    koiboxResult = { status: 'error', error: err.message };
+    console.log('[Koibox] Cancel exception:', err.message);
+  }
+
+  // 2. Update GHL: opportunity + contact + note
+  let ghlResult = { status: 'skipped' };
+  const ghlKey = process.env.VITE_GHL_API_KEY;
+  if (ghl_contact_id && ghlKey) {
+    try {
+      ghlResult = await syncCancellationToGHL(ghl_contact_id, ghlKey, koibox_id, reason);
+    } catch (err) {
+      ghlResult = { status: 'error', error: err.message };
+      console.log('[Koibox→GHL] Cancel sync failed:', err.message);
+    }
+  }
+
+  // 3. Track in PostHog
+  trackServerEvent('appointment_cancelled', {
+    koibox_id,
+    reason: reason || 'patient_cancelled',
+    ghl_contact_id: ghl_contact_id || '',
+  });
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: koiboxResult.status === 'cancelled',
+      koibox: koiboxResult,
+      ghl: ghlResult,
+    }),
+  };
+}
+
+/**
+ * Sync cancellation to GHL:
+ * - Update opportunity: tratamiento_status → cancelled, move to Cancelled stage
+ * - Clear contact fecha_cita/hora_cita fields
+ * - Add cancellation note
+ * - Add tag cita_cancelada
+ */
+async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
+  const ghlHeaders = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Version': '2021-07-28',
+  };
+  const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
+
+  // Opportunity custom field IDs
+  const OPP_CF_CANCEL = {
+    tratamiento_status: 'Hk81fRW2HaTqlry4I1L0',
+  };
+  const PIPELINE_STAGE_CANCELLED = '8a3b4c5d-cancelled'; // TODO: replace with real stage ID from GHL
+
+  // Contact custom field IDs
+  const APPOINTMENT_CF = {
+    fecha_cita:   'yEjha5MpjAeDrrUfFmur',
+    hora_cita:    'KX7eyTmYQKbi0937Wj9I',
+    clinica_cita: 'upGgK5yc0bSDwqC99DkZ',
+  };
+
+  // 1. Find and update opportunity
+  try {
+    const searchRes = await fetch(
+      `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${contactId}&status=open`,
+      { headers: ghlHeaders }
+    );
+    const searchData = await searchRes.json();
+    const opp = (searchData?.opportunities || [])[0];
+
+    if (opp) {
+      await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
+        method: 'PUT',
+        headers: ghlHeaders,
+        body: JSON.stringify({
+          pipelineStageId: PIPELINE_STAGE_CANCELLED,
+          customFields: [
+            { id: OPP_CF_CANCEL.tratamiento_status, field_value: 'cancelled' },
+          ],
+        }),
+      });
+      console.log('[Cancel→GHL] Opportunity updated to cancelled:', opp.id);
+    }
+  } catch (err) {
+    console.log('[Cancel→GHL] Opportunity update failed:', err.message);
+  }
+
+  // 2. Clear contact appointment fields
+  try {
+    await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+      method: 'PUT',
+      headers: ghlHeaders,
+      body: JSON.stringify({
+        customFields: [
+          { id: APPOINTMENT_CF.fecha_cita, field_value: '' },
+          { id: APPOINTMENT_CF.hora_cita, field_value: '' },
+          { id: APPOINTMENT_CF.clinica_cita, field_value: '' },
+        ],
+      }),
+    });
+    console.log('[Cancel→GHL] Contact appointment fields cleared');
+  } catch (err) {
+    console.log('[Cancel→GHL] Contact update failed:', err.message);
+  }
+
+  // 3. Add cancellation note
+  const reasonText = reason || 'El paciente no puede asistir';
+  const noteBody = `❌ CITA CANCELADA\nMotivo: ${reasonText}\nKoibox ID: ${koiboxId}\nFecha de cancelación: ${new Date().toISOString()}\nHueco liberado en la agenda.`;
+
+  try {
+    await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify({ body: noteBody }),
+    });
+    console.log('[Cancel→GHL] Cancellation note added');
+  } catch (err) {
+    console.log('[Cancel→GHL] Note creation failed:', err.message);
+  }
+
+  // 4. Add tag for workflow trigger (Ramiro configures notification to commercial)
+  try {
+    await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify({ tags: ['cita_cancelada'] }),
+    });
+    console.log('[Cancel→GHL] Tag cita_cancelada added');
+  } catch (err) {
+    console.log('[Cancel→GHL] Tag addition failed:', err.message);
+  }
+
+  return { status: 'ok', contactId };
 }
 
 /**

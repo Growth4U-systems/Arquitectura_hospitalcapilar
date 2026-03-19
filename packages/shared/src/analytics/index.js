@@ -8,4 +8,8 @@ export {
   generateSessionId,
   calculateLeadScore,
   getUTMParams,
+  classifyTrafficSource,
+  detectFunnelType,
+  detectNicho,
+  getEventContext,
 } from './events';

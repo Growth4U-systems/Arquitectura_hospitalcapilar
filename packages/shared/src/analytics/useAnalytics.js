@@ -1,6 +1,6 @@
 import { useCallback, useContext, useRef } from 'react';
 import { AnalyticsContext } from './AnalyticsContext';
-import { ANALYTICS_EVENTS, calculateLeadScore, getUTMParams } from './events';
+import { ANALYTICS_EVENTS, calculateLeadScore, getUTMParams, getEventContext } from './events';
 
 // Use window.posthog to avoid import errors when blocked
 const getPostHog = () => typeof window !== 'undefined' ? window.posthog : null;
@@ -40,14 +40,14 @@ export function useAnalytics() {
     questionStartTime.current = Date.now();
     startQuizTimer?.();
 
-    const utmParams = getUTMParams();
+    const context = getEventContext();
 
     safeCapture(ANALYTICS_EVENTS.QUIZ_STARTED, {
       session_id: sessionId,
       timestamp: new Date().toISOString(),
       referrer: document.referrer || 'direct',
       experiment_variant: experimentVariant,
-      ...utmParams,
+      ...context,
     });
   }, [sessionId, experimentVariant, startQuizTimer]);
 
@@ -74,12 +74,15 @@ export function useAnalytics() {
       ? Date.now() - quizStartTime.current
       : 0;
 
+    const context = getEventContext();
+
     safeCapture(ANALYTICS_EVENTS.QUIZ_COMPLETED, {
       session_id: sessionId,
       total_time_ms: totalTime,
       answers_count: Object.keys(answers).length,
       answers_summary: JSON.stringify(answers),
       experiment_variant: experimentVariant,
+      ...context,
     });
   }, [sessionId, experimentVariant]);
 
@@ -125,15 +128,17 @@ export function useAnalytics() {
   const trackFormSubmitted = useCallback((leadData, answers) => {
     const leadScore = calculateLeadScore(answers);
     const answersHash = btoa(JSON.stringify(answers)).slice(0, 20);
+    const context = getEventContext();
 
     safeCapture(ANALYTICS_EVENTS.FORM_SUBMITTED, {
       session_id: sessionId,
       lead_score: leadScore,
       answers_hash: answersHash,
       experiment_variant: experimentVariant,
+      ...context,
     });
 
-    // Identificar usuario
+    // Identificar usuario con propiedades de persona
     try {
       const ph = getPostHog();
       if (leadData.email && ph?.identify) {
@@ -143,6 +148,9 @@ export function useAnalytics() {
           quiz_completed: true,
           lead_score: leadScore,
           signup_date: new Date().toISOString(),
+          funnel_type: context.funnel_type,
+          traffic_source: context.traffic_source,
+          nicho: context.nicho,
         });
       }
     } catch (e) {
@@ -179,9 +187,11 @@ export function useAnalytics() {
   // ============================================
 
   const trackEvent = useCallback((eventName, properties = {}) => {
+    const context = getEventContext();
     safeCapture(eventName, {
       session_id: sessionId,
-      ...properties,
+      ...context,
+      ...properties, // allow caller to override context
     });
   }, [sessionId]);
 

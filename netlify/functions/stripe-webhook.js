@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { updateLeadByEmail } = require('./lib/firebase-admin');
+const { updateLeadByEmail, getLeadSourceByEmail } = require('./lib/firebase-admin');
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
@@ -63,7 +63,8 @@ exports.handler = async (event) => {
         paymentDate: new Date().toISOString(),
       });
 
-      // Track in PostHog server-side
+      // Track in PostHog server-side (enrich with lead attribution)
+      const leadSource = await getLeadSourceByEmail(session.customer_email);
       trackServerEvent('payment_completed', {
         amount: session.amount_total / 100,
         currency: session.currency,
@@ -71,6 +72,7 @@ exports.handler = async (event) => {
         ecp: session.metadata?.ecp || '',
         ubicacion: session.metadata?.ubicacion || '',
         ghl_contact_id: contactId || '',
+        ...leadSource,
       }, session.customer_email);
     }
 

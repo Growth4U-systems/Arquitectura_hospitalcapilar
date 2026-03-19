@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
-import { generateSessionId, ANALYTICS_EVENTS, getUTMParams } from './events';
+import { generateSessionId, ANALYTICS_EVENTS, getEventContext } from './events';
 
 // Use window.posthog to avoid import errors when blocked
 const getPostHog = () => typeof window !== 'undefined' ? window.posthog : null;
@@ -57,14 +57,14 @@ export function AnalyticsProvider({ children }) {
       const trackSession = () => {
         const ph = getPostHog();
         if (ph?.capture) {
-          const utmParams = getUTMParams();
+          const context = getEventContext();
           ph.capture(ANALYTICS_EVENTS.SESSION_START, {
             session_id: sessionId,
             referrer: document.referrer || 'direct',
             user_agent: navigator.userAgent,
             screen_width: window.innerWidth,
             screen_height: window.innerHeight,
-            ...utmParams,
+            ...context,
           });
         }
       };
@@ -88,11 +88,13 @@ export function AnalyticsProvider({ children }) {
 
       const ph = getPostHog();
       if (ph?.capture) {
+        const context = getEventContext();
         ph.capture(ANALYTICS_EVENTS.QUIZ_ABANDONED, {
           session_id: sessionId,
           last_question_index: answersCount,
           time_spent_ms: timeSpent,
           answers_count: answersCount,
+          ...context,
         });
       }
     };
