@@ -5,7 +5,7 @@ import {
   Check, X, Star, ChevronDown, Lock, Phone
 } from 'lucide-react';
 import { useAnalytics } from '@hospital-capilar/shared/analytics';
-import { getUTMParams, classifyTrafficSource, detectFunnelType, detectNicho } from '@hospital-capilar/shared/analytics';
+import { getUTMParams, classifyTrafficSource, detectFunnelType } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import PaymentConfirmation from './PaymentConfirmation';
@@ -234,7 +234,6 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const [utmParams] = useState(() => getUTMParams());
   const [funnelType] = useState(() => detectFunnelType());
   const [trafficSource] = useState(() => classifyTrafficSource());
-  const [nicho] = useState(() => detectNicho());
   const ghlContactIdRef = useRef(null);
   const [paymentStep, setPaymentStep] = useState(null); // null | 'paying' | 'paid'
   const [openFaq, setOpenFaq] = useState(null);
