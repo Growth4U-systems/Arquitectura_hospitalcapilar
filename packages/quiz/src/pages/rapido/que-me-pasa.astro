@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ShortQuizIsland from '../../components/ShortQuizIsland.jsx';
+---
+
+<BaseLayout title="¿Por Qué Se Me Cae el Pelo? Diagnóstico Rápido - Hospital Capilar" description="No sabes por qué se te cae el pelo. Responde 4 preguntas y recibe orientación personalizada en 1 minuto.">
+  <ShortQuizIsland client:only="react" nicho="que-me-pasa" />
+</BaseLayout>
