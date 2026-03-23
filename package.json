@@ -10,7 +10,10 @@
     "build": "npm --prefix packages/quiz run build",
     "build:quiz": "npm --prefix packages/quiz run build",
     "build:dashboard": "npm --prefix packages/dashboard run build",
-    "install:all": "npm install && cd packages/shared && npm install && cd ../quiz && npm install && cd ../dashboard && npm install"
+    "install:all": "npm install && cd packages/shared && npm install && cd ../quiz && npm install && cd ../dashboard && npm install",
+    "smoke-test": "node scripts/smoke-test.js",
+    "smoke-test:local": "node scripts/smoke-test.js http://localhost:8888",
+    "health-check": "node -e \"fetch('https://diagnostico.hospitalcapilar.com/.netlify/functions/health-check').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2))).catch(e=>console.error(e))\""
   },
   "devDependencies": {
     "typescript": "^5.7.3"
@@ -19,6 +22,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "firebase-admin": "^13.7.0"
+    "firebase-admin": "^13.7.0",
+    "resend": "^6.9.4"
   }
 }
