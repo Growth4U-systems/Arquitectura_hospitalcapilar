@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react'
+import PhoneInput from '../PhoneInput'
 
 export default function LeadFormScreen({
   screen,
@@ -142,20 +143,34 @@ export default function LeadFormScreen({
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
                   {config.label}
                 </label>
-                <input
-                  type={config.type}
-                  value={formData[field]}
-                  onChange={(e) => handleChange(field, e.target.value)}
-                  className={`w-full p-3 md:p-4 border rounded-xl focus:ring-2 focus:outline-none transition ${
-                    errors[field]
-                      ? 'border-red-300 focus:ring-red-200'
-                      : 'border-gray-200 focus:ring-opacity-50'
-                  }`}
-                  style={{
-                    '--tw-ring-color': errors[field] ? undefined : primaryColor,
-                  }}
-                  placeholder={config.placeholder}
-                />
+                {field === 'phone' ? (
+                  <PhoneInput
+                    value={formData.phone}
+                    onChange={(phone) => handleChange('phone', phone)}
+                    required={config.required}
+                    inputClassName={`p-3 md:p-4 ${
+                      errors.phone
+                        ? 'border-red-300 focus:ring-red-200'
+                        : 'focus:ring-2 focus:ring-opacity-50'
+                    }`}
+                    placeholder="612 345 678"
+                  />
+                ) : (
+                  <input
+                    type={config.type}
+                    value={formData[field]}
+                    onChange={(e) => handleChange(field, e.target.value)}
+                    className={`w-full p-3 md:p-4 border rounded-xl focus:ring-2 focus:outline-none transition ${
+                      errors[field]
+                        ? 'border-red-300 focus:ring-red-200'
+                        : 'border-gray-200 focus:ring-opacity-50'
+                    }`}
+                    style={{
+                      '--tw-ring-color': errors[field] ? undefined : primaryColor,
+                    }}
+                    placeholder={config.placeholder}
+                  />
+                )}
                 {errors[field] && (
                   <p className="text-red-500 text-xs mt-1">{errors[field]}</p>
                 )}

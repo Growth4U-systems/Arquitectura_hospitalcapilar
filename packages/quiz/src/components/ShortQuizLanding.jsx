@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, Phone, ShieldCheck, Stethoscope, Clock, Check, X, Star, ChevronDown } from 'lucide-react';
+import PhoneInput from './PhoneInput';
 import { useAnalytics, getUTMParams, classifyTrafficSource } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { safeFetch } from '../utils/safeFetch';
 import { NICHOS } from './nichoConfig';
 import { OBJECTIONS_BY_ECP, TESTIMONIALS_BY_ECP, INCLUDED_BY_CTA, FAQS_BY_CTA } from './resultContent';
 import {
@@ -101,8 +103,8 @@ const ECP_MESSAGES = {
   },
 };
 
-const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
-  const config = NICHOS[nicho] || NICHOS['hombres-caida'];
+const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
+  const config = NICHOS[nicho] || NICHOS['que-me-pasa'];
   const analytics = useAnalytics();
   const [utmParams] = useState(() => getUTMParams());
 
@@ -134,6 +136,7 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
   const handleSubmit = async () => {
     if (!form.nombre || !form.email || !form.telefono || !form.provincia || !form.consentPrivacidad) return;
+    if (submitting) return; // Prevent double-submit
     setSubmitting(true);
     setPhase('analyzing');
 
@@ -178,6 +181,9 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:             'dydSaUSYbb5R7nYOboLq',
       utm_term:                'eLdhsOthmyD38al527tG',
+      nicho:                   'o4I4AG3ZK07nEzAMLTlK',
+      funnel_type:             'liIshAFJMngl2BV9MtVw',
+      traffic_source:          'miu6E3oxZowYahYGjX1A',
     };
 
     const customFields = [
@@ -188,6 +194,9 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
       { id: CF.contact_score, field_value: contactScore },
       { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
       { id: CF.consent, field_value: form.consentPrivacidad ? `privacidad:si|comunicaciones:${form.consentComunicaciones ? 'si' : 'no'}` : '' },
+      { id: CF.nicho, field_value: nicho || 'general' },
+      { id: CF.funnel_type, field_value: 'quiz_corto' },
+      { id: CF.traffic_source, field_value: classifyTrafficSource(utmParams) || 'direct' },
     ];
     if (utmParams.utm_source) customFields.push({ id: CF.utm_source, field_value: utmParams.utm_source });
     if (utmParams.utm_medium) customFields.push({ id: CF.utm_medium, field_value: utmParams.utm_medium });
@@ -234,11 +243,11 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
 
     let ghlResult = { status: 'pending' };
     try {
-      const response = await fetch('/.netlify/functions/ghl-proxy', {
+      const response = await safeFetch('/.netlify/functions/ghl-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      }, { timeoutMs: 20000, retries: 1, label: 'GHL-ShortQuiz' });
       const data = await response.json();
       ghlResult = { status: response.ok ? 'ok' : 'error', contactId: data.contactId || null };
     } catch (err) {
@@ -736,8 +745,13 @@ const ShortQuizLanding = ({ nicho = 'hombres-caida' }) => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono <span className="text-red-500">*</span></label>
-                  <input type="tel" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })}
-                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#4CA994] outline-none text-sm" placeholder="+34 612 345 678" />
+                  <PhoneInput
+                    value={form.telefono}
+                    onChange={(phone) => setForm({ ...form, telefono: phone })}
+                    required
+                    inputClassName="p-3 focus:border-[#4CA994]"
+                    placeholder="612 345 678"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">¿Cerca de qué clínica te queda mejor? <span className="text-red-500">*</span></label>

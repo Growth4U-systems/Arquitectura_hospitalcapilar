@@ -8,7 +8,9 @@ import { useAnalytics } from '@hospital-capilar/shared/analytics';
 import { getUTMParams, classifyTrafficSource, detectFunnelType } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import { safeFetch } from '../utils/safeFetch';
 import PaymentConfirmation from './PaymentConfirmation';
+import PhoneInput from './PhoneInput';
 import { OBJECTIONS_BY_ECP, TESTIMONIALS_BY_ECP, INCLUDED_BY_CTA, FAQS_BY_CTA } from './resultContent';
 
 const WhatsAppIcon = ({ size = 24, className = '' }) => (
@@ -176,40 +178,19 @@ ${frame === 'FRAME_A' ? `CIERRE DIRECTO: Este lead quiere actuar YA. No divagar 
 // NICHO WELCOME CONFIGS
 // ============================================
 const NICHO_WELCOME = {
-  mujeres: {
-    badge: 'Especialistas en Alopecia Femenina',
-    headline: '¿Tu pelo pierde densidad y',
-    headlineAccent: 'nadie te da una respuesta clara?',
-    subheadline: 'El 40% de las mujeres sufre pérdida de pelo. La mayoría recibe un diagnóstico genérico. Nosotros cruzamos tu perfil hormonal con un estudio capilar completo para encontrar la causa real.',
-    cta: 'Descubre qué le pasa a tu pelo',
-  },
-  jovenes: {
+  'el-espejo': {
     badge: 'Alopecia Temprana: Actúa Antes',
     headline: '¿Notas que tus entradas',
     headlineAccent: 'retroceden antes de tiempo?',
     subheadline: 'La alopecia a los 18-28 años es más común de lo que piensas. Y cuanto antes actúes, más pelo conservas. No esperes a que sea tarde — un diagnóstico a tiempo cambia todo.',
     cta: 'Evalúa tu caso en 3 minutos',
   },
-  'hombres-caida': {
-    badge: 'Diagnóstico Capilar Avanzado',
-    headline: '¿Llevas tiempo con caída y',
-    headlineAccent: 'nada de lo que pruebas funciona?',
-    subheadline: 'El 60% de hombres que usan minoxidil no ven resultados. No porque el producto no sirva — sino porque nunca les diagnosticaron correctamente la causa de su caída.',
-    cta: 'Descubre por qué no funciona',
-  },
-  'segunda-opinion': {
-    badge: 'Segunda Opinión Capilar',
-    headline: '¿Tuviste una mala experiencia',
-    headlineAccent: 'en otra clínica capilar?',
-    subheadline: 'Sabemos que hay clínicas que prometen mucho y entregan poco. Hospital Capilar es un centro médico, no un centro estético. Aquí no hay consultas gratuitas que son ventas disfrazadas.',
-    cta: 'Evalúa tu caso sin compromiso',
-  },
-  'post-trasplante': {
-    badge: 'Mantenimiento Post-Trasplante',
-    headline: 'Ya te operaste.',
-    headlineAccent: '¿Quién protege tu inversión?',
-    subheadline: 'Un trasplante capilar sin plan de mantenimiento pierde resultados con el tiempo. El pelo trasplantado no se cae, pero el pelo nativo sigue sometido a los mismos factores que causaron la caída original.',
-    cta: 'Protege tu trasplante',
+  'es-normal': {
+    badge: 'Especialistas en Alopecia Femenina',
+    headline: '¿Tu pelo pierde densidad y',
+    headlineAccent: 'nadie te da una respuesta clara?',
+    subheadline: 'El 40% de las mujeres sufre pérdida de pelo. La mayoría recibe un diagnóstico genérico. Nosotros cruzamos tu perfil hormonal con un estudio capilar completo para encontrar la causa real.',
+    cta: 'Descubre qué le pasa a tu pelo',
   },
   postparto: {
     badge: 'Caída Capilar Postparto',
@@ -217,6 +198,34 @@ const NICHO_WELCOME = {
     headlineAccent: 'desde el embarazo o el parto?',
     subheadline: 'El efluvio postparto afecta al 50% de madres. En la mayoría de casos es temporal, pero en algunas mujeres revela una alopecia subyacente que necesita tratamiento. La única forma de saberlo es con un diagnóstico.',
     cta: 'Descubre si es temporal o algo más',
+  },
+  'que-me-pasa': {
+    badge: '¿Por Qué Se Me Cae el Pelo?',
+    headline: 'Se te cae el pelo y',
+    headlineAccent: 'no sabes por qué',
+    subheadline: 'Google te asusta más de lo que te ayuda. No sabes si es estrés, genético o algo peor. El 70% de las personas con caída no tienen diagnóstico.',
+    cta: '¿Qué me pasa? Descúbrelo en 3 min',
+  },
+  'ya-me-engañaron': {
+    badge: 'Segunda Opinión Capilar',
+    headline: '¿Tuviste una mala experiencia',
+    headlineAccent: 'en otra clínica capilar?',
+    subheadline: 'Sabemos que hay clínicas que prometen mucho y entregan poco. Hospital Capilar es un centro médico, no un centro estético. Aquí no hay consultas gratuitas que son ventas disfrazadas.',
+    cta: 'Evalúa tu caso sin compromiso',
+  },
+  'farmacia-sin-salida': {
+    badge: 'Cuando los Productos No Funcionan',
+    headline: '¿Llevas años gastando en champús y',
+    headlineAccent: 'nada funciona?',
+    subheadline: 'Olistic, Iraltone, Pilexil, minoxidil... €500+ tirados. El problema no son los productos — es que nunca te diagnosticaron por qué se te cae el pelo.',
+    cta: 'Descubre por qué no funciona',
+  },
+  'la-inversion': {
+    badge: 'Mantenimiento Post-Trasplante',
+    headline: 'Ya te operaste.',
+    headlineAccent: '¿Quién protege tu inversión?',
+    subheadline: 'Un trasplante capilar sin plan de mantenimiento pierde resultados con el tiempo. El pelo trasplantado no se cae, pero el pelo nativo sigue sometido a los mismos factores que causaron la caída original.',
+    cta: 'Protege tu trasplante',
   },
 };
 
@@ -1016,6 +1025,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:             'dydSaUSYbb5R7nYOboLq',
       utm_term:                'eLdhsOthmyD38al527tG',
+      nicho:                   'o4I4AG3ZK07nEzAMLTlK',
+      funnel_type:             'liIshAFJMngl2BV9MtVw',
+      traffic_source:          'miu6E3oxZowYahYGjX1A',
     };
 
     // contact_score: NUMERICAL 0-100
@@ -1036,6 +1048,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       { id: CF.contact_score, field_value: contactScore },
       { id: CF.ubicacion_clinica, field_value: data.ubicacion || '' },
       { id: CF.consent, field_value: data.consentPrivacidad ? `privacidad:si|comunicaciones:${data.consentComunicaciones ? 'si' : 'no'}` : '' },
+      { id: CF.nicho, field_value: nicho || 'general' },
+      { id: CF.funnel_type, field_value: funnelType || 'quiz_largo' },
+      { id: CF.traffic_source, field_value: trafficSource || 'direct' },
     ];
 
     // UTMs
@@ -1096,11 +1111,11 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     console.log('[GHL] Sending payload:', JSON.stringify(payload));
 
     try {
-      const response = await fetch('/.netlify/functions/ghl-proxy', {
+      const response = await safeFetch('/.netlify/functions/ghl-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      }, { timeoutMs: 20000, retries: 1, label: 'GHL' });
       const responseData = await response.json();
       console.log('[GHL] Response:', response.status, responseData);
       return {
@@ -1267,7 +1282,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     // When user requests a call, tag + note the contact in GHL
     if (ctaType === 'solicitar_llamada' && ghlContactIdRef.current) {
       const contactId = ghlContactIdRef.current;
-      fetch('/.netlify/functions/ghl-call-request', {
+      safeFetch('/.netlify/functions/ghl-call-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1275,7 +1290,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           ecp: finalResult?.ecp || '',
           nombre: answers.nombre || '',
         }),
-      }).catch(() => {}); // silent — PostHog already tracked it
+      }, { timeoutMs: 10000, retries: 1, label: 'GHL-CallRequest' })
+        .catch((err) => console.warn('[GHL-CallRequest] Failed:', err.message));
     }
   };
 
@@ -1437,9 +1453,10 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     }
 
     const handleStartPayment = async () => {
+      if (paymentStep === 'paying') return; // Prevent double-click
       setPaymentStep('paying');
       try {
-        const res = await fetch('/.netlify/functions/stripe-checkout', {
+        const res = await safeFetch('/.netlify/functions/stripe-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1450,7 +1467,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             ubicacion: answers.ubicacion || '',
             amount: bonoPrice * 100,
           }),
-        });
+        }, { timeoutMs: 15000, retries: 0, label: 'Stripe' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.url) {
@@ -1890,9 +1907,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono <span className="text-red-500">*</span></label>
-                <input type="tel" value={answers.telefono || ''} onChange={(e) => setAnswers({...answers, telefono: e.target.value})}
+                <PhoneInput
+                  value={answers.telefono || ''}
+                  onChange={(phone) => setAnswers({...answers, telefono: phone})}
                   onFocus={() => analytics.trackEvent('form_field_focused', { field: 'telefono' })}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#4CA994] outline-none text-sm" placeholder="+34 612 345 678" />
+                  required
+                  inputClassName="p-3 focus:border-[#4CA994]"
+                  placeholder="612 345 678"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">¿Cerca de qué clínica te queda mejor? <span className="text-red-500">*</span></label>

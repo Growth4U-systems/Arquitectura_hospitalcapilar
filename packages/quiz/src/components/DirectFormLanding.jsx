@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Phone, CheckCircle2, Loader2, Clock, ShieldCheck } from 'lucide-react';
+import PhoneInput from './PhoneInput';
 import { useAnalytics, getUTMParams, classifyTrafficSource } from '@hospital-capilar/shared/analytics';
 import { db } from '@hospital-capilar/shared/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { safeFetch } from '../utils/safeFetch';
 import { NICHOS } from './nichoConfig';
 import {
   TopBar,
@@ -42,8 +44,8 @@ const UbicacionSelect = ({ value, onChange, className }) => (
   </select>
 );
 
-const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
-  const config = NICHOS[nicho] || NICHOS['hombres-caida'];
+const DirectFormLanding = ({ nicho = 'que-me-pasa' }) => {
+  const config = NICHOS[nicho] || NICHOS['que-me-pasa'];
   const analytics = useAnalytics();
   const [utmParams] = useState(() => getUTMParams());
 
@@ -58,6 +60,7 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.nombre || !form.telefono) return;
+    if (submitting) return; // Prevent double-submit
 
     setSubmitting(true);
 
@@ -91,6 +94,9 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
       utm_campaign:            '3fUI7GO9o7oZ7ddMNnFf',
       utm_content:             'dydSaUSYbb5R7nYOboLq',
       utm_term:                'eLdhsOthmyD38al527tG',
+      nicho:                   'o4I4AG3ZK07nEzAMLTlK',
+      funnel_type:             'liIshAFJMngl2BV9MtVw',
+      traffic_source:          'miu6E3oxZowYahYGjX1A',
     };
 
     // contact_score: NUMERICAL 0-100 (form tiene menos peso que quiz)
@@ -115,6 +121,9 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
       { id: CF.contact_score, field_value: contactScore },
       { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
       { id: CF.consent, field_value: form.consentPrivacidad ? `privacidad:si|comunicaciones:${form.consentComunicaciones ? 'si' : 'no'}` : '' },
+      { id: CF.nicho, field_value: nicho || 'general' },
+      { id: CF.funnel_type, field_value: 'formulario_directo' },
+      { id: CF.traffic_source, field_value: classifyTrafficSource(utmParams) || 'direct' },
     ];
 
     // UTMs
@@ -162,11 +171,11 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
     let ghlResult = { status: 'pending' };
 
     try {
-      const response = await fetch('/.netlify/functions/ghl-proxy', {
+      const response = await safeFetch('/.netlify/functions/ghl-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      }, { timeoutMs: 20000, retries: 1, label: 'GHL-Form' });
       const data = await response.json();
       ghlResult = {
         status: response.ok ? 'ok' : 'error',
@@ -346,14 +355,12 @@ const DirectFormLanding = ({ nicho = 'hombres-caida' }) => {
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="tel"
-            name="telefono"
-            placeholder="Teléfono / WhatsApp"
+          <PhoneInput
             value={form.telefono}
-            onChange={handleChange}
+            onChange={(phone) => setForm(prev => ({ ...prev, telefono: phone }))}
             required
-            className="w-full px-4 py-3 rounded-xl bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CA994]"
+            inputClassName="px-4 py-3 bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#4CA994]"
+            placeholder="612 345 678"
           />
           <UbicacionSelect
             value={form.provincia}

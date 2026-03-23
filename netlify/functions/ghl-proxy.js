@@ -1,3 +1,5 @@
+const { sendAlert } = require('./lib/alert');
+
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const SALESFORCE_URL = 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00D090000047Cb3';
 const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
@@ -75,6 +77,16 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
+
+    // Normalize phone to E.164 format for GHL + WhatsApp
+    if (body.phone) {
+      let phone = body.phone.replace(/[\s\-\(\)]/g, '');
+      // If no prefix, assume Spain (+34)
+      if (!phone.startsWith('+')) {
+        phone = '+34' + phone;
+      }
+      body.phone = phone;
+    }
 
     // Extract extra fields before sending to GHL contacts API
     const agentMessage = body._agentMessage || '';
@@ -245,6 +257,10 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     console.log('[GHL] Exception:', err.message);
+    await sendAlert('ghl-proxy', `Lead creation failed: ${err.message}`, {
+      severity: 'critical',
+      error: err.message,
+    });
     return {
       statusCode: 500,
       headers,
