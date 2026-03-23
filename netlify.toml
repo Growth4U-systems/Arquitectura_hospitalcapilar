@@ -4,7 +4,7 @@
 
 [build]
   base = "."
-  command = "cd packages/shared && npm install && cd ../quiz && npm install && npm run build"
+  command = "npm install && cd packages/shared && npm install && cd ../quiz && npm install && npm run build"
   publish = "packages/quiz/dist"
 
 [build.environment]
