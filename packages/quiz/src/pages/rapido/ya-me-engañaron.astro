@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ShortQuizIsland from '../../components/ShortQuizIsland.jsx';
+---
+
+<BaseLayout title="Segunda Opinión Capilar Rápida - Hospital Capilar" description="¿Tuviste una mala experiencia en otra clínica? Responde 4 preguntas y recibe orientación en 1 minuto.">
+  <ShortQuizIsland client:only="react" nicho="ya-me-engañaron" />
+</BaseLayout>
