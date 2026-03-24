@@ -451,7 +451,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       id: 'impacto', block: 2,
       title: '¿Cuánto te afecta este problema en tu día a día?',
       type: 'single',
-      microTip: 'La pérdida de pelo afecta a la autoestima del 75% de las personas que la sufren. No estás solo/a.',
+      microTipFn: (ans) => `La pérdida de pelo afecta a la autoestima del 75% de las personas que la sufren. No estás ${ans.sexo === 'mujer' ? 'sola' : 'solo'}.`,
       options: [
         { label: 'Poco — me preocupa pero no me limita', value: 'bajo' },
         { label: 'Bastante — evito ciertas situaciones o peinados', value: 'medio' },
@@ -463,9 +463,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     {
       id: 'social_validacion', block: 2,
       type: 'info',
-      infoContent: {
+      infoContentFn: (ans) => ({
         icon: 'heart',
-        headline: 'No estás solo/a en esto',
+        headline: `No estás ${ans.sexo === 'mujer' ? 'sola' : 'solo'} en esto`,
         body: 'Miles de pacientes han pasado por donde tú estás ahora. Nuestro equipo médico especializado en salud capilar ha ayudado a cada uno de ellos a entender su caso y encontrar una solución real.',
         stats: [
           { value: '+10.000', label: 'pacientes atendidos' },
@@ -475,7 +475,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         image: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/mejores_cirujanos_de_injerto_capilar_w5ppmh.jpg',
         imageAlt: 'Equipo médico Hospital Capilar',
         cta: 'Seguir con mi diagnóstico',
-      },
+      }),
     },
     {
       id: 'diagnostico_previo', block: 2,
@@ -934,7 +934,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       if (perfil === 'C') {
         return {
           primary: { type: 'descarga_guia', label: 'Descarga tu Guía (PDF)', icon: 'Download', style: 'primary' },
-          secondary: { type: 'solicitar_llamada', label: 'Que me llamen sin compromiso', icon: 'PhoneCall', style: 'text' },
+          secondary: null,
           heading: 'Recibe tu Guía Personalizada',
           description: 'Sabemos que vienes con dudas. Te hemos preparado una guía con todo lo que necesitas saber antes de tomar cualquier decisión.',
         };
@@ -960,7 +960,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       // Perfil A o B → WhatsApp como vía principal de contacto
       return {
         primary: { type: 'whatsapp', label: 'Agendar cita por WhatsApp', icon: 'WhatsApp', style: 'primary', badge: 'PASO RECOMENDADO' },
-        secondary: { type: 'solicitar_llamada', label: 'Prefiero que me llamen', icon: 'PhoneCall', style: 'text' },
+        secondary: null,
         heading: 'Reserva tu diagnóstico presencial',
         description: 'El siguiente paso es confirmar el pre-diagnóstico con un médico en clínica. Escríbenos por WhatsApp y te agendamos.',
       };
@@ -979,7 +979,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       // Perfil A o B → cobrar bono (A/B test 125€/195€)
       return {
         primary: { type: 'pagar_bono', label: `Reserva tu Diagnóstico — ${bonoPrice}€`, icon: 'Calendar', style: 'primary', badge: 'DIAGNÓSTICO COMPLETO' },
-        secondary: { type: 'solicitar_llamada', label: '¿Dudas? Te llamamos sin compromiso', icon: 'PhoneCall', style: 'text' },
+        secondary: null,
         heading: 'Tu caso necesita un diagnóstico especializado',
         description: 'La consulta incluye tricoscopía digital + analítica hormonal completa + plan de tratamiento personalizado. En 30 minutos tendrás respuestas.',
       };
@@ -1134,7 +1134,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // NAVIGATION HANDLERS
   // ============================================
   const handleNext = () => {
-    if (currentQ.microTip && !showMicroTip) {
+    if ((currentQ.microTip || currentQ.microTipFn) && !showMicroTip) {
       setShowMicroTip(true);
       return;
     }
@@ -1745,7 +1745,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               <Info size={32} style={{ color: theme.primary }} />
             </div>
             <h3 className="text-xl font-bold text-[#2C3E50] mb-4">¿Sabías que...?</h3>
-            <p className="text-[#405B5B] text-lg leading-relaxed mb-8">{currentQ.microTip}</p>
+            <p className="text-[#405B5B] text-lg leading-relaxed mb-8">{currentQ.microTipFn ? currentQ.microTipFn(answers) : currentQ.microTip}</p>
             <button
               onClick={handleNext}
               className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-md hover:opacity-90 transition-opacity"
