@@ -224,23 +224,32 @@
   </div>
 </div>
 
-<!-- COST / ROI (future) -->
-<div class="section-header" style="color:#555;">
-  Coste y ROI <span style="font-size:12px;background:#333;padding:2px 8px;border-radius:4px;margin-left:8px;">PRONTO</span>
+<!-- COST / ROI -->
+<div class="section-header">
+  Coste y ROI <span style="font-size:12px;background:#10b981;padding:2px 8px;border-radius:4px;margin-left:8px;color:#fff;">LIVE</span>
 </div>
-<div class="grid" style="opacity:0.4;">
-  <div class="card">
-    <div class="card-header"><h3>CPL por fuente</h3><span class="type">Table</span></div>
+<div class="kpi-row" id="adSpendKpiRow" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="kpi"><div class="value" id="kpi-total-spend">-</div><div class="label">Gasto total</div></div>
+  <div class="kpi"><div class="value" id="kpi-avg-cpl">-</div><div class="label">CPL medio</div></div>
+  <div class="kpi"><div class="value" id="kpi-avg-cpa">-</div><div class="label">Coste / Agenda</div></div>
+  <div class="kpi"><div class="value" id="kpi-total-ad-clicks">-</div><div class="label">Clicks (ads)</div></div>
+</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>CPL / CPA por fuente</h3><span class="type">Table</span></div>
     <div class="card-body">
-      <table>
-        <thead><tr><th>Fuente</th><th class="num">Spend</th><th class="num">Leads</th><th class="num">CPL</th><th class="num">Agendadas</th><th class="num">Coste/Agenda</th><th class="num">CAC</th><th class="num">Revenue</th><th class="num">ROAS</th></tr></thead>
-        <tbody>
-          <tr><td>Meta</td><td class="num">&euro;-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td></tr>
-          <tr><td>Google Ads</td><td class="num">&euro;-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td></tr>
-          <tr><td>TikTok</td><td class="num">&euro;-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td></tr>
-          <tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td><td class="num">&euro;-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">-</td></tr>
-        </tbody>
-      </table>
+      <table id="adSpendTable"></table>
+    </div>
+  </div>
+  <div class="card full-width">
+    <div class="card-header"><h3>Gasto diario por plataforma</h3><span class="type">Trend</span></div>
+    <div class="card-body">
+      <div id="adSpendDailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
+      <div id="adSpendDailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
+      <div class="legend" style="margin-top:8px;">
+        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
+        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
+      </div>
     </div>
   </div>
 </div>
@@ -417,6 +426,9 @@ function renderDashboard(data) {
 
   // ECP
   renderEcp(data);
+
+  // Ad Spend / ROI
+  renderAdSpend(data);
 }
 
 function renderFunnel(k) {
@@ -727,6 +739,161 @@ function renderEcp(data) {
   });
   if (entries.length === 0) html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos de clasificacion ECP</div>';
   document.getElementById('ecpChart').innerHTML = html;
+}
+
+// ---- AD SPEND / ROI ----
+function fmtEur(n) {
+  if (n == null || isNaN(n)) return '-';
+  return '€' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtEurDec(n) {
+  if (n == null || isNaN(n)) return '-';
+  return '€' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const AD_SOURCE_MAP = {
+  'meta_ads': 'Meta',
+  'google_ads': 'Google Ads',
+};
+
+function normalizeAdSource(s) {
+  return AD_SOURCE_MAP[s] || s || 'Otro';
+}
+
+function renderAdSpend(data) {
+  const adSpend = data.ad_spend_by_source || [];
+  const adDaily = data.ad_spend_daily || [];
+
+  // Merge ad spend with lead/booking data from traffic sources
+  const trafficMap = {};
+  (data.by_traffic_source || []).forEach(r => {
+    const s = normalizeSource(r.source);
+    if (!trafficMap[s]) trafficMap[s] = { leads: 0, booked: 0, attended: 0 };
+    trafficMap[s].leads += r.leads || 0;
+    trafficMap[s].booked += r.booked || 0;
+    trafficMap[s].attended += r.attended || 0;
+  });
+
+  // Build combined rows
+  const rows = [];
+  let totalSpend = 0, totalClicks = 0, totalLeads = 0, totalBooked = 0;
+
+  adSpend.forEach(r => {
+    const adSrc = normalizeAdSource(r.source);
+    const traffic = trafficMap[adSrc] || { leads: 0, booked: 0, attended: 0 };
+    const spend = Number(r.spend) || 0;
+    const clicks = Number(r.clicks) || 0;
+    const leads = traffic.leads;
+    const booked = traffic.booked;
+    const cpl = leads > 0 ? spend / leads : 0;
+    const cpa = booked > 0 ? spend / booked : 0;
+
+    totalSpend += spend;
+    totalClicks += clicks;
+    totalLeads += leads;
+    totalBooked += booked;
+
+    rows.push({ source: adSrc, spend, clicks, leads, booked, cpl, cpa });
+  });
+
+  // KPIs
+  document.getElementById('kpi-total-spend').textContent = fmtEur(totalSpend);
+  document.getElementById('kpi-avg-cpl').textContent = totalLeads > 0 ? fmtEurDec(totalSpend / totalLeads) : '-';
+  document.getElementById('kpi-avg-cpa').textContent = totalBooked > 0 ? fmtEurDec(totalSpend / totalBooked) : '-';
+  document.getElementById('kpi-total-ad-clicks').textContent = fmt(totalClicks);
+
+  // Table
+  let html = `<thead><tr>
+    <th>Fuente</th><th class="num">Spend</th><th class="num">Clicks</th>
+    <th class="num">Leads</th><th class="num">CPL</th>
+    <th class="num">Agendadas</th><th class="num">Coste/Agenda</th>
+  </tr></thead><tbody>`;
+
+  rows.sort((a, b) => b.spend - a.spend);
+  rows.forEach(r => {
+    const cplClass = r.cpl > 0 && r.cpl < 5 ? 'good' : r.cpl < 15 ? 'warn' : 'bad';
+    const cpaClass = r.cpa > 0 && r.cpa < 30 ? 'good' : r.cpa < 60 ? 'warn' : 'bad';
+    html += `<tr>
+      <td><span style="color:${sourceColor(r.source)};">&#9679;</span> ${r.source}</td>
+      <td class="num">${fmtEur(r.spend)}</td>
+      <td class="num">${fmt(r.clicks)}</td>
+      <td class="num">${fmt(r.leads)}</td>
+      <td class="num ${r.leads > 0 ? cplClass : ''}">${r.leads > 0 ? fmtEurDec(r.cpl) : '-'}</td>
+      <td class="num">${fmt(r.booked)}</td>
+      <td class="num ${r.booked > 0 ? cpaClass : ''}">${r.booked > 0 ? fmtEurDec(r.cpa) : '-'}</td>
+    </tr>`;
+  });
+
+  // Total row
+  const totalCpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
+  const totalCpa = totalBooked > 0 ? totalSpend / totalBooked : 0;
+  html += `<tr style="font-weight:600;border-top:2px solid #444;">
+    <td>Total</td>
+    <td class="num">${fmtEur(totalSpend)}</td>
+    <td class="num">${fmt(totalClicks)}</td>
+    <td class="num">${fmt(totalLeads)}</td>
+    <td class="num">${totalLeads > 0 ? fmtEurDec(totalCpl) : '-'}</td>
+    <td class="num">${fmt(totalBooked)}</td>
+    <td class="num">${totalBooked > 0 ? fmtEurDec(totalCpa) : '-'}</td>
+  </tr></tbody>`;
+
+  document.getElementById('adSpendTable').innerHTML = html;
+
+  // Daily spend chart
+  renderAdSpendDaily(adDaily);
+}
+
+function renderAdSpendDaily(adDaily) {
+  const dateMap = {};
+  const srcSet = new Set();
+  adDaily.forEach(r => {
+    const d = r.date;
+    const s = normalizeAdSource(r.source);
+    srcSet.add(s);
+    if (!dateMap[d]) dateMap[d] = {};
+    dateMap[d][s] = (dateMap[d][s] || 0) + (Number(r.spend) || 0);
+  });
+  const dates = Object.keys(dateMap).sort();
+  const sources = ['Meta', 'Google Ads'];
+  srcSet.forEach(s => { if (!sources.includes(s)) sources.push(s); });
+
+  let maxDay = 1;
+  dates.forEach(d => {
+    const total = sources.reduce((sum, s) => sum + (dateMap[d]?.[s] || 0), 0);
+    if (total > maxDay) maxDay = total;
+  });
+
+  const chartHeight = 120;
+  let html = '';
+  if (dates.length === 0) {
+    html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos de gasto diario — los datos se sincronizan cada noche</div>';
+  } else {
+    dates.forEach(d => {
+      let col = '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">';
+      [...sources].reverse().forEach(s => {
+        const spend = dateMap[d]?.[s] || 0;
+        if (spend === 0) return;
+        const h = Math.max(Math.round((spend / maxDay) * chartHeight), 2);
+        col += `<div style="height:${h}px;" class="${sourceCss(s)}" title="${s}: ${fmtEurDec(spend)} (${d})"></div>`;
+      });
+      col += '</div>';
+      html += col;
+    });
+  }
+  document.getElementById('adSpendDailyChart').innerHTML = html;
+
+  if (dates.length > 0) {
+    const fmtDate = d => { const dt = new Date(d); return dt.toLocaleDateString('es-ES', {day:'numeric',month:'short'}); };
+    const labels = [];
+    if (dates.length <= 5) {
+      dates.forEach(d => labels.push(fmtDate(d)));
+    } else {
+      const step = Math.floor(dates.length / 4);
+      for (let i = 0; i < dates.length; i += step) labels.push(fmtDate(dates[i]));
+      if (labels.length < 5) labels.push(fmtDate(dates[dates.length - 1]));
+    }
+    document.getElementById('adSpendDailyDates').innerHTML = labels.map(l => `<span>${l}</span>`).join('');
+  }
 }
 
 // ---- INIT ----

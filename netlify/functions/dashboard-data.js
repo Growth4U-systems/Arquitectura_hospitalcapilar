@@ -68,6 +68,8 @@ exports.handler = async (event) => {
       dailyLeadsBySource,
       attendedBySource,
       noShowBySource,
+      adSpendBySource,
+      adSpendDaily,
     ] = await Promise.all([
       // KPIs
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' AND timestamp > now() - interval ${interval}`),
@@ -165,6 +167,34 @@ exports.handler = async (event) => {
         GROUP BY source
         ORDER BY cnt DESC
       `),
+
+      // Ad spend by source (from ad_spend_daily events)
+      hogqlQuery(apiKey, `
+        SELECT
+          properties.source as ad_source,
+          sum(toFloat64OrZero(toString(properties.spend))) as total_spend,
+          sum(toInt64OrZero(toString(properties.clicks))) as total_clicks,
+          sum(toInt64OrZero(toString(properties.impressions))) as total_impressions,
+          sum(toInt64OrZero(toString(properties.conversions))) as total_conversions
+        FROM events
+        WHERE event = 'ad_spend_daily'
+          AND timestamp > now() - interval ${interval}
+        GROUP BY properties.source
+        ORDER BY total_spend DESC
+      `),
+
+      // Ad spend daily trend
+      hogqlQuery(apiKey, `
+        SELECT
+          properties.date as spend_date,
+          properties.source as ad_source,
+          sum(toFloat64OrZero(toString(properties.spend))) as daily_spend
+        FROM events
+        WHERE event = 'ad_spend_daily'
+          AND timestamp > now() - interval ${interval}
+        GROUP BY properties.date, properties.source
+        ORDER BY spend_date ASC
+      `),
     ]);
 
     // Helper to extract single value
@@ -218,6 +248,18 @@ exports.handler = async (event) => {
       no_show_by_source: noShowBySource.map(row => ({
         source: row[0],
         count: row[1],
+      })),
+      ad_spend_by_source: adSpendBySource.map(row => ({
+        source: row[0],
+        spend: row[1],
+        clicks: row[2],
+        impressions: row[3],
+        conversions: row[4],
+      })),
+      ad_spend_daily: adSpendDaily.map(row => ({
+        date: row[0],
+        source: row[1],
+        spend: row[2],
       })),
     };
 
