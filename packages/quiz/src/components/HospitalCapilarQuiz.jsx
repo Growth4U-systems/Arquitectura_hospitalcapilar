@@ -187,9 +187,9 @@ const NICHO_WELCOME = {
   },
   'es-normal': {
     badge: 'Especialistas en Alopecia Femenina',
-    headline: '¿Tu pelo pierde densidad y',
-    headlineAccent: 'nadie te da una respuesta clara?',
-    subheadline: 'El 40% de las mujeres sufre pérdida de pelo. La mayoría recibe un diagnóstico genérico. Nosotros cruzamos tu perfil hormonal con un estudio capilar completo para encontrar la causa real.',
+    headline: '¿Tu médica dice que tu caída',
+    headlineAccent: 'es "normal"?',
+    subheadline: 'Desde la menopausia se te cae a puñados. Llevas un año y cada vez peor. El 40% de las mujeres sufre pérdida de pelo — y el 80% está mal diagnosticada.',
     cta: 'Descubre qué le pasa a tu pelo',
   },
   postparto: {
