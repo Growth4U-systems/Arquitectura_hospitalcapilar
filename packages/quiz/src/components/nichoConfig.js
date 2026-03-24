@@ -5,9 +5,9 @@
 
 export const NICHOS = {
   // ─── El Espejo — Joven 20-28 ──────────────────────────────
-  jovenes: {
-    slug: 'jovenes',
-    door: 'landing_jovenes',
+  'el-espejo': {
+    slug: 'el-espejo',
+    door: 'landing_el_espejo',
     badge: 'Alopecia Temprana: Actúa Antes',
     headline: '¿Cada mañana ves las entradas avanzar?',
     subheadline: 'Tienes 20-28 años y ya notas que el pelo retrocede. Tu padre es calvo y temes que te pase lo mismo. Cuanto antes actúes, más pelo conservas.',
@@ -36,13 +36,13 @@ export const NICHOS = {
       { q: '¿Es muy pronto para un trasplante?', a: 'Depende. En muchos casos, a los 20-25 es mejor estabilizar la caída con tratamiento médico antes de plantearse una cirugía. Te lo explicamos sin presión.' },
       { q: '¿Los tratamientos tienen efectos secundarios?', a: 'Existen opciones con y sin efectos secundarios. Nuestros médicos te explican cada opción, sus pros y contras, para que tomes una decisión informada.' },
     ],
-    tags: ['nicho-jovenes'],
+    tags: ['nicho-el-espejo'],
   },
 
   // ─── Es Normal — Mujer menopausia/perimenopausia 45-55 ────
-  mujeres: {
-    slug: 'mujeres',
-    door: 'landing_mujeres',
+  'es-normal': {
+    slug: 'es-normal',
+    door: 'landing_es_normal',
     badge: 'Especialistas en Alopecia Femenina',
     headline: '¿Tu médica dice que tu caída es "normal"?',
     subheadline: 'Desde la menopausia se te cae a puñados. Llevas un año y cada vez peor. El 40% de las mujeres sufre pérdida de pelo — y el 80% está mal diagnosticada.',
@@ -71,7 +71,7 @@ export const NICHOS = {
       { q: '¿Qué incluye la valoración?', a: 'Tricoscopía digital (microscopio capilar), revisión de tu historial hormonal, valoración médica personalizada y plan de acción. Todo en 30 minutos.' },
       { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican y te explican tus opciones. Si no necesitas tratamiento, te lo decimos. Sin presión comercial.' },
     ],
-    tags: ['nicho-mujeres'],
+    tags: ['nicho-es-normal'],
   },
 
   // ─── Lo Que Vino Con el Bebé — Postparto 28-38 ───────────
@@ -145,9 +145,9 @@ export const NICHOS = {
   },
 
   // ─── Ya Me Engañaron — Insatisfecho otra clínica ──────────
-  'segunda-opinion': {
-    slug: 'segunda-opinion',
-    door: 'landing_segunda_opinion',
+  'ya-me-engañaron': {
+    slug: 'ya-me-engañaron',
+    door: 'landing_ya_me_engañaron',
     badge: 'Segunda Opinión Capilar',
     headline: '¿Pagaste miles de euros y no viste resultados?',
     subheadline: 'En Svenson te presionaron. En Insparya no funcionó. Ya no te fías de nadie. Lo entendemos. Hospital Capilar es un centro médico, no un centro estético.',
@@ -176,7 +176,7 @@ export const NICHOS = {
       { q: '¿Es confidencial?', a: 'Absolutamente. Todo lo que compartas con nuestro equipo médico es confidencial. No necesitas decirnos dónde te operaste si no quieres.' },
       { q: '¿Cuánto cuesta la segunda opinión?', a: 'Te llamamos sin compromiso para entender tu caso. La consulta presencial incluye un diagnóstico completo con datos objetivos.' },
     ],
-    tags: ['nicho-segunda-opinion'],
+    tags: ['nicho-ya-me-engañaron'],
   },
 
   // ─── La Farmacia Sin Salida — OTC frustrado 2-4 años ─────
@@ -215,9 +215,9 @@ export const NICHOS = {
   },
 
   // ─── La Inversión — Post-trasplante sin mantenimiento ─────
-  'post-trasplante': {
-    slug: 'post-trasplante',
-    door: 'landing_post_trasplante',
+  'la-inversion': {
+    slug: 'la-inversion',
+    door: 'landing_la_inversion',
     badge: 'Mantenimiento Post-Trasplante',
     headline: 'Ya te operaste. ¿Quién protege tu inversión?',
     subheadline: 'Te gastaste €4.000+ en un trasplante y nadie te dijo que necesitabas mantenimiento. El pelo trasplantado no se cae, pero el nativo sigue cayendo.',
@@ -246,41 +246,7 @@ export const NICHOS = {
       { q: '¿Puedo hacer mantenimiento aunque me operé en otra clínica?', a: 'Sí. Evaluamos el estado actual de tu trasplante y del pelo nativo, y diseñamos un plan personalizado independientemente de dónde te operaste.' },
       { q: '¿En qué consiste el seguimiento?', a: 'Tricoscopía de control cada 6 meses, ajuste de tratamiento médico según evolución, y acceso a nuestro equipo para cualquier duda.' },
     ],
-    tags: ['nicho-post-trasplante'],
+    tags: ['nicho-la-inversion'],
   },
 
-  // ─── LEGACY: hombres-caida (redirect/fallback) ───────────
-  'hombres-caida': {
-    slug: 'hombres-caida',
-    door: 'landing_hombres_caida',
-    badge: 'Diagnóstico Capilar Avanzado',
-    headline: '¿Llevas tiempo con caída y nada de lo que pruebas funciona?',
-    subheadline: 'El 60% de hombres que usan minoxidil no ven resultados. No porque el producto no sirva — sino porque nunca les diagnosticaron correctamente la causa.',
-    ctaQuiz: 'Descubre por qué no funciona',
-    ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: '¿Qué Me Pasa?',
-    stats: [
-      { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
-      { value: '20+', label: 'tipos de alopecia con tratamientos distintos' },
-      { value: '30 min', label: 'diagnóstico integral completo' },
-    ],
-    painPoints: [
-      '¿Minoxidil, finasteride, champús... y sigue cayendo?',
-      '¿Llevas más de un año perdiendo densidad?',
-      '¿Te han dado recetas genéricas sin hacerte un estudio completo?',
-      '¿No sabes si necesitas tratamiento médico o cirugía?',
-    ],
-    testimonials: [
-      { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años con minoxidil y finasteride sin resultado. En HC descubrieron que mi alopecia era mixta. Cambiaron el tratamiento y en 6 meses noté la diferencia.', stars: 5 },
-      { name: 'Javier L.', age: 45, text: 'Me operé en Turquía y el pelo seguía cayendo. En Hospital Capilar me diseñaron un plan de mantenimiento que protege mi inversión.', stars: 5 },
-    ],
-    solution: 'Hacemos lo que nadie hace: un diagnóstico integral con tricoscopía + analítica hormonal + valoración médica en 30 minutos. Sin diagnóstico correcto, cualquier tratamiento es una apuesta.',
-    faqs: [
-      { q: '¿Por qué el minoxidil no me funciona?', a: 'Hay más de 20 tipos de alopecia. Si no sabes cuál tienes, el tratamiento puede no ser el adecuado. Un diagnóstico preciso es el primer paso.' },
-      { q: '¿Necesito trasplante o tratamiento?', a: 'Depende de tu tipo de alopecia, tu edad y el grado de pérdida. Nuestros médicos te lo explican con datos reales después del diagnóstico.' },
-      { q: '¿Cuánto cuesta la valoración?', a: 'La primera valoración médica incluye tricoscopía digital + revisión de tu caso. Consulta las condiciones al solicitar tu cita.' },
-      { q: '¿Los resultados son permanentes?', a: 'Los tratamientos médicos requieren seguimiento. Los trasplantes son permanentes en la zona implantada, pero el pelo nativo necesita mantenimiento.' },
-    ],
-    tags: ['nicho-hombres-caida'],
-  },
 };
