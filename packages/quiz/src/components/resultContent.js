@@ -35,12 +35,12 @@ export const OBJECTIONS_BY_ECP = {
     { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos se centran en hormonas. Nuestro equipo médico capilar cruza tu perfil hormonal con un estudio del pelo para encontrar la causa real.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'El importe se descuenta íntegro si inicias tratamiento.' },
   ],
-  'Sin diagnostico gateway': [
+  'Qué Me Pasa Gateway': [
     { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia que avanza. Solo un diagnóstico profesional te saca de dudas.' },
     { myth: 'Busqué en Google y me asusté más', truth: 'Internet no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te da la respuesta real — sin adivinar.' },
     { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado en salud capilar combina microscopio + analítica + médico. Es el diagnóstico más completo que existe para tu caso.' },
   ],
-  'OTC frustrado sin resultado': [
+  'Farmacia Sin Salida': [
     { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin diagnóstico. No es que no funcione — es que puede no ser lo que necesitas.' },
     { myth: 'Los suplementos anticaída deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin saber la causa de tu caída, es tirar dinero.' },
     { myth: 'Ya me gasté demasiado, para qué gastar más', truth: 'Un diagnóstico profesional (descontable si inicias tratamiento) puede ahorrarte años de productos que no funcionan. Compáralo con los €500+ que ya llevas.' },
@@ -73,11 +73,11 @@ export const TESTIMONIALS_BY_ECP = {
     { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
     { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],
-  'Sin diagnostico gateway': [
+  'Qué Me Pasa Gateway': [
     { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer. El alivio fue enorme.', stars: 5 },
     { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y la consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
   ],
-  'OTC frustrado sin resultado': [
+  'Farmacia Sin Salida': [
     { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. En 6 meses noté la diferencia.', stars: 5 },
     { name: 'Andrea L.', age: 33, text: 'Probé todo lo de la farmacia durante 2 años. Nada. En Hospital Capilar me dijeron exactamente por qué no funcionaba y qué sí iba a funcionar.', stars: 5 },
   ],

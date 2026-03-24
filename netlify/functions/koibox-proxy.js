@@ -1,4 +1,4 @@
-const { updateLeadByEmail, getLeadSourceByEmail } = require('./lib/firebase-admin');
+const { updateLeadByEmail, getLeadSourceByEmail, getLeadByEmail } = require('./lib/firebase-admin');
 
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
@@ -441,6 +441,17 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     koibox_client_id: clientId,
     ...leadSource,
   }, email);
+
+  // 6. Send to Salesforce with full G4U mapping (fire-and-forget)
+  sendBookingToSalesforce({
+    email,
+    nombre,
+    phone: movil,
+    clinica,
+    fecha,
+    hora_inicio,
+    ghl_contact_id,
+  });
 
   return {
     statusCode: 200,
@@ -1012,8 +1023,8 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   }
 
   // 6. Tag bono_pendiente for women ECPs who haven't paid yet
-  // ECP values from quiz: 'Mujer con caida hormonal', 'Caida postparto'
-  const WOMEN_ECPS = ['mujer con caida hormonal', 'caida postparto'];
+  // ECP values from quiz: 'Es Normal', 'Lo Que Vino Con el Bebé'
+  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
   const isWomanEcp = contactEcp && WOMEN_ECPS.some(e => contactEcp.toLowerCase().includes(e));
 
   if (isWomanEcp && !bonoPaid) {
@@ -1041,6 +1052,156 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   }
 
   return { status: 'ok', contactId };
+}
+
+// ─── Salesforce Web-To-Lead sync on booking ────────────────────────────────
+const SALESFORCE_URL = 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00D090000047Cb3';
+
+const SF = {
+  oid:                     '00D090000047Cb3',
+  clinica_pck:             '00NbE000006pqPJ',
+  lopd_firmada:            '00N0900000CPq2F',
+  acepta_comunicaciones:   '00N0900000CPq1v',
+  g4u_id:                  '00NbE000006ougH',
+  g4u_perfil_clinico:      '00NbE000006pt3p',
+  g4u_score:               '00NbE000006psAz',
+  g4u_door:                '00NbE000006pqXP',
+  genero:                  '00N0900000CPq2O',
+  g4u_edad:                '00NbE000006pvbt',
+  g4u_problema:            '00NbE000006pvwr',
+  g4u_tiempo:              '00NbE000006pvvF',
+  g4u_probado:             '00NbE000006pvyT',
+  g4u_motivacion:          '00NbE000006ptJx',
+  g4u_formato:             '00NbE000006ptOn',
+  g4u_condicion:           '00NbE000006ptTd',
+  g4u_mensaje_comercial:   '00NbE000006ptWr',
+  g4u_utm_source:          '00NbE000006ptYT',
+  g4u_utm_medium:          '00NbE000006pta5',
+  g4u_utm_campaign:        '00NbE000006ptjl',
+  g4u_utm_content:         '00NbE000006ptob',
+  g4u_utm_term:            '00NbE000006pt8g',
+  g4u_fbclid:              '00NbE000006ptqD',
+  g4u_gclid:               '00NbE000006pttR',
+  g4u_referrer:            '00NbE000006ptv3',
+  g4u_landing_url:         '00NbE000006ptwf',
+};
+
+/**
+ * Send lead to Salesforce via Web-To-Lead when appointment is booked.
+ * Gathers full data from GHL contact + Firestore lead record.
+ * Fire-and-forget: does not block the booking response.
+ *
+ * Mapping per Hospital Capilar Salesforce spec:
+ * - Estado de candidato: "Cita agendada con asesor"
+ * - Propietario: "Noemí Díez" (via lead assignment rules in SF)
+ * - Tipo proceso de venta: "Presencial"
+ * - Origen del candidato: "GU4"
+ * - All G4U custom fields from quiz data
+ */
+async function sendBookingToSalesforce({ email, nombre, phone, clinica, fecha, hora_inicio, ghl_contact_id }) {
+  try {
+    // 1. Get full lead data from Firestore (quiz answers, consent, source)
+    const lead = await getLeadByEmail(email);
+
+    // 2. Get G4U custom fields from GHL contact
+    let ghlCustomFields = {};
+    if (ghl_contact_id) {
+      const ghlKey = process.env.VITE_GHL_API_KEY;
+      if (ghlKey) {
+        try {
+          const ghlHeaders = {
+            'Authorization': `Bearer ${ghlKey}`,
+            'Content-Type': 'application/json',
+            'Version': '2021-07-28',
+          };
+          const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
+          if (contactRes.ok) {
+            const contactData = await contactRes.json();
+            const cfs = contactData?.contact?.customFields || [];
+            // Map GHL custom field IDs to readable keys
+            const cfMap = {
+              'cFIcdJlT9sfnC3KMSwDD': 'ecp',
+              'SGT17lKk7bZgkInBTtrT': 'score',
+              '2JYlfGk60lHbuyh9vcdV': 'door',
+              'P7D2edjnOHwXLpglw9tB': 'sexo',
+              'o4I4AG3ZK07nEzAMLTlK': 'nicho',
+              'liIshAFJMngl2BV9MtVw': 'funnel_type',
+              '5voFSSQP0yBFa8VdLuzY': 'agent_message',
+            };
+            for (const cf of cfs) {
+              const key = cfMap[cf.id];
+              if (key) ghlCustomFields[key] = cf.value || '';
+            }
+          }
+        } catch (err) {
+          console.log('[SF-Booking] GHL contact fetch failed:', err.message);
+        }
+      }
+    }
+
+    // 3. Merge data sources (Firestore lead > GHL custom fields > defaults)
+    const source = lead?.source || {};
+    const firstName = (nombre || '').split(' ')[0] || '';
+    const lastName = (nombre || '').split(' ').slice(1).join(' ') || '';
+    const clinicaMap = { madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra' };
+    const generoMap = { hombre: 'Masculino', mujer: 'Femenino' };
+    const formatoMap = { presencial: 'Presencial', online: 'Online', llamada: 'Llamada' };
+
+    // Build Salesforce Web-To-Lead payload
+    const params = new URLSearchParams();
+    params.append('oid', SF.oid);
+    params.append('retURL', 'http://');
+
+    // Standard fields
+    params.append('first_name', firstName);
+    params.append('last_name', lastName);
+    params.append('email', email || '');
+    params.append('phone', phone || '');
+    params.append('lead_source', 'GU4');
+
+    // Booking-specific fields
+    params.append(SF.clinica_pck, clinicaMap[clinica] || '');
+
+    // G4U custom fields — from Firestore lead (quiz answers)
+    params.append(SF.g4u_id, ghl_contact_id || '');
+    params.append(SF.g4u_perfil_clinico, ghlCustomFields.ecp || lead?.ecp || '');
+    params.append(SF.g4u_score, String(ghlCustomFields.score || lead?.score || ''));
+    params.append(SF.g4u_door, ghlCustomFields.door || source.door || '');
+    params.append(SF.genero, generoMap[lead?.answersRaw?.sexo] || '');
+    params.append(SF.g4u_edad, lead?.answersRaw?.edad || '');
+    params.append(SF.g4u_problema, lead?.answersRaw?.problema || '');
+    params.append(SF.g4u_tiempo, lead?.answersRaw?.tiempo || '');
+    params.append(SF.g4u_probado, Array.isArray(lead?.answersRaw?.probado) ? lead.answersRaw.probado.join(', ') : (lead?.answersRaw?.probado || ''));
+    params.append(SF.g4u_motivacion, lead?.answersRaw?.motivacion || '');
+    params.append(SF.g4u_formato, formatoMap[lead?.answersRaw?.formato] || '');
+    params.append(SF.g4u_condicion, Array.isArray(lead?.answersRaw?.condicion) ? lead.answersRaw.condicion.join(', ') : (lead?.answersRaw?.condicion || ''));
+    params.append(SF.g4u_mensaje_comercial, ghlCustomFields.agent_message || lead?.agentMessage || '');
+
+    // Consent (LOPD)
+    params.append(SF.lopd_firmada, lead?.answersRaw?.consentPrivacidad ? 'Sí' : 'No');
+    params.append(SF.acepta_comunicaciones, lead?.answersRaw?.consentComunicaciones ? '1' : '0');
+
+    // UTM & attribution
+    params.append(SF.g4u_utm_source, source.utm_source || '');
+    params.append(SF.g4u_utm_medium, source.utm_medium || '');
+    params.append(SF.g4u_utm_campaign, source.utm_campaign || '');
+    params.append(SF.g4u_utm_content, source.utm_content || '');
+    params.append(SF.g4u_utm_term, source.utm_term || '');
+    params.append(SF.g4u_fbclid, source.fbclid || '');
+    params.append(SF.g4u_gclid, source.gclid || '');
+    params.append(SF.g4u_referrer, source.referrer || '');
+    params.append(SF.g4u_landing_url, source.landing_url || '');
+
+    // 4. Send to Salesforce
+    const res = await fetch(SALESFORCE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+    console.log('[SF-Booking] Web-To-Lead sent for', email, '— status:', res.status, '— clinica:', clinica, '— fecha:', fecha);
+  } catch (err) {
+    console.log('[SF-Booking] Failed:', err.message);
+  }
 }
 
 /**

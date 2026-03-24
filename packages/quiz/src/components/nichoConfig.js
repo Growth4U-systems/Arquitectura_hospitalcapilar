@@ -48,7 +48,7 @@ export const NICHOS = {
     subheadline: 'Desde la menopausia se te cae a puñados. Llevas un año y cada vez peor. El 40% de las mujeres sufre pérdida de pelo — y el 80% está mal diagnosticada.',
     ctaQuiz: 'Descubre qué le pasa a tu pelo',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Mujer con caida hormonal',
+    ecp: 'Es Normal',
     stats: [
       { value: '40%', label: 'de mujeres sufren caída capilar' },
       { value: '80%', label: 'mal diagnosticadas la primera vez' },
@@ -83,7 +83,7 @@ export const NICHOS = {
     subheadline: 'Han pasado más de 6 meses y sigue cayendo. Tu ginecóloga dice que es normal. El efluvio postparto afecta al 50% de madres — pero a veces revela algo más.',
     ctaQuiz: 'Descubre si es temporal o algo más',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Caida postparto',
+    ecp: 'Lo Que Vino Con el Bebé',
     stats: [
       { value: '50%', label: 'de madres sufren caída postparto' },
       { value: '85%', label: 'se recuperan con tratamiento adecuado' },
@@ -118,7 +118,7 @@ export const NICHOS = {
     subheadline: 'Google te asusta más de lo que te ayuda. No sabes si es estrés, genético o algo peor. El 70% de las personas con caída no tienen diagnóstico. Tú puedes ser una de ellas.',
     ctaQuiz: '¿Qué me pasa? Descúbrelo en 3 min',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Sin diagnostico gateway',
+    ecp: 'Qué Me Pasa Gateway',
     stats: [
       { value: '70%', label: 'de afectados no tiene diagnóstico' },
       { value: '20+', label: 'tipos de alopecia con tratamientos distintos' },
@@ -153,7 +153,7 @@ export const NICHOS = {
     subheadline: 'En Svenson te presionaron. En Insparya no funcionó. Ya no te fías de nadie. Lo entendemos. Hospital Capilar es un centro médico, no un centro estético.',
     ctaQuiz: 'Evalúa tu caso sin compromiso',
     ctaForm: 'QUE ME LLAMEN SIN COMPROMISO',
-    ecp: 'Mala experiencia otra clinica',
+    ecp: 'Ya Me Engañaron',
     stats: [
       { value: '35%', label: 'de pacientes vienen de otra clínica' },
       { value: '0', label: 'presión comercial en la consulta' },
@@ -188,7 +188,7 @@ export const NICHOS = {
     subheadline: 'Olistic, Iraltone, Pilexil, minoxidil... €500+ tirados. El problema no son los productos — es que nunca te diagnosticaron por qué se te cae el pelo.',
     ctaQuiz: 'Descubre por qué no funciona',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'OTC frustrado sin resultado',
+    ecp: 'Farmacia Sin Salida',
     stats: [
       { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
       { value: '€500+', label: 'gasto medio antes del diagnóstico' },
@@ -223,7 +223,7 @@ export const NICHOS = {
     subheadline: 'Te gastaste €4.000+ en un trasplante y nadie te dijo que necesitabas mantenimiento. El pelo trasplantado no se cae, pero el nativo sigue cayendo.',
     ctaQuiz: 'Protege tu trasplante',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Post-trasplante mantenimiento',
+    ecp: 'La Inversión',
     stats: [
       { value: '40%', label: 'pierden resultados sin mantenimiento' },
       { value: '12 meses', label: 'críticos post-cirugía' },
