@@ -37,7 +37,7 @@ const NichoLanding = ({ nicho, onStartQuiz }) => {
       <div className="relative bg-[#2C3E50] text-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-10" />
+            <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-10" />
           </div>
           <p className="text-[#4CA994] text-sm font-bold tracking-widest uppercase mb-4">{config.badge}</p>
           <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4 max-w-3xl">{config.headline}</h1>

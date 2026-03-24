@@ -1,19 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 100" fill="none">
-  <!-- Left circle - concentric rings -->
-  <circle cx="100" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
-  <circle cx="100" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
-  <circle cx="100" cy="28" r="3" fill="#6BA89E"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 170" fill="none">
+  <!-- Circle 1: two concentric rings -->
+  <circle cx="179" cy="52" r="46" stroke="#6BA89E" stroke-width="7" fill="none"/>
+  <circle cx="179" cy="52" r="27" stroke="#6BA89E" stroke-width="5" fill="none"/>
 
-  <!-- Middle circle - concentric rings -->
-  <circle cx="140" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
-  <circle cx="140" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
-  <circle cx="140" cy="28" r="3" fill="#6BA89E"/>
+  <!-- Circle 2: three concentric rings -->
+  <circle cx="290" cy="52" r="46" stroke="#6BA89E" stroke-width="6" fill="none"/>
+  <circle cx="290" cy="52" r="33" stroke="#6BA89E" stroke-width="5" fill="none"/>
+  <circle cx="290" cy="52" r="19" stroke="#6BA89E" stroke-width="4" fill="none"/>
 
-  <!-- Right circle - solid -->
-  <circle cx="180" cy="28" r="18" fill="#6BA89E"/>
+  <!-- Circle 3: solid -->
+  <circle cx="401" cy="52" r="48" fill="#6BA89E"/>
 
-  <!-- HOSPITAL text -->
-  <text x="140" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" letter-spacing="2">
-    <tspan fill="#6BA89E">HOSPITAL</tspan><tspan fill="#2C3E50" font-weight="700">CAPILAR</tspan>
+  <!-- HOSPITAL (light) + CAPILAR (bold) — centered under circles -->
+  <text x="290" y="155" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="42" letter-spacing="3">
+    <tspan fill="#2C3E50" font-weight="300">HOSPITAL</tspan><tspan fill="#2C3E50" font-weight="700">CAPILAR</tspan>
   </text>
 </svg>
