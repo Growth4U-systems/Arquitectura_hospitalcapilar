@@ -172,10 +172,10 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `
         SELECT
           properties.source as ad_source,
-          sum(toFloat64OrZero(toString(properties.spend))) as total_spend,
-          sum(toInt64OrZero(toString(properties.clicks))) as total_clicks,
-          sum(toInt64OrZero(toString(properties.impressions))) as total_impressions,
-          sum(toInt64OrZero(toString(properties.conversions))) as total_conversions
+          sum(toFloatOrZero(toString(properties.spend))) as total_spend,
+          sum(toIntOrZero(toString(properties.clicks))) as total_clicks,
+          sum(toIntOrZero(toString(properties.impressions))) as total_impressions,
+          sum(toIntOrZero(toString(properties.conversions))) as total_conversions
         FROM events
         WHERE event = 'ad_spend_daily'
           AND timestamp > now() - interval ${interval}
@@ -188,7 +188,7 @@ exports.handler = async (event) => {
         SELECT
           properties.date as spend_date,
           properties.source as ad_source,
-          sum(toFloat64OrZero(toString(properties.spend))) as daily_spend
+          sum(toFloatOrZero(toString(properties.spend))) as daily_spend
         FROM events
         WHERE event = 'ad_spend_daily'
           AND timestamp > now() - interval ${interval}
