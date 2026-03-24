@@ -10,11 +10,11 @@ const TESTIMONIALS_BY_ECP = {
     { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
     { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],
-  'Qué Me Pasa Gateway': [
+  '¿Qué Me Pasa?': [
     { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer.', stars: 5 },
     { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. La consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
   ],
-  'Farmacia Sin Salida': [
+  'La Farmacia': [
     { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. En 6 meses noté la diferencia.', stars: 5 },
     { name: 'Andrea L.', age: 33, text: 'Probé todo lo de la farmacia durante 2 años. Nada. En HC me dijeron exactamente por qué no funcionaba y qué sí iba a funcionar.', stars: 5 },
   ],
@@ -31,12 +31,12 @@ const OBJECTIONS = {
     { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos se centran en hormonas. Nuestro equipo médico capilar cruza tu perfil hormonal con un estudio del pelo para encontrar la causa real.' },
     { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
   ],
-  'Qué Me Pasa Gateway': [
+  '¿Qué Me Pasa?': [
     { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia. Solo un diagnóstico profesional te saca de dudas.' },
     { myth: 'Busqué en Google y me asusté más', truth: 'Internet no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te da la respuesta real.' },
     { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado combina microscopio + analítica + médico. Es el diagnóstico más completo para caída capilar.' },
   ],
-  'Farmacia Sin Salida': [
+  'La Farmacia': [
     { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin diagnóstico. No es que no funcione — es que puede no ser lo que necesitas.' },
     { myth: 'Los suplementos deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin diagnóstico es tirar dinero.' },
     { myth: 'Ya me gasté demasiado, para qué gastar más', truth: null }, // dynamic — uses bonoPrice
@@ -85,9 +85,9 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           <p className="text-gray-500 text-sm">
             {ecp === 'Lo Que Vino Con el Bebé'
               ? 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal postparto con un estudio capilar completo.'
-              : ecp === 'Qué Me Pasa Gateway'
+              : ecp === '¿Qué Me Pasa?'
               ? 'Google no puede diagnosticarte. Solo una tricoscopía + analítica te dice exactamente qué ocurre.'
-              : ecp === 'Farmacia Sin Salida'
+              : ecp === 'La Farmacia'
               ? 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.'
               : 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.'}
           </p>

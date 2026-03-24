@@ -42,14 +42,14 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
   else if (frame === 'FRAME_D' || score < 30) urgencia = 'baja';
 
   let intro = '';
-  if (ecp === 'Qué Me Pasa') intro = `${nombre} es un hombre que lleva ${tiempoLabel} con caída capilar. Ya probó ${probadoLabels} sin resultado. No tiene diagnóstico formal.`;
+  if (ecp === '¿Qué Me Pasa?') intro = `${nombre} es un hombre que lleva ${tiempoLabel} con caída capilar. Ya probó ${probadoLabels} sin resultado. No tiene diagnóstico formal.`;
   else if (ecp === 'Es Normal') intro = `${nombre} es una mujer con caída probablemente hormonal. Lleva ${tiempoLabel} con el problema.`;
   else if (ecp === 'El Espejo') intro = `${nombre} es un joven (${edadLabel}) que está empezando a notar caída. Tiene poco o ningún tratamiento previo.`;
   else if (ecp === 'Ya Me Engañaron') intro = `${nombre} tuvo mala experiencia en ${labels.clinica_previa || 'otra clínica'}. Viene con desconfianza.`;
   else if (ecp === 'La Inversión') intro = `${nombre} ya se hizo un trasplante (${labels.cirugia_lugar || 'no especificado'}) y necesita mantenimiento.`;
   else if (ecp === 'Lo Que Vino Con el Bebé') intro = `${nombre} tiene caída desde el embarazo/parto. Lleva ${tiempoLabel} con el problema.`;
-  else if (ecp === 'Qué Me Pasa Gateway') intro = `${nombre} nota caída capilar y no sabe la causa. No tiene diagnóstico. Lleva ${tiempoLabel} preocupado/a. Gateway — clasificar tras diagnóstico.`;
-  else if (ecp === 'Farmacia Sin Salida') intro = `${nombre} lleva ${tiempoLabel} usando productos OTC (champús, suplementos, minoxidil) sin resultado. Punto de inflexión: necesita diagnóstico real.`;
+  else if (ecp === '¿Qué Me Pasa?') intro = `${nombre} nota caída capilar y no sabe la causa. No tiene diagnóstico. Lleva ${tiempoLabel} preocupado/a. Gateway — clasificar tras diagnóstico.`;
+  else if (ecp === 'La Farmacia') intro = `${nombre} lleva ${tiempoLabel} usando productos OTC (champús, suplementos, minoxidil) sin resultado. Punto de inflexión: necesita diagnóstico real.`;
   else intro = `${nombre} tiene problemas de cuero cabelludo (caspa, irritación). NO es candidato/a — derivar a dermatología.`;
 
   const factoresText = (answers.factores_recientes || []).length > 0 && !(answers.factores_recientes || []).includes('ninguno')
@@ -69,7 +69,7 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
 
   // Objeciones anticipadas por perfil
   let objeciones = '';
-  if (ecp === 'Qué Me Pasa') {
+  if (ecp === '¿Qué Me Pasa?') {
     objeciones = `- "Ya probé minoxidil y no funcionó" → El 40-60% no responde a minoxidil sin saber la causa. Sin diagnóstico, es como tomar pastillas a ciegas. Nosotros primero diagnosticamos y luego tratamos.
 - "Es muy caro" → La consulta de ${bonoPrice}€ incluye tricoscopia digital + análisis hormonal + plan personalizado. En farmacias gastarás más sin resultado.
 - "No sé si es el momento" → Cuanto más esperas, más folículos se pierden. Los que se van no vuelven. Hoy tienes más pelo que mañana.`;
@@ -93,11 +93,7 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
     objeciones = `- "Me dicen que es normal después del parto" → Sí, es común. El 50% de madres lo sufren. Pero si pasan más de 6 meses y no se recupera, puede haber una alopecia subyacente que el embarazo activó.
 - "Estoy dando el pecho, ¿puedo tratarme?" → Sí, hay tratamientos compatibles con la lactancia. En la consulta evaluamos opciones seguras para ti y tu bebé.
 - "Ya se me pasará sola" → Ojalá, pero mejor descartarlo con un diagnóstico. Si hay AGA de fondo, cada mes sin tratar cuenta.`;
-  } else if (ecp === 'Qué Me Pasa Gateway') {
-    objeciones = `- "Seguro que no es nada" → Puede ser estrés temporal o el inicio de una alopecia. Solo un diagnóstico diferencia una cosa de otra. No busques más en Google.
-- "No sé a quién ir" → Un centro especializado en salud capilar combina tricoscopía + analítica + médico. Es el diagnóstico más completo que existe.
-- "Me da miedo saber qué tengo" → El 70% de personas con caída no tienen diagnóstico. Saber qué tienes es el primer paso para poder actuar.`;
-  } else if (ecp === 'Farmacia Sin Salida') {
+  } else if (ecp === 'La Farmacia') {
     objeciones = `- "Ya gasté €500+ en productos y nada funciona" → El problema no son los productos — es que nunca te diagnosticaron. Sin saber la causa, todo es una apuesta.
 - "El minoxidil no me hizo nada" → El 60% no responde a minoxidil sin diagnóstico. Puede que necesites otro tratamiento completamente distinto.
 - "Ya no creo en nada" → Entendemos la frustración. Un diagnóstico con datos objetivos (microscopio + analítica) te dice exactamente qué necesitas. Sin adivinar.`;
@@ -105,14 +101,13 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
 
   // Descripción natural del problema según ECP (para usar en el guión)
   let problemaNatural = 'la caída de pelo';
-  if (ecp === 'Qué Me Pasa') problemaNatural = 'la caída de pelo sin tener un diagnóstico claro';
+  if (ecp === '¿Qué Me Pasa?') problemaNatural = 'la caída de pelo sin tener un diagnóstico claro';
   else if (ecp === 'Es Normal') problemaNatural = 'la pérdida de densidad capilar';
   else if (ecp === 'El Espejo') problemaNatural = 'los primeros signos de caída';
   else if (ecp === 'Ya Me Engañaron') problemaNatural = 'tu experiencia anterior y la caída de pelo';
   else if (ecp === 'La Inversión') problemaNatural = 'el mantenimiento después del trasplante';
   else if (ecp === 'Lo Que Vino Con el Bebé') problemaNatural = 'la caída de pelo desde el embarazo';
-  else if (ecp === 'Qué Me Pasa Gateway') problemaNatural = 'la caída de pelo sin saber la causa';
-  else if (ecp === 'Farmacia Sin Salida') problemaNatural = 'la caída de pelo tras años probando productos sin resultado';
+  else if (ecp === 'La Farmacia') problemaNatural = 'la caída de pelo tras años probando productos sin resultado';
 
   // Guión de apertura personalizado
   let apertura = '';
@@ -545,10 +540,10 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         if (!ecpKey) {
           if (ans.sexo === 'mujer') ecpKey = 'Es Normal';
           else if (ans.edad === '18-25') ecpKey = 'El Espejo';
-          else if ((ans.probado || []).some(v => ['otc', 'minoxidil'].includes(v)) && !(ans.probado || []).includes('nada')) ecpKey = 'Farmacia Sin Salida';
+          else if ((ans.probado || []).some(v => ['otc', 'minoxidil'].includes(v)) && !(ans.probado || []).includes('nada')) ecpKey = 'La Farmacia';
           else ecpKey = '¿Qué Me Pasa?';
         }
-        const testimonials = TESTIMONIALS_BY_ECP[ecpKey] || TESTIMONIALS_BY_ECP['¿Qué Me Pasa?'];
+        const testimonials = TESTIMONIALS_BY_ECP[ecpKey] || TESTIMONIALS_BY_ECP['Es Normal'];
         const t = testimonials[0];
         return {
           icon: 'star',
@@ -659,11 +654,11 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // SCORING ENGINE
   // ============================================
   const processResults = (finalAnswers) => {
-    let ecp = 'Qué Me Pasa';
+    let ecp = '¿Qué Me Pasa?';
     let score = 0;
 
     // ECP assignment using new clinical questions
-    if (finalAnswers.problema === 'cuero-cabelludo') ecp = 'No Candidato';
+    if (finalAnswers.problema === 'cuero-cabelludo') ecp = 'No candidato';
     else if (finalAnswers.problema === 'post-cirugia' || (finalAnswers.probado || []).includes('trasplante')) ecp = 'La Inversión';
     else if (finalAnswers.problema === 'mala-experiencia') ecp = 'Ya Me Engañaron';
     else if (finalAnswers.sexo === 'mujer' && finalAnswers.problema === 'postparto') ecp = 'Lo Que Vino Con el Bebé';
@@ -710,8 +705,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     if (finalAnswers.formato === 'info') score -= 10;
 
     let frame = '';
-    if (ecp === 'No Candidato') frame = 'DERIVACION';
-    else if (!['madrid', 'murcia', 'pontevedra'].includes(ubi) && ubi !== '') frame = 'WAITLIST';
+    if (ecp === 'No candidato') frame = 'DERIVACION';
+    else if (!['madrid', 'murcia', 'pontevedra'].includes(ubi) && ubi !== '') { frame = 'WAITLIST'; ecp = 'Ciudad sin clinica'; }
     else if (finalAnswers.formato === 'llamada' || ecp === 'Ya Me Engañaron') frame = 'FRAME_C';
     else if (finalAnswers.formato === 'info' || score < 40) frame = 'FRAME_D';
     else frame = 'FRAME_A';
@@ -885,7 +880,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // CTA CONFIG BY ECP + PERFIL
   // ============================================
   const TREATABLE_ECPS = [
-    'Qué Me Pasa',
+    '¿Qué Me Pasa?',
     'El Espejo',
     'La Inversión',
   ];
@@ -1520,14 +1515,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
     // ECP-specific subtitle for the header
     const ecpSubtitles = {
-      'Qué Me Pasa': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
+      '¿Qué Me Pasa?': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
       'Es Normal': 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.',
       'El Espejo': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
       'Ya Me Engañaron': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
       'La Inversión': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
       'Lo Que Vino Con el Bebé': 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal con un estudio capilar completo.',
-      'Qué Me Pasa Gateway': 'Google no puede diagnosticarte. Un diagnóstico profesional te dice exactamente qué ocurre.',
-      'Farmacia Sin Salida': 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
+      '¿Qué Me Pasa?': 'Google no puede diagnosticarte. Un diagnóstico profesional te dice exactamente qué ocurre.',
+      'La Farmacia': 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
     };
 
     return (

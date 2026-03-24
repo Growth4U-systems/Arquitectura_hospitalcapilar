@@ -118,7 +118,7 @@ export const NICHOS = {
     subheadline: 'Google te asusta más de lo que te ayuda. No sabes si es estrés, genético o algo peor. El 70% de las personas con caída no tienen diagnóstico. Tú puedes ser una de ellas.',
     ctaQuiz: '¿Qué me pasa? Descúbrelo en 3 min',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Qué Me Pasa Gateway',
+    ecp: '¿Qué Me Pasa?',
     stats: [
       { value: '70%', label: 'de afectados no tiene diagnóstico' },
       { value: '20+', label: 'tipos de alopecia con tratamientos distintos' },
@@ -179,7 +179,7 @@ export const NICHOS = {
     tags: ['nicho-ya-me-engañaron'],
   },
 
-  // ─── La Farmacia Sin Salida — OTC frustrado 2-4 años ─────
+  // ─── La Farmacia — OTC frustrado 2-4 años ────────────────
   'farmacia-sin-salida': {
     slug: 'farmacia-sin-salida',
     door: 'landing_farmacia_sin_salida',
@@ -188,7 +188,7 @@ export const NICHOS = {
     subheadline: 'Olistic, Iraltone, Pilexil, minoxidil... €500+ tirados. El problema no son los productos — es que nunca te diagnosticaron por qué se te cae el pelo.',
     ctaQuiz: 'Descubre por qué no funciona',
     ctaForm: 'SOLICITAR VALORACIÓN',
-    ecp: 'Farmacia Sin Salida',
+    ecp: 'La Farmacia',
     stats: [
       { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
       { value: '€500+', label: 'gasto medio antes del diagnóstico' },

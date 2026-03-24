@@ -47,21 +47,21 @@ const UbicacionSelect = ({ value, onChange, className }) => (
 
 // ECP mapping from situacion answer
 const SITUACION_ECP = {
-  'caida-sin-diagnostico': 'Qué Me Pasa',
-  'entradas-coronilla': 'Qué Me Pasa',
+  'caida-sin-diagnostico': '¿Qué Me Pasa?',
+  'entradas-coronilla': '¿Qué Me Pasa?',
   'joven-perdida': 'El Espejo',
   'postparto': 'Lo Que Vino Con el Bebé',
   'hormonal': 'Es Normal',
   'post-cirugia': 'La Inversión',
   'mala-experiencia': 'Ya Me Engañaron',
-  'no-se-que-tengo': 'Qué Me Pasa Gateway',
-  'otc-frustrado': 'Farmacia Sin Salida',
-  'cuero-cabelludo': 'No Candidato',
+  'no-se-que-tengo': '¿Qué Me Pasa?',
+  'otc-frustrado': 'La Farmacia',
+  'cuero-cabelludo': 'No candidato',
 };
 
 // ECP result messages (short version)
 const ECP_MESSAGES = {
-  'Qué Me Pasa': {
+  '¿Qué Me Pasa?': {
     title: 'Tu caída necesita un diagnóstico profesional',
     body: 'Sin una tricoscopía y analítica, cualquier tratamiento es una apuesta. En 30 minutos sabrás exactamente qué tienes.',
   },
@@ -85,21 +85,17 @@ const ECP_MESSAGES = {
     title: 'Entendemos que tengas dudas',
     body: 'Hospital Capilar es un centro médico, no estético. Médicos que diagnostican con datos y te dicen la verdad. Sin presión.',
   },
-  'Qué Me Pasa Gateway': {
-    title: 'El primer paso es saber qué tienes',
-    body: 'Google no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te dice exactamente qué ocurre y qué opciones hay. Sin adivinar.',
-  },
-  'Farmacia Sin Salida': {
+  'La Farmacia': {
     title: 'No es que los productos no sirvan — es que necesitas un diagnóstico',
     body: 'El 60% de personas no responden a minoxidil porque nunca les diagnosticaron correctamente. Un diagnóstico cambia todo.',
   },
-  'No Candidato': {
+  'No candidato': {
     title: 'Tu caso requiere atención especializada',
     body: 'Lo que describes parece un problema del cuero cabelludo que requiere atención dermatológica especializada.',
   },
-  'La Farmacia': {
-    title: 'Los productos solos no son suficientes',
-    body: 'Sin un diagnóstico médico real, cualquier producto es un disparo al aire. Un protocolo personalizado tras tricoscopía y analítica es lo que marca la diferencia.',
+  'Ciudad sin clinica': {
+    title: 'Todavía no estamos en tu zona',
+    body: 'Estamos abriendo nuevas clínicas en 2026. Te avisaremos en cuanto tengamos fecha para tu ciudad.',
   },
 };
 
@@ -308,8 +304,8 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
   // ==========================================
   if (phase === 'results') {
     const ecp = SITUACION_ECP[answers.situacion] || config.ecp;
-    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['Qué Me Pasa'];
-    const isDerivacion = ecp === 'No Candidato';
+    const ecpMsg = ECP_MESSAGES[ecp] || ECP_MESSAGES['¿Qué Me Pasa?'];
+    const isDerivacion = ecp === 'No candidato';
     const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
       `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de completar el diagnóstico rápido en Hospital Capilar. Me gustaría recibir más información.`
@@ -804,7 +800,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       <div className="relative bg-[#2C3E50] text-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-10" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-10" />
           </div>
           <p className="text-[#4CA994] text-sm font-bold tracking-widest uppercase mb-4">{config.badge}</p>
           <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4 max-w-3xl">{config.headline}</h1>
