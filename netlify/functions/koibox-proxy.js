@@ -1022,6 +1022,39 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     console.log('[Koibox→GHL] Opportunity update failed:', err.message);
   }
 
+  // 5b. Create appointment in GHL native calendar (triggers reminder workflows)
+  const GHL_CALENDAR_ID = 'zUwTXAPxy5m2nm9x3lqi'; // Calendario Prueba 1
+  try {
+    // Build ISO datetime from fecha (YYYY-MM-DD) + hora_inicio (HH:MM)
+    const startISO = `${fecha}T${hora_inicio}:00+01:00`; // Spain CET
+    const endDate = new Date(`${fecha}T${hora_inicio}:00+01:00`);
+    endDate.setMinutes(endDate.getMinutes() + 30); // 30min default slot
+    const endISO = endDate.toISOString();
+
+    const calRes = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify({
+        calendarId: GHL_CALENDAR_ID,
+        locationId,
+        contactId,
+        startTime: startISO,
+        endTime: endISO,
+        title: `Diagnóstico Capilar - ${nombre || 'Paciente'}`,
+        appointmentStatus: 'confirmed',
+        toNotify: true,
+      }),
+    });
+    const calData = await calRes.json();
+    if (calRes.ok) {
+      console.log('[Koibox→GHL] Calendar appointment created:', calData?.id || calData?.event?.id);
+    } else {
+      console.log('[Koibox→GHL] Calendar appointment failed:', calRes.status, JSON.stringify(calData));
+    }
+  } catch (err) {
+    console.log('[Koibox→GHL] Calendar appointment error:', err.message);
+  }
+
   // 6. Tag bono_pendiente for women ECPs who haven't paid yet
   // ECP values from quiz: 'Es Normal', 'Lo Que Vino Con el Bebé'
   const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
@@ -1059,6 +1092,13 @@ const SALESFORCE_URL = 'https://webto.salesforce.com/servlet/servlet.WebToLead?e
 
 const SF = {
   oid:                     '00D090000047Cb3',
+  // Booking-specific fields (from HC Salesforce admin)
+  cita_asesoria:           '00NIV00001XhtqX',   // Fecha y hora de cita
+  interesado_en:           '00N0900000CPq2Y',   // Campo libre — perfil clínico
+  tipo_proceso_venta:      '00N0900000CPq2U',   // "Presencial"
+  owner_id:                '00509000008tZrfAAE', // Noemí Díez
+  // lead_status is a standard SF field (no custom ID needed)
+  // G4U fields
   clinica_pck:             '00NbE000006pqPJ',
   lopd_firmada:            '00N0900000CPq2F',
   acepta_comunicaciones:   '00N0900000CPq1v',
@@ -1158,9 +1198,17 @@ async function sendBookingToSalesforce({ email, nombre, phone, clinica, fecha, h
     params.append('email', email || '');
     params.append('phone', phone || '');
     params.append('lead_source', 'GU4');
+    params.append('lead_status', 'Cita agendada con asesor');
 
     // Booking-specific fields
+    const citaDateTime = fecha && hora_inicio ? `${fecha} ${hora_inicio}` : '';
+    params.append(SF.cita_asesoria, citaDateTime);
+    params.append(SF.interesado_en, ghlCustomFields.ecp || lead?.ecp || '');
+    params.append(SF.tipo_proceso_venta, 'Presencial');
     params.append(SF.clinica_pck, clinicaMap[clinica] || '');
+
+    // Owner: Noemí Díez
+    params.append('ownerId', SF.owner_id);
 
     // G4U custom fields — from Firestore lead (quiz answers)
     params.append(SF.g4u_id, ghl_contact_id || '');
