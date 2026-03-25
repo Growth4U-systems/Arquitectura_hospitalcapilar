@@ -145,12 +145,32 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       ? `${utmParams.utm_source}/${utmParams.utm_medium || 'unknown'}`
       : document.referrer ? 'organic/referral' : 'direct';
 
-    // contact_score: NUMERICAL 0-100
+    // contact_score: DYNAMIC 0-100 based on quiz answers
     const clinicasOperativas = ['madrid', 'murcia', 'pontevedra'];
     const isOperativa = clinicasOperativas.includes(form.provincia);
-    let contactScore = 50; // NORMAL — quiz_corto + próximas aperturas
-    if (isOperativa) contactScore = 50; // NORMAL — quiz_corto + operativa
-    else if (form.provincia === 'otra' || !form.provincia) contactScore = 20; // OUT
+    let contactScore = 40; // Base score
+
+    // Urgency signal (strongest intent indicator)
+    if (answers.urgencia === 'alta') contactScore += 25;
+    else if (answers.urgencia === 'media') contactScore += 10;
+    else if (answers.urgencia === 'baja') contactScore -= 15;
+
+    // Time with problem (longer = more committed to solving)
+    if (answers.tiempo === '3a+') contactScore += 20;
+    else if (answers.tiempo === '1-3a') contactScore += 10;
+    else if (answers.tiempo === '<3m') contactScore -= 10;
+
+    // Location
+    if (isOperativa) contactScore += 15;
+    else if (form.provincia === 'otra' || !form.provincia) contactScore -= 20;
+    else contactScore += 5; // próximas aperturas
+
+    // ECP: surgical-adjacent profiles score higher
+    const highIntentECPs = ['El Espejo', 'La Inversión', 'Ya Me Engañaron'];
+    if (highIntentECPs.includes(ecp)) contactScore += 10;
+
+    // Clamp to 0-100
+    contactScore = Math.max(0, Math.min(100, contactScore));
 
     const ubicacionMap = {
       madrid: 'Madrid', murcia: 'Murcia', pontevedra: 'Pontevedra',
@@ -254,7 +274,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       await addDoc(collection(db, 'quiz_leads'), {
         nombre: form.nombre, email: form.email, telefono: form.telefono,
         ubicacion: form.provincia, sexo: answers.sexo, nicho, ecp,
-        door: 'quiz_corto',
+        door: 'quiz_corto', score: contactScore,
         answersRaw: answers,
         agentMessage: agentMsg,
         source: {
