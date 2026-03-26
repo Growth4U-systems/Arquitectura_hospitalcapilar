@@ -128,20 +128,22 @@ exports.handler = async (event) => {
       // Build bookingUrl (reused for contact + opportunity)
       const bookingUrl = `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}`;
 
-      // Populate link_agendar so Noemí can open booking page from the contact card
+      // PUT all custom fields + link_agendar on contact (ensures fields are set even for duplicate contacts)
+      const allCustomFields = [
+        ...(body.customFields || []),
+        { id: 'UdbclFWU2YGw0YYup4vm', field_value: bookingUrl },
+      ];
       try {
         await fetch(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT',
           headers: ghlHeaders,
           body: JSON.stringify({
-            customFields: [
-              { id: 'UdbclFWU2YGw0YYup4vm', field_value: bookingUrl },
-            ],
+            customFields: allCustomFields,
           }),
         });
-        console.log('[GHL] link_agendar set on contact:', contactId);
+        console.log('[GHL] Custom fields + link_agendar set on contact:', contactId);
       } catch (linkErr) {
-        console.log('[GHL] link_agendar update failed:', linkErr.message);
+        console.log('[GHL] Custom fields update failed:', linkErr.message);
       }
     }
 
