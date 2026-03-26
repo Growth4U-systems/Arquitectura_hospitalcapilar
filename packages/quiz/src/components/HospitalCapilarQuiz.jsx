@@ -924,21 +924,13 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       };
     }
 
-    // MALA EXPERIENCIA — siempre llamada, nunca pago directo
+    // MALA EXPERIENCIA — siempre WhatsApp
     if (ecp === 'Ya Me Engañaron') {
-      if (perfil === 'C') {
-        return {
-          primary: { type: 'descarga_guia', label: 'Descarga tu Guía (PDF)', icon: 'Download', style: 'primary' },
-          secondary: null,
-          heading: 'Recibe tu Guía Personalizada',
-          description: 'Sabemos que vienes con dudas. Te hemos preparado una guía con todo lo que necesitas saber antes de tomar cualquier decisión.',
-        };
-      }
       return {
-        primary: { type: 'solicitar_llamada', label: 'Solicita que te llamemos', icon: 'PhoneCall', style: 'primary' },
-        secondary: { type: 'descarga_guia', label: 'Quiero más información', icon: 'Download', style: 'text' },
+        primary: { type: 'whatsapp', label: 'Háblanos por WhatsApp', icon: 'WhatsApp', style: 'primary', badge: 'SIN COMPROMISO' },
+        secondary: null,
         heading: 'Entendemos que quieras hablar antes',
-        description: 'Un asesor médico de Hospital Capilar te llamará en menos de 24h para resolver tus dudas, sin compromiso.',
+        description: 'Escríbenos por WhatsApp y te resolvemos cualquier duda. Sin presión, sin compromiso.',
       };
     }
 
