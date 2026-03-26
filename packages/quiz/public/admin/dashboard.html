@@ -157,6 +157,7 @@
   <img src="/logo-hc.svg" alt="HC" class="logo">
   <h1>Funnel Analytics</h1>
   <span class="badge">LIVE</span>
+  <span class="badge" style="background:#2C3E50;border:1px solid var(--hc-teal);" id="launchBadge"></span>
   <div class="controls">
     <button class="date-btn" data-days="7" onclick="changeDays(7)">7d</button>
     <button class="date-btn" data-days="14" onclick="changeDays(14)">14d</button>
@@ -411,6 +412,10 @@ async function fetchData() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderDashboard(data);
+    if (data.launch_date) {
+      const ld = new Date(data.launch_date);
+      document.getElementById('launchBadge').textContent = 'Desde ' + ld.toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'numeric'});
+    }
   } catch (err) {
     document.getElementById('errorBanner').textContent = 'Error cargando datos: ' + err.message;
     document.getElementById('errorBanner').style.display = 'block';

@@ -3,6 +3,7 @@
 
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
 const PROJECT_ID = '137870';
+const LAUNCH_DATE = '2026-03-30';
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
@@ -51,7 +52,8 @@ exports.handler = async (event) => {
   const interval = `${days} day`;
 
   try {
-    // Run all queries in parallel
+    const dateFilter = `AND timestamp >= '${LAUNCH_DATE}' AND timestamp > now() - interval ${interval}`;
+
     const [
       kpiPageviews,
       kpiStarted,
@@ -72,13 +74,13 @@ exports.handler = async (event) => {
       adSpendDaily,
     ] = await Promise.all([
       // KPIs
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_started' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_completed' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'form_submitted' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_booked' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_attended' AND timestamp > now() - interval ${interval}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_no_show' AND timestamp > now() - interval ${interval}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_started' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_completed' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'form_submitted' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
 
       // By traffic source: leads, booked, attended, no-show
       hogqlQuery(apiKey, `
@@ -90,7 +92,7 @@ exports.handler = async (event) => {
           countIf(event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked', 'appointment_attended', 'appointment_no_show')
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.traffic_source
         ORDER BY leads DESC
       `),
@@ -103,7 +105,7 @@ exports.handler = async (event) => {
           countIf(event = 'appointment_booked') as booked
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked')
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.funnel_type
         ORDER BY leads DESC
       `),
@@ -113,7 +115,7 @@ exports.handler = async (event) => {
         SELECT properties.nicho as nicho, count() as cnt
         FROM events
         WHERE event = 'form_submitted'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.nicho
         ORDER BY cnt DESC
       `),
@@ -123,7 +125,7 @@ exports.handler = async (event) => {
         SELECT properties.ecp as ecp, count() as cnt
         FROM events
         WHERE event = 'lead_classified'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.ecp
         ORDER BY cnt DESC
       `),
@@ -133,7 +135,7 @@ exports.handler = async (event) => {
         SELECT toDate(timestamp) as day, count() as cnt
         FROM events
         WHERE event = 'form_submitted'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY day
         ORDER BY day ASC
       `),
@@ -143,7 +145,7 @@ exports.handler = async (event) => {
         SELECT toDate(timestamp) as day, properties.traffic_source as source, count() as cnt
         FROM events
         WHERE event = 'form_submitted'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY day, source
         ORDER BY day ASC
       `),
@@ -153,7 +155,7 @@ exports.handler = async (event) => {
         SELECT properties.traffic_source as source, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'appointment_attended'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY source
         ORDER BY cnt DESC
       `),
@@ -163,7 +165,7 @@ exports.handler = async (event) => {
         SELECT properties.traffic_source as source, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'appointment_no_show'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY source
         ORDER BY cnt DESC
       `),
@@ -178,7 +180,7 @@ exports.handler = async (event) => {
           sum(toIntOrZero(toString(properties.conversions))) as total_conversions
         FROM events
         WHERE event = 'ad_spend_daily'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.source
         ORDER BY total_spend DESC
       `),
@@ -191,7 +193,7 @@ exports.handler = async (event) => {
           sum(toFloatOrZero(toString(properties.spend))) as daily_spend
         FROM events
         WHERE event = 'ad_spend_daily'
-          AND timestamp > now() - interval ${interval}
+          ${dateFilter}
         GROUP BY properties.date, properties.source
         ORDER BY spend_date ASC
       `),
@@ -202,6 +204,7 @@ exports.handler = async (event) => {
 
     const result = {
       days,
+      launch_date: LAUNCH_DATE,
       generated_at: new Date().toISOString(),
       kpis: {
         pageviews: val(kpiPageviews),
