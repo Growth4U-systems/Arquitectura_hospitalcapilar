@@ -899,7 +899,42 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
   }
 
   if (!koiboxId) {
-    console.log('[GetContactAppt] No koibox_id found on any opportunity for contact:', ghl_contact_id);
+    console.log('[GetContactAppt] No koibox_id on opportunity, checking contact custom fields...');
+
+    // Fallback: check contact's fecha_cita/hora_cita/clinica_cita custom fields
+    try {
+      const cfRes = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
+      if (cfRes.ok) {
+        const cfData = await cfRes.json();
+        const cfs = cfData?.contact?.customFields || [];
+        const fechaCita = (cfs.find(f => f.id === 'yEjha5MpjAeDrrUfFmur')?.value || '').substring(0, 10); // DATE → YYYY-MM-DD
+        const horaCita = cfs.find(f => f.id === 'KX7eyTmYQKbi0937Wj9I')?.value || '';
+        const clinicaCita = (cfs.find(f => f.id === 'upGgK5yc0bSDwqC99DkZ')?.value || '').toLowerCase();
+
+        if (fechaCita && new Date(fechaCita) >= new Date(new Date().toISOString().substring(0, 10))) {
+          console.log('[GetContactAppt] Found future appointment via contact custom fields:', fechaCita, horaCita);
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              hasAppointment: true,
+              contactName,
+              contactEmail,
+              contactPhone,
+              clinica: clinicaCita,
+              appointment: {
+                fecha: fechaCita,
+                hora_inicio: horaCita,
+              },
+              _debug: { ..._debug, resolvedVia: _debug.resolvedVia || 'contactId', appointmentSource: 'contact_custom_fields' },
+            }),
+          };
+        }
+      }
+    } catch (err) {
+      console.log('[GetContactAppt] Contact custom fields check failed:', err.message);
+    }
+
     return {
       statusCode: 200,
       headers: corsHeaders,
