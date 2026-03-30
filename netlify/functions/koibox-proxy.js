@@ -647,6 +647,9 @@ async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
     console.log('[Cancel→GHL] Tag addition failed:', err.message);
   }
 
+  // 5. Cancel GHL calendar appointments
+  await cancelGHLAppointments(contactId, ghlHeaders);
+
   return { status: 'ok', contactId };
 }
 
@@ -838,7 +841,19 @@ async function rescheduleAppointment(body, koiboxHeaders, corsHeaders) {
     console.log('[Reschedule] Cancel failed:', err.message);
   }
 
-  // 2. Create new appointment via the existing flow
+  // 1b. Cancel old GHL calendar appointments before creating new one
+  if (ghl_contact_id) {
+    const ghlKey = process.env.VITE_GHL_API_KEY;
+    if (ghlKey) {
+      await cancelGHLAppointments(ghl_contact_id, {
+        'Authorization': `Bearer ${ghlKey}`,
+        'Content-Type': 'application/json',
+        'Version': '2021-07-28',
+      });
+    }
+  }
+
+  // 2. Create new appointment via the existing flow (also creates new GHL calendar event)
   const createResult = await createAppointment(
     { ...body, action: 'create_appointment' },
     koiboxHeaders,
@@ -893,6 +908,45 @@ async function rescheduleAppointment(body, koiboxHeaders, corsHeaders) {
       ghlSync: createData.ghlSync,
     }),
   };
+}
+
+/**
+ * Cancel all active GHL calendar appointments for a contact.
+ * Used during cancellation and reschedule flows.
+ */
+async function cancelGHLAppointments(contactId, ghlHeaders) {
+  try {
+    const res = await fetch(`${GHL_BASE}/contacts/${contactId}/appointments`, { headers: ghlHeaders });
+    if (!res.ok) {
+      console.log('[GHL] Failed to fetch appointments:', res.status);
+      return [];
+    }
+    const data = await res.json();
+    const active = (data.events || []).filter(e => e.appointmentStatus !== 'cancelled' && !e.deleted);
+    const cancelled = [];
+
+    for (const event of active) {
+      try {
+        const cancelRes = await fetch(`${GHL_BASE}/calendars/events/appointments/${event.id}`, {
+          method: 'PUT',
+          headers: ghlHeaders,
+          body: JSON.stringify({ appointmentStatus: 'cancelled' }),
+        });
+        if (cancelRes.ok) {
+          cancelled.push(event.id);
+          console.log('[GHL] Appointment cancelled:', event.id);
+        } else {
+          console.log('[GHL] Failed to cancel appointment:', event.id, cancelRes.status);
+        }
+      } catch (err) {
+        console.log('[GHL] Cancel appointment error:', event.id, err.message);
+      }
+    }
+    return cancelled;
+  } catch (err) {
+    console.log('[GHL] Fetch appointments error:', err.message);
+    return [];
+  }
 }
 
 /**
@@ -1025,7 +1079,7 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     };
     console.log('[Koibox→GHL] Creating calendar event, payload:', JSON.stringify(calPayload));
 
-    const calRes = await fetch(`${GHL_BASE}/calendars/events`, {
+    const calRes = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
       method: 'POST',
       headers: ghlHeaders,
       body: JSON.stringify(calPayload),
@@ -1036,19 +1090,6 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
       console.log('[Koibox→GHL] Calendar appointment created:', ghlAppointmentId);
     } else {
       console.log('[Koibox→GHL] Calendar appointment failed:', calRes.status, JSON.stringify(calData));
-      // Retry with /calendars/events/appointments (legacy endpoint)
-      const calRes2 = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
-        method: 'POST',
-        headers: ghlHeaders,
-        body: JSON.stringify(calPayload),
-      });
-      const calData2 = await calRes2.json();
-      if (calRes2.ok) {
-        ghlAppointmentId = calData2?.id || calData2?.event?.id || null;
-        console.log('[Koibox→GHL] Calendar appointment created (legacy):', ghlAppointmentId);
-      } else {
-        console.log('[Koibox→GHL] Calendar appointment failed (legacy):', calRes2.status, JSON.stringify(calData2));
-      }
     }
   } catch (err) {
     console.log('[Koibox→GHL] Calendar appointment error:', err.message);
