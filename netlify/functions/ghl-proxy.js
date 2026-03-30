@@ -190,16 +190,38 @@ exports.handler = async (event) => {
       opportunityData = await oppRes.json();
       console.log('[GHL] Opportunity response status:', oppRes.status, 'lead_priority:', priority, JSON.stringify(opportunityData));
 
+      // Extract oppId — from POST response or by searching existing opportunity
+      let oppId = opportunityData?.opportunity?.id;
+
       if (!oppRes.ok) {
-        oppError = `Opportunity creation failed: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
+        console.log('[GHL] Opportunity POST failed:', oppRes.status, JSON.stringify(opportunityData));
+        // Duplicate opportunity — search for the existing one to update its custom fields
+        if (oppRes.status === 400 && /duplicate/i.test(opportunityData?.message || '')) {
+          try {
+            const searchRes = await fetch(`${GHL_BASE}/opportunities/search`, {
+              method: 'POST',
+              headers: ghlHeaders,
+              body: JSON.stringify({ locationId: body.locationId, limit: 20 }),
+            });
+            const searchData = await searchRes.json();
+            const existing = (searchData?.opportunities || []).find(
+              o => o.contact?.id === contactId || o.contactId === contactId
+            );
+            if (existing?.id) {
+              oppId = existing.id;
+              console.log('[GHL] Found existing opportunity for contact:', oppId);
+            }
+          } catch (searchErr) {
+            console.log('[GHL] Opportunity search failed:', searchErr.message);
+          }
+        }
+        if (!oppId) {
+          oppError = `Opportunity creation failed: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
+        }
       }
 
-      // Fallback: if POST didn't save custom fields, update via PUT
-      const oppId = opportunityData?.opportunity?.id;
-      const oppCF = opportunityData?.opportunity?.customFields;
-      const prioritySaved = Array.isArray(oppCF) && oppCF.some(f => f.id === OPP_CF.lead_priority && f.field_value);
-      if (oppId && !prioritySaved) {
-        console.log('[GHL] Custom fields not in POST response, updating via PUT...');
+      // Update opportunity custom fields via PUT (always, to ensure fields are set)
+      if (oppId) {
         try {
           const updateRes = await fetch(`${GHL_BASE}/opportunities/${oppId}`, {
             method: 'PUT',
@@ -207,7 +229,7 @@ exports.handler = async (event) => {
             body: JSON.stringify({ customFields }),
           });
           const updateBody = await updateRes.json();
-          console.log('[GHL] Opportunity PUT status:', updateRes.status, 'lead_priority:', priority, JSON.stringify(updateBody));
+          console.log('[GHL] Opportunity PUT status:', updateRes.status, JSON.stringify(updateBody));
         } catch (updateErr) {
           console.log('[GHL] Opportunity PUT failed:', updateErr.message);
         }
