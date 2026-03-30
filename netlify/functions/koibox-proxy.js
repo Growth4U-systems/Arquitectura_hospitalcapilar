@@ -775,16 +775,31 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     console.log('[GetContactAppt] Contact fetch failed:', err.message);
   }
 
-  // 2. Find open opportunity with koibox_id
+  // 2. Find opportunity with koibox_id (try open first, fallback to all statuses)
   let koiboxId = '';
   let clinica = '';
   try {
+    let opportunities = [];
     const searchRes = await fetch(
       `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${ghl_contact_id}&status=open`,
       { headers: ghlHeaders }
     );
     const searchData = await searchRes.json();
-    const opp = (searchData?.opportunities || [])[0];
+    opportunities = searchData?.opportunities || [];
+    console.log('[GetContactAppt] Open opportunities found:', opportunities.length);
+
+    // Fallback: search all statuses if no open opportunity found
+    if (opportunities.length === 0) {
+      const searchRes2 = await fetch(
+        `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${ghl_contact_id}`,
+        { headers: ghlHeaders }
+      );
+      const searchData2 = await searchRes2.json();
+      opportunities = searchData2?.opportunities || [];
+      console.log('[GetContactAppt] All-status opportunities found:', opportunities.length);
+    }
+
+    const opp = opportunities[0];
 
     if (opp?.id) {
       const oppDetailRes = await fetch(`${GHL_BASE}/opportunities/${opp.id}`, { headers: ghlHeaders });
@@ -793,6 +808,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         const cfs = oppDetail?.opportunity?.customFields || [];
         const koiboxField = cfs.find(f => f.id === 'x1MAP0Om3rUW3a10ZiUe');
         koiboxId = koiboxField?.fieldValue || koiboxField?.value || '';
+        console.log('[GetContactAppt] Opportunity:', opp.id, 'koibox_id:', koiboxId);
 
         // Get clinica from contact custom fields
         const contactRes2 = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
@@ -803,12 +819,15 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
           clinica = (clinicaField?.value || '').toLowerCase();
         }
       }
+    } else {
+      console.log('[GetContactAppt] No opportunities found for contact:', ghl_contact_id);
     }
   } catch (err) {
     console.log('[GetContactAppt] Opportunity search failed:', err.message);
   }
 
   if (!koiboxId) {
+    console.log('[GetContactAppt] No koibox_id found on any opportunity for contact:', ghl_contact_id);
     return {
       statusCode: 200,
       headers: corsHeaders,
