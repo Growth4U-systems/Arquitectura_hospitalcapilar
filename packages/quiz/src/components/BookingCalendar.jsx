@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Calendar, Clock, ChevronLeft, ChevronRight, CheckCircle, Loader2 } from 'lucide-react';
+import { safeFetch } from '../utils/safeFetch';
 
 const CLINICS = {
-  madrid: { name: 'Madrid', address: 'C/ del Príncipe de Vergara, 43' },
-  pontevedra: { name: 'Pontevedra', address: 'Rúa Benito Corbal, 47' },
-  murcia: { name: 'Murcia', address: 'C/ Alejandro Séiquer, 5' },
+  madrid: { name: 'Madrid', address: 'Calle del Moscatelar, Nº11, 28043 Madrid' },
+  pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
+  murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
 };
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -23,15 +24,21 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
-  // Fetch availability when date is selected
+  // Fetch availability when date is selected (with abort on re-fetch)
+  const abortRef = useRef(null);
   useEffect(() => {
     if (!selectedDate || !selectedClinic) return;
+
+    // Abort previous request if still in-flight
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const fetchSlots = async () => {
       setLoadingSlots(true);
       setSelectedSlot(null);
       try {
-        const res = await fetch('/.netlify/functions/koibox-proxy', {
+        const res = await safeFetch('/.netlify/functions/koibox-proxy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -39,22 +46,31 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
             fecha: selectedDate,
             clinica: selectedClinic,
           }),
-        });
+          signal: controller.signal,
+        }, { timeoutMs: 12000, retries: 1, label: 'Koibox-Slots' });
         const data = await res.json();
-        setSlots((data.slots || []).filter(s => s.disponible));
+        if (!controller.signal.aborted) {
+          setSlots((data.slots || []).filter(s => s.disponible));
+        }
       } catch (err) {
-        console.error('[Booking] Failed to fetch slots:', err);
-        setSlots([]);
+        if (err.name !== 'AbortError') {
+          console.error('[Booking] Failed to fetch slots:', err);
+          setSlots([]);
+        }
       } finally {
-        setLoadingSlots(false);
+        if (!controller.signal.aborted) {
+          setLoadingSlots(false);
+        }
       }
     };
 
     fetchSlots();
+    return () => controller.abort();
   }, [selectedDate, selectedClinic]);
 
   const handleBook = async () => {
     if (!selectedSlot || !selectedDate || !selectedClinic) return;
+    if (booking) return; // Prevent double-booking
     setBooking(true);
 
     try {
@@ -70,11 +86,11 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
         ...(contactId && { ghl_contact_id: contactId }),
         ...(rescheduleFrom && { koibox_id: rescheduleFrom }),
       };
-      const res = await fetch('/.netlify/functions/koibox-proxy', {
+      const res = await safeFetch('/.netlify/functions/koibox-proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      }, { timeoutMs: 30000, retries: 0, label: 'Koibox-Book' });
       const data = await res.json();
 
       if (data.success) {
@@ -89,7 +105,9 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
       }
     } catch (err) {
       console.error('[Booking] Failed:', err);
-      alert('Error de conexión. Inténtalo de nuevo.');
+      alert(err.name === 'AbortError'
+        ? 'La conexión ha tardado demasiado. Inténtalo de nuevo o llámanos al 623 457 218.'
+        : 'Error de conexión. Inténtalo de nuevo.');
     } finally {
       setBooking(false);
     }

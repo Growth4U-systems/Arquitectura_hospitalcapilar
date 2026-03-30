@@ -3,9 +3,9 @@ import { Calendar, Clock, MapPin, AlertTriangle, CheckCircle, XCircle, Loader2, 
 import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
-  madrid: { name: 'Madrid', address: 'C/ del Príncipe de Vergara, 43' },
-  pontevedra: { name: 'Pontevedra', address: 'Rúa Benito Corbal, 47' },
-  murcia: { name: 'Murcia', address: 'C/ Alejandro Séiquer, 5' },
+  madrid: { name: 'Madrid', address: 'Calle del Moscatelar, Nº11, 28043 Madrid' },
+  pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
+  murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
 };
 
 const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
