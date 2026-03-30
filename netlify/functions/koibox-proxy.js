@@ -869,11 +869,15 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     const opp = opportunities[0];
 
     if (opp?.id) {
+      _debug.oppId = opp.id;
       const oppDetailRes = await fetch(`${GHL_BASE}/opportunities/${opp.id}`, { headers: ghlHeaders });
+      _debug.oppDetailStatus = oppDetailRes.status;
       if (oppDetailRes.ok) {
         const oppDetail = await oppDetailRes.json();
         const cfs = oppDetail?.opportunity?.customFields || [];
+        _debug.customFieldCount = cfs.length;
         const koiboxField = cfs.find(f => f.id === 'x1MAP0Om3rUW3a10ZiUe');
+        _debug.koiboxFieldRaw = koiboxField || null;
         koiboxId = koiboxField?.fieldValue || koiboxField?.value || '';
         console.log('[GetContactAppt] Opportunity:', opp.id, 'koibox_id:', koiboxId);
 
