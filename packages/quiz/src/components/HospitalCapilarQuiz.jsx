@@ -1034,7 +1034,12 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       { id: CF.agent_message_contact, field_value: agentMessage || '' },
       { id: CF.contact_score, field_value: contactScore },
       { id: CF.ubicacion_clinica, field_value: data.ubicacion || '' },
-      { id: CF.consent, field_value: data.consentPrivacidad ? `privacidad:si|comunicaciones:${data.consentComunicaciones ? 'si' : 'no'}` : '' },
+      { id: CF.consent, field_value: (() => {
+        const opts = [];
+        if (data.consentPrivacidad) opts.push('He leido y acepto la Politica de Privacidad');
+        if (data.consentComunicaciones) opts.push('Acepto recibir comunicaciones comerciales por email, Whatsapp y/o teléfono sobre tratamientos, promociones y novedades.');
+        return opts;
+      })() },
       { id: CF.nicho, field_value: nicho || 'general' },
       { id: CF.funnel_type, field_value: funnelType || 'quiz_largo' },
       { id: CF.traffic_source, field_value: trafficSource || 'direct' },

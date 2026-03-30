@@ -120,7 +120,12 @@ const DirectFormLanding = ({ nicho = 'que-me-pasa' }) => {
       { id: CF.agent_message_contact, field_value: agentMsg },
       { id: CF.contact_score, field_value: contactScore },
       { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
-      { id: CF.consent, field_value: form.consentPrivacidad ? `privacidad:si|comunicaciones:${form.consentComunicaciones ? 'si' : 'no'}` : '' },
+      { id: CF.consent, field_value: (() => {
+        const opts = [];
+        if (form.consentPrivacidad) opts.push('He leido y acepto la Politica de Privacidad');
+        if (form.consentComunicaciones) opts.push('Acepto recibir comunicaciones comerciales por email, Whatsapp y/o teléfono sobre tratamientos, promociones y novedades.');
+        return opts;
+      })() },
       { id: CF.nicho, field_value: nicho || 'general' },
       { id: CF.funnel_type, field_value: 'formulario_directo' },
       { id: CF.traffic_source, field_value: classifyTrafficSource(utmParams) || 'direct' },
