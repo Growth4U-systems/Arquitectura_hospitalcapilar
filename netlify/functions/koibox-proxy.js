@@ -876,6 +876,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         const oppDetail = await oppDetailRes.json();
         const cfs = oppDetail?.opportunity?.customFields || [];
         _debug.customFieldCount = cfs.length;
+        _debug.customFieldIds = cfs.map(f => ({ id: f.id, key: f.key, value: (f.fieldValue || f.value || '').toString().substring(0, 50) }));
         const koiboxField = cfs.find(f => f.id === 'x1MAP0Om3rUW3a10ZiUe');
         _debug.koiboxFieldRaw = koiboxField || null;
         koiboxId = koiboxField?.fieldValue || koiboxField?.value || '';
