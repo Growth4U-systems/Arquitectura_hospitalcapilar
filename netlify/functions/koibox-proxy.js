@@ -123,32 +123,36 @@ async function syncLead(body, koiboxHeaders, corsHeaders) {
     return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'nombre is required' }) };
   }
 
-  // 1. Check for existing client by phone
+  // 1. Check for existing client by phone (Koibox filter params don't work —
+  //    the API ignores ?movil= and ?email= and returns ALL clients.
+  //    We must fetch and filter client-side.)
   let existingClient = null;
+  const normalizePhone = (p) => (p || '').replace(/[^0-9]/g, '').slice(-9); // last 9 digits
+
   if (movil) {
-    const searchRes = await fetch(`${KOIBOX_BASE}/clientes/?movil=${encodeURIComponent(movil)}`, {
-      headers: koiboxHeaders,
-    });
-    if (searchRes.ok) {
-      const searchData = await searchRes.json();
-      if (searchData.count > 0) {
-        existingClient = searchData.results[0];
-        console.log('[Koibox] Found existing client by phone:', existingClient.id);
+    const needle = normalizePhone(movil);
+    if (needle.length >= 9) {
+      const searchRes = await fetch(`${KOIBOX_BASE}/clientes/?movil=${encodeURIComponent(movil)}&limit=100`, {
+        headers: koiboxHeaders,
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        existingClient = (searchData.results || []).find(c => normalizePhone(c.movil) === needle) || null;
+        if (existingClient) console.log('[Koibox] Found existing client by phone:', existingClient.id);
       }
     }
   }
 
   // 2. Check by email if not found by phone
   if (!existingClient && email) {
-    const searchRes = await fetch(`${KOIBOX_BASE}/clientes/?email=${encodeURIComponent(email)}`, {
+    const needleEmail = email.toLowerCase().trim();
+    const searchRes = await fetch(`${KOIBOX_BASE}/clientes/?email=${encodeURIComponent(email)}&limit=100`, {
       headers: koiboxHeaders,
     });
     if (searchRes.ok) {
       const searchData = await searchRes.json();
-      if (searchData.count > 0) {
-        existingClient = searchData.results[0];
-        console.log('[Koibox] Found existing client by email:', existingClient.id);
-      }
+      existingClient = (searchData.results || []).find(c => (c.email || '').toLowerCase().trim() === needleEmail) || null;
+      if (existingClient) console.log('[Koibox] Found existing client by email:', existingClient.id);
     }
   }
 
@@ -409,7 +413,8 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
 
   console.log('[Koibox] Appointment created:', appointmentData.id);
 
-  // 3. Sync to GHL: add tags + note + update opportunity stage
+  // 3. Sync to GHL, Firestore, PostHog, Salesforce — all non-blocking
+  // If any of these fail, the Koibox appointment is already created, so we return success
   let ghlSync = { status: 'skipped' };
   try {
     ghlSync = await syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId: String(appointmentData.id || ''), ghl_contact_id, bonoPaid, contactEcp });
@@ -419,28 +424,36 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   }
 
   // 4. Update Firestore lead with appointment info
-  await updateLeadByEmail(email, {
-    appointmentStatus: 'booked',
-    appointmentClinica: clinica || '',
-    appointmentFecha: fecha || '',
-    appointmentHora: hora_inicio || '',
-    appointmentKoiboxId: String(appointmentData.id || ''),
-    appointmentBookedAt: new Date().toISOString(),
-  });
+  try {
+    await updateLeadByEmail(email, {
+      appointmentStatus: 'booked',
+      appointmentClinica: clinica || '',
+      appointmentFecha: fecha || '',
+      appointmentHora: hora_inicio || '',
+      appointmentKoiboxId: String(appointmentData.id || ''),
+      appointmentBookedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.log('[Koibox] Firestore update failed:', err.message);
+  }
 
   // 5. Track in PostHog server-side (enrich with lead attribution)
-  const leadSource = await getLeadSourceByEmail(email);
-  await trackServerEvent('appointment_booked', {
-    clinica,
-    fecha,
-    hora_inicio,
-    hora_fin,
-    has_email: !!email,
-    has_phone: !!movil,
-    koibox_appointment_id: appointmentData.id,
-    koibox_client_id: clientId,
-    ...leadSource,
-  }, email);
+  try {
+    const leadSource = await getLeadSourceByEmail(email);
+    await trackServerEvent('appointment_booked', {
+      clinica,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      has_email: !!email,
+      has_phone: !!movil,
+      koibox_appointment_id: appointmentData.id,
+      koibox_client_id: clientId,
+      ...leadSource,
+    }, email);
+  } catch (err) {
+    console.log('[Koibox] PostHog tracking failed:', err.message);
+  }
 
   // 6. Send to Salesforce with full G4U mapping (fire-and-forget)
   sendBookingToSalesforce({
@@ -697,13 +710,17 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
   };
   const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 
-  // 1. Get contact name from GHL
+  // 1. Get contact name, email, phone from GHL
   let contactName = '';
+  let contactEmail = '';
+  let contactPhone = '';
   try {
     const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
     if (contactRes.ok) {
       const contactData = await contactRes.json();
       contactName = contactData?.contact?.firstName || contactData?.contact?.name || '';
+      contactEmail = contactData?.contact?.email || '';
+      contactPhone = contactData?.contact?.phone || '';
     }
   } catch (err) {
     console.log('[GetContactAppt] Contact fetch failed:', err.message);
@@ -746,7 +763,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ hasAppointment: false, contactName }),
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone }),
     };
   }
 
@@ -757,7 +774,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone }),
       };
     }
     const data = await res.json();
@@ -767,7 +784,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, previouslyCancelled: true }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, previouslyCancelled: true }),
       };
     }
 
@@ -777,6 +794,8 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       body: JSON.stringify({
         hasAppointment: true,
         contactName,
+        contactEmail,
+        contactPhone,
         koibox_id: koiboxId,
         clinica: clinica || '',
         appointment: {
@@ -973,7 +992,69 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     console.log('[Koibox→GHL] Note creation failed:', err.message);
   }
 
-  // 5. Update opportunity: move to "Booked" stage + update tratamiento_status, koibox_id, fecha, hora
+  // 5. Create appointment in GHL native calendar FIRST (need appointmentId for opportunity)
+  const GHL_CALENDAR_ID = 'sMbNt8SyzfjroMbZvB74'; // Calendario HC (producción)
+  let ghlAppointmentId = null;
+  try {
+    // Build ISO datetime from fecha (YYYY-MM-DD) + hora_inicio (HH:MM)
+    // Use Intl to determine current Spain offset (CET +01:00 or CEST +02:00)
+    const probeDate = new Date(`${fecha}T${hora_inicio}:00Z`);
+    const madridStr = probeDate.toLocaleString('en-US', { timeZone: 'Europe/Madrid' });
+    const madridDate = new Date(madridStr + ' UTC');
+    const offsetMs = madridDate - probeDate;
+    const offsetHours = Math.round(offsetMs / 3600000);
+    const offsetStr = `${offsetHours >= 0 ? '+' : '-'}${String(Math.abs(offsetHours)).padStart(2, '0')}:00`;
+
+    const startLocal = `${fecha}T${hora_inicio}:00${offsetStr}`;
+    const startDate = new Date(startLocal);
+    const endDate = new Date(startDate.getTime() + 30 * 60000); // 30min slot
+    // GHL expects ISO strings in UTC
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+
+    const calPayload = {
+      calendarId: GHL_CALENDAR_ID,
+      locationId,
+      contactId,
+      startTime: startISO,
+      endTime: endISO,
+      title: `Diagnóstico Capilar - ${nombre || 'Paciente'}`,
+      appointmentStatus: 'confirmed',
+      toNotify: true,
+      selectedTimezone: 'Europe/Madrid',
+    };
+    console.log('[Koibox→GHL] Creating calendar event, payload:', JSON.stringify(calPayload));
+
+    const calRes = await fetch(`${GHL_BASE}/calendars/events`, {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify(calPayload),
+    });
+    const calData = await calRes.json();
+    if (calRes.ok) {
+      ghlAppointmentId = calData?.id || calData?.event?.id || null;
+      console.log('[Koibox→GHL] Calendar appointment created:', ghlAppointmentId);
+    } else {
+      console.log('[Koibox→GHL] Calendar appointment failed:', calRes.status, JSON.stringify(calData));
+      // Retry with /calendars/events/appointments (legacy endpoint)
+      const calRes2 = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify(calPayload),
+      });
+      const calData2 = await calRes2.json();
+      if (calRes2.ok) {
+        ghlAppointmentId = calData2?.id || calData2?.event?.id || null;
+        console.log('[Koibox→GHL] Calendar appointment created (legacy):', ghlAppointmentId);
+      } else {
+        console.log('[Koibox→GHL] Calendar appointment failed (legacy):', calRes2.status, JSON.stringify(calData2));
+      }
+    }
+  } catch (err) {
+    console.log('[Koibox→GHL] Calendar appointment error:', err.message);
+  }
+
+  // 5b. Update opportunity: move to "Booked" stage + link appointment + update custom fields
   const PIPELINE_STAGE_BOOKED = 'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5';
   // Opportunity custom field IDs
   const OPP_CF_BOOKING = {
@@ -996,9 +1077,6 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
 
     if (opportunities.length > 0) {
       const opp = opportunities[0];
-      // Note: tratamiento_status is NOT updated here — it tracks payment (not_paid/paid_195/paid_70),
-      // booking state is tracked via pipelineStageId
-      // Generate reagendar link: uses contact_id directly (auto-detects appointment)
       const SITE_BASE = process.env.SITE_URL || 'https://diagnostico.hospitalcapilar.com';
       const linkReagendar = `${SITE_BASE}/mi-cita?c=${contactId}`;
 
@@ -1008,51 +1086,25 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
         { key: 'hora_cita_opp', field_value: hora_inicio || '' },
         { key: 'link_reagendar', field_value: linkReagendar },
       ];
+
+      const oppUpdate = {
+        pipelineStageId: PIPELINE_STAGE_BOOKED,
+        customFields,
+      };
+      // Link calendar appointment to opportunity
+      if (ghlAppointmentId) {
+        oppUpdate.appointmentId = ghlAppointmentId;
+      }
+
       await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
         method: 'PUT',
         headers: ghlHeaders,
-        body: JSON.stringify({
-          pipelineStageId: PIPELINE_STAGE_BOOKED,
-          customFields,
-        }),
+        body: JSON.stringify(oppUpdate),
       });
-      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'koiboxId:', koiboxId, 'linkReagendar:', linkReagendar);
+      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'appointmentId:', ghlAppointmentId, 'koiboxId:', koiboxId);
     }
   } catch (err) {
     console.log('[Koibox→GHL] Opportunity update failed:', err.message);
-  }
-
-  // 5b. Create appointment in GHL native calendar (triggers reminder workflows)
-  const GHL_CALENDAR_ID = 'zUwTXAPxy5m2nm9x3lqi'; // Calendario Prueba 1
-  try {
-    // Build ISO datetime from fecha (YYYY-MM-DD) + hora_inicio (HH:MM)
-    const startISO = `${fecha}T${hora_inicio}:00+01:00`; // Spain CET
-    const endDate = new Date(`${fecha}T${hora_inicio}:00+01:00`);
-    endDate.setMinutes(endDate.getMinutes() + 30); // 30min default slot
-    const endISO = endDate.toISOString();
-
-    const calRes = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
-      method: 'POST',
-      headers: ghlHeaders,
-      body: JSON.stringify({
-        calendarId: GHL_CALENDAR_ID,
-        locationId,
-        contactId,
-        startTime: startISO,
-        endTime: endISO,
-        title: `Diagnóstico Capilar - ${nombre || 'Paciente'}`,
-        appointmentStatus: 'confirmed',
-        toNotify: true,
-      }),
-    });
-    const calData = await calRes.json();
-    if (calRes.ok) {
-      console.log('[Koibox→GHL] Calendar appointment created:', calData?.id || calData?.event?.id);
-    } else {
-      console.log('[Koibox→GHL] Calendar appointment failed:', calRes.status, JSON.stringify(calData));
-    }
-  } catch (err) {
-    console.log('[Koibox→GHL] Calendar appointment error:', err.message);
   }
 
   // 6. Tag bono_pendiente for women ECPs who haven't paid yet
@@ -1096,8 +1148,7 @@ const SF = {
   cita_asesoria:           '00NIV00001XhtqX',   // Fecha y hora de cita
   interesado_en:           '00N0900000CPq2Y',   // Campo libre — perfil clínico
   tipo_proceso_venta:      '00N0900000CPq2U',   // "Presencial"
-  owner_id:                '00509000008tZrfAAE', // Noemí Díez
-  // lead_status is a standard SF field (no custom ID needed)
+  // Estado + Propietario: managed by Salesforce Flow (Origen=GU4 → estado + owner by clínica)
   // G4U fields
   clinica_pck:             '00NbE000006pqPJ',
   lopd_firmada:            '00N0900000CPq2F',
@@ -1198,17 +1249,14 @@ async function sendBookingToSalesforce({ email, nombre, phone, clinica, fecha, h
     params.append('email', email || '');
     params.append('phone', phone || '');
     params.append('lead_source', 'GU4');
-    params.append('lead_status', 'Cita agendada con asesor');
+    // Estado + Propietario: managed by Salesforce Flow (trigger: Origen = GU4, assigns by Clínica)
 
     // Booking-specific fields
-    const citaDateTime = fecha && hora_inicio ? `${fecha} ${hora_inicio}` : '';
+    const citaDateTime = fecha && hora_inicio ? `${fecha}T${hora_inicio}:00` : '';
     params.append(SF.cita_asesoria, citaDateTime);
     params.append(SF.interesado_en, ghlCustomFields.ecp || lead?.ecp || '');
     params.append(SF.tipo_proceso_venta, 'Presencial');
     params.append(SF.clinica_pck, clinicaMap[clinica] || '');
-
-    // Owner: Noemí Díez
-    params.append('ownerId', SF.owner_id);
 
     // G4U custom fields — from Firestore lead (quiz answers)
     params.append(SF.g4u_id, ghl_contact_id || '');

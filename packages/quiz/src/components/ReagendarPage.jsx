@@ -263,9 +263,9 @@ export default function ReagendarPage() {
             <div className="bg-[#4CA994]/5 border border-[#4CA994]/20 rounded-2xl p-5">
               <BookingCalendar
                 ubicacion={contactData.clinica}
-                nombre=""
-                email=""
-                telefono=""
+                nombre={contactData.contactName || ''}
+                email={contactData.contactEmail || ''}
+                telefono={contactData.contactPhone || ''}
                 contactId={contactId}
                 rescheduleFrom={contactData.koibox_id}
                 onBooked={handleRescheduled}
