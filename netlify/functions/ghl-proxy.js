@@ -112,6 +112,11 @@ exports.handler = async (event) => {
     const contactId = contactData?.contact?.id || contactData?.meta?.contactId || contactData?.id || contactData?.contactId;
     console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', !!contactData?.meta?.contactId);
 
+    // Build bookingUrl (reused for contact + opportunity)
+    const bookingUrl = contactId
+      ? `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}`
+      : '';
+
     // 1b. Add "new_lead" tag + populate link_agendar on contact
     if (contactId) {
       try {
@@ -124,9 +129,6 @@ exports.handler = async (event) => {
       } catch (tagErr) {
         console.log('[GHL] Tag addition failed:', tagErr.message);
       }
-
-      // Build bookingUrl (reused for contact + opportunity)
-      const bookingUrl = `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}`;
 
       // PUT all custom fields + link_agendar on contact (ensures fields are set even for duplicate contacts)
       const allCustomFields = [
