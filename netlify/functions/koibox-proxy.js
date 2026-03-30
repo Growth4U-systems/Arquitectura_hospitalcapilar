@@ -763,16 +763,21 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
   let contactName = '';
   let contactEmail = '';
   let contactPhone = '';
+  let _debug = {};
   try {
     const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
+    _debug.contactStatus = contactRes.status;
     if (contactRes.ok) {
       const contactData = await contactRes.json();
       contactName = contactData?.contact?.firstName || contactData?.contact?.name || '';
       contactEmail = contactData?.contact?.email || '';
       contactPhone = contactData?.contact?.phone || '';
+    } else {
+      _debug.contactError = await contactRes.text();
     }
   } catch (err) {
     console.log('[GetContactAppt] Contact fetch failed:', err.message);
+    _debug.contactException = err.message;
   }
 
   // 2. Find opportunity with koibox_id (try open first, fallback to all statuses)
@@ -785,7 +790,9 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       { headers: ghlHeaders }
     );
     const searchData = await searchRes.json();
+    _debug.oppSearchStatus = searchRes.status;
     opportunities = searchData?.opportunities || [];
+    _debug.openOppCount = opportunities.length;
     console.log('[GetContactAppt] Open opportunities found:', opportunities.length);
 
     // Fallback: search all statuses if no open opportunity found
@@ -831,7 +838,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone }),
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, _debug }),
     };
   }
 
