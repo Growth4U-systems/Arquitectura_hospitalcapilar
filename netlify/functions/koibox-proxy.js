@@ -34,6 +34,13 @@ const WORKING_HOURS = {
 
 const SLOT_DURATION = 30; // minutes
 
+// Max confirmed appointments per clinic per day (Koibox restriction: 4 agendas/day)
+const MAX_DAILY_APPOINTMENTS = {
+  madrid: 4,
+  pontevedra: 4,
+  murcia: 4,
+};
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -253,7 +260,16 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
   }
 
   const data = await res.json();
-  const appointments = data.results || [];
+  const allAppointments = data.results || [];
+
+  // Filter to only this clinic's employee appointments, excluding cancelled (estado=5)
+  const employeeId = EMPLOYEES[clinica] || EMPLOYEES.madrid;
+  const appointments = allAppointments.filter(a => a.user === employeeId && a.estado !== 5);
+
+  // Check daily appointment limit
+  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 4;
+  const confirmedCount = appointments.length;
+  const dailyLimitReached = confirmedCount >= maxDaily;
 
   // Build set of occupied time ranges
   const occupied = appointments.map(a => ({
@@ -282,12 +298,16 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
     slots.push({
       hora_inicio: startStr,
       hora_fin: endStr,
-      disponible: !isOccupied,
+      disponible: !isOccupied && !dailyLimitReached,
     });
 
     // Advance to next slot
     m += SLOT_DURATION;
     if (m >= 60) { h += Math.floor(m / 60); m = m % 60; }
+  }
+
+  if (dailyLimitReached) {
+    console.log(`[Koibox] Daily limit reached for ${clinica} on ${fecha}: ${confirmedCount}/${maxDaily}`);
   }
 
   return {
@@ -299,6 +319,9 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
       horario: hours,
       total_slots: slots.length,
       disponibles: slots.filter(s => s.disponible).length,
+      daily_limit: maxDaily,
+      daily_confirmed: confirmedCount,
+      daily_limit_reached: dailyLimitReached,
       slots,
     }),
   };
@@ -376,7 +399,30 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     }
   }
 
-  // 2. Create the appointment
+  // 2. Check daily appointment limit before creating
+  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 4;
+  try {
+    const checkRes = await fetch(
+      `${KOIBOX_BASE}/agenda/?fecha__gte=${fecha}&fecha__lte=${fecha}&limit=50`,
+      { headers: koiboxHeaders }
+    );
+    if (checkRes.ok) {
+      const checkData = await checkRes.json();
+      const confirmedCount = (checkData.results || []).filter(a => a.user === employeeId && a.estado !== 5).length;
+      if (confirmedCount >= maxDaily) {
+        console.log(`[Koibox] Daily limit blocked creation for ${clinica} on ${fecha}: ${confirmedCount}/${maxDaily}`);
+        return {
+          statusCode: 409,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'daily_limit_reached', message: `Límite diario alcanzado (${maxDaily} citas). Por favor selecciona otro día.`, confirmed: confirmedCount, max: maxDaily }),
+        };
+      }
+    }
+  } catch (err) {
+    console.log('[Koibox] Daily limit check failed, proceeding:', err.message);
+  }
+
+  // 3. Create the appointment
   const appointmentPayload = {
     titulo: `Diagnóstico Capilar - ${nombre || 'Paciente'}`,
     fecha,
