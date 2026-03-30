@@ -918,6 +918,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
             headers: corsHeaders,
             body: JSON.stringify({
               hasAppointment: true,
+              resolvedContactId,
               contactName,
               contactEmail,
               contactPhone,
@@ -968,6 +969,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       headers: corsHeaders,
       body: JSON.stringify({
         hasAppointment: true,
+        resolvedContactId,
         contactName,
         contactEmail,
         contactPhone,

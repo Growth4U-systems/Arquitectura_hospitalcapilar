@@ -95,7 +95,7 @@ export default function AgendarPage() {
             </div>
           </div>
           <a
-            href={`/mi-cita?c=${params.contactId}`}
+            href={`/mi-cita?c=${existingAppt.resolvedContactId || params.contactId}`}
             className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center"
           >
             Cambiar o cancelar cita
