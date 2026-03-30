@@ -539,29 +539,33 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
 async function cancelAppointment(body, koiboxHeaders, corsHeaders) {
   const { koibox_id, ghl_contact_id, reason } = body;
 
-  if (!koibox_id) {
-    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id required' }) };
+  if (!koibox_id && !ghl_contact_id) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id or ghl_contact_id required' }) };
   }
 
   // 1. Cancel in Koibox (estado 5 = cancelled)
   let koiboxResult = { status: 'skipped' };
-  try {
-    const cancelRes = await fetch(`${KOIBOX_BASE}/agenda/${koibox_id}/`, {
-      method: 'PATCH',
-      headers: koiboxHeaders,
-      body: JSON.stringify({ estado: 5 }),
-    });
-    if (cancelRes.ok) {
-      koiboxResult = { status: 'cancelled' };
-      console.log('[Koibox] Appointment cancelled:', koibox_id);
-    } else {
-      const errData = await cancelRes.json().catch(() => ({}));
-      koiboxResult = { status: 'error', code: cancelRes.status, details: errData };
-      console.log('[Koibox] Cancel failed:', cancelRes.status, JSON.stringify(errData));
+  if (koibox_id) {
+    try {
+      const cancelRes = await fetch(`${KOIBOX_BASE}/agenda/${koibox_id}/`, {
+        method: 'PATCH',
+        headers: koiboxHeaders,
+        body: JSON.stringify({ estado: 5 }),
+      });
+      if (cancelRes.ok) {
+        koiboxResult = { status: 'cancelled' };
+        console.log('[Koibox] Appointment cancelled:', koibox_id);
+      } else {
+        const errData = await cancelRes.json().catch(() => ({}));
+        koiboxResult = { status: 'error', code: cancelRes.status, details: errData };
+        console.log('[Koibox] Cancel failed:', cancelRes.status, JSON.stringify(errData));
+      }
+    } catch (err) {
+      koiboxResult = { status: 'error', error: err.message };
+      console.log('[Koibox] Cancel exception:', err.message);
     }
-  } catch (err) {
-    koiboxResult = { status: 'error', error: err.message };
-    console.log('[Koibox] Cancel exception:', err.message);
+  } else {
+    console.log('[Koibox] No koibox_id provided, skipping Koibox cancellation (GHL-only cancel)');
   }
 
   // 2. Update GHL: opportunity + contact + note
@@ -587,7 +591,7 @@ async function cancelAppointment(body, koiboxHeaders, corsHeaders) {
     statusCode: 200,
     headers: corsHeaders,
     body: JSON.stringify({
-      success: koiboxResult.status === 'cancelled',
+      success: koibox_id ? koiboxResult.status === 'cancelled' : ghlResult.status !== 'error',
       koibox: koiboxResult,
       ghl: ghlResult,
     }),
