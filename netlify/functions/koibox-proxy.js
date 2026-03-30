@@ -1239,7 +1239,15 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     console.log('[Koibox→GHL] Note creation failed:', err.message);
   }
 
-  // 5. Create appointment in GHL native calendar FIRST (need appointmentId for opportunity)
+  // 5a. Cancel any existing GHL calendar appointments before creating new one
+  try {
+    await cancelGHLAppointments(contactId, ghlHeaders);
+    console.log('[Koibox→GHL] Old calendar appointments cancelled');
+  } catch (err) {
+    console.log('[Koibox→GHL] Cancel old appointments failed:', err.message);
+  }
+
+  // 5b. Create appointment in GHL native calendar (need appointmentId for opportunity)
   const GHL_CALENDAR_ID = 'sMbNt8SyzfjroMbZvB74'; // Calendario HC (producción)
   let ghlAppointmentId = null;
   try {
