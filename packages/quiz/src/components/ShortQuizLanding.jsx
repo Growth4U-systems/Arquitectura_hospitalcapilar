@@ -211,7 +211,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       { id: CF.ubicacion_clinica, field_value: form.provincia || '' },
       { id: CF.consent, field_value: (() => {
         const opts = [];
-        if (form.consentPrivacidad) opts.push('He leido y acepto la Politica de Privacidad');
+        if (form.consentPrivacidad) opts.push('He leído y acepto la Política de Privacidad');
         if (form.consentComunicaciones) opts.push('Acepto recibir comunicaciones comerciales por email, Whatsapp y/o teléfono sobre tratamientos, promociones y novedades.');
         return opts;
       })() },

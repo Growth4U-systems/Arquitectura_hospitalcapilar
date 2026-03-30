@@ -109,8 +109,29 @@ exports.handler = async (event) => {
     const contactData = await contactRes.json();
 
     // GHL returns contact.id for new contacts, meta.contactId for duplicates
-    const contactId = contactData?.contact?.id || contactData?.meta?.contactId || contactData?.id || contactData?.contactId;
-    console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', !!contactData?.meta?.contactId);
+    // IMPORTANT: meta.contactId from duplicate response is unreliable for GET/PUT — must re-lookup
+    let contactId = contactData?.contact?.id;
+    const isDuplicate = !!contactData?.meta?.contactId;
+    if (!contactId && isDuplicate && body.email) {
+      // Re-lookup by email to get a working contact ID
+      try {
+        const lookupRes = await fetch(
+          `${GHL_BASE}/contacts/?locationId=${body.locationId}&query=${encodeURIComponent(body.email)}`,
+          { headers: ghlHeaders }
+        );
+        const lookupData = await lookupRes.json();
+        const match = (lookupData?.contacts || []).find(c => c.email === body.email);
+        contactId = match?.id || contactData.meta.contactId;
+        console.log('[GHL] Duplicate contact re-lookup:', contactId, 'matched:', !!match);
+      } catch (lookupErr) {
+        contactId = contactData.meta.contactId; // fallback
+        console.log('[GHL] Duplicate contact lookup failed:', lookupErr.message);
+      }
+    }
+    if (!contactId) {
+      contactId = contactData?.meta?.contactId || contactData?.id || contactData?.contactId;
+    }
+    console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', isDuplicate);
 
     // Build bookingUrl (reused for contact + opportunity)
     const bookingUrl = contactId

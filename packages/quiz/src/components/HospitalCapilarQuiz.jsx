@@ -1036,7 +1036,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       { id: CF.ubicacion_clinica, field_value: data.ubicacion || '' },
       { id: CF.consent, field_value: (() => {
         const opts = [];
-        if (data.consentPrivacidad) opts.push('He leido y acepto la Politica de Privacidad');
+        if (data.consentPrivacidad) opts.push('He leído y acepto la Política de Privacidad');
         if (data.consentComunicaciones) opts.push('Acepto recibir comunicaciones comerciales por email, Whatsapp y/o teléfono sobre tratamientos, promociones y novedades.');
         return opts;
       })() },
