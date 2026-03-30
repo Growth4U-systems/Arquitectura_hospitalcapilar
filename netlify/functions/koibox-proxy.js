@@ -636,9 +636,9 @@ async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
         body: JSON.stringify({
           pipelineStageId: PIPELINE_STAGE_CANCELLED,
           customFields: [
-            { key: 'fecha_cita_opp', field_value: '' },
-            { key: 'hora_cita_opp', field_value: '' },
-            { key: 'koibox_id', field_value: '' },
+            { id: 'RXAkzlyYHnz4MjYuYaml', field_value: '' },  // fecha_cita_opp
+            { id: 'age1q0r6Ek0PQztGZ4FJ', field_value: '' },   // hora_cita_opp
+            { id: 'x1MAP0Om3rUW3a10ZiUe', field_value: '' },   // koibox_id
           ],
         }),
       });
@@ -1048,7 +1048,22 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
 
   console.log('[Koibox→GHL] Found contact:', contactId);
 
-  // 2. No extra tags — Ramiro configures flows in GHL
+  // 2. Read contact_score to derive lead_priority for the opportunity
+  let leadPriority = 'WARM';
+  try {
+    const contactRes = await fetch(`${GHL_BASE}/contacts/${contactId}`, { headers: ghlHeaders });
+    if (contactRes.ok) {
+      const contactData = await contactRes.json();
+      const scoreCf = (contactData?.contact?.customFields || []).find(f => f.id === 'SGT17lKk7bZgkInBTtrT');
+      const scoreNum = parseInt(scoreCf?.value, 10) || 50;
+      if (scoreNum >= 70) leadPriority = 'HOT';
+      else if (scoreNum < 30) leadPriority = 'COLD';
+      console.log('[Koibox→GHL] contact_score:', scoreCf?.value, '→ lead_priority:', leadPriority);
+    }
+  } catch (err) {
+    console.log('[Koibox→GHL] Contact score read failed:', err.message);
+  }
+
   const clinicaName = clinica ? clinica.charAt(0).toUpperCase() + clinica.slice(1) : '';
 
   // 3. Save appointment date/time as contact custom fields (for workflow triggers)
@@ -1155,12 +1170,26 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   };
 
   try {
+    // Search open opportunities first, fallback to all statuses (reschedule may have moved it)
+    let opportunities = [];
     const searchRes = await fetch(
       `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${contactId}&status=open`,
       { headers: ghlHeaders }
     );
     const searchData = await searchRes.json();
-    const opportunities = searchData?.opportunities || [];
+    opportunities = searchData?.opportunities || [];
+
+    if (opportunities.length === 0) {
+      const searchRes2 = await fetch(
+        `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${contactId}`,
+        { headers: ghlHeaders }
+      );
+      const searchData2 = await searchRes2.json();
+      opportunities = searchData2?.opportunities || [];
+      if (opportunities.length > 0) {
+        console.log('[Koibox→GHL] Found opportunity in non-open status, will reopen:', opportunities[0].id);
+      }
+    }
 
     if (opportunities.length > 0) {
       const opp = opportunities[0];
@@ -1168,14 +1197,16 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
       const linkReagendar = `${SITE_BASE}/mi-cita?c=${contactId}`;
 
       const customFields = [
-        { key: 'koibox_id', field_value: koiboxId || '' },
-        { key: 'fecha_cita_opp', field_value: fecha || '' },
-        { key: 'hora_cita_opp', field_value: hora_inicio || '' },
-        { key: 'link_reagendar', field_value: linkReagendar },
+        { id: OPP_CF_BOOKING.koibox_id, field_value: koiboxId || '' },
+        { id: OPP_CF_BOOKING.fecha_cita_opp, field_value: fecha || '' },
+        { id: OPP_CF_BOOKING.hora_cita_opp, field_value: hora_inicio || '' },
+        { id: OPP_CF_BOOKING.link_reagendar, field_value: linkReagendar },
+        { id: 'l99Opesqh9cJBLxSPs4z', field_value: leadPriority },
       ];
 
       const oppUpdate = {
         pipelineStageId: PIPELINE_STAGE_BOOKED,
+        status: 'open',
         customFields,
       };
       // Link calendar appointment to opportunity

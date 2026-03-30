@@ -195,25 +195,20 @@ exports.handler = async (event) => {
 
       if (!oppRes.ok) {
         console.log('[GHL] Opportunity POST failed:', oppRes.status, JSON.stringify(opportunityData));
-        // Duplicate opportunity — search for the existing one to update its custom fields
-        if (oppRes.status === 400 && /duplicate/i.test(opportunityData?.message || '')) {
-          try {
-            const searchRes = await fetch(`${GHL_BASE}/opportunities/search`, {
-              method: 'POST',
-              headers: ghlHeaders,
-              body: JSON.stringify({ locationId: body.locationId, limit: 20 }),
-            });
-            const searchData = await searchRes.json();
-            const existing = (searchData?.opportunities || []).find(
-              o => o.contact?.id === contactId || o.contactId === contactId
-            );
-            if (existing?.id) {
-              oppId = existing.id;
-              console.log('[GHL] Found existing opportunity for contact:', oppId);
-            }
-          } catch (searchErr) {
-            console.log('[GHL] Opportunity search failed:', searchErr.message);
+        // POST failed (likely duplicate from GHL Workflow) — search by contact_id to find existing opportunity
+        try {
+          const searchRes = await fetch(
+            `${GHL_BASE}/opportunities/search?location_id=${body.locationId}&contact_id=${contactId}&status=open`,
+            { headers: ghlHeaders }
+          );
+          const searchData = await searchRes.json();
+          const existing = (searchData?.opportunities || [])[0];
+          if (existing?.id) {
+            oppId = existing.id;
+            console.log('[GHL] Found existing opportunity for contact:', oppId);
           }
+        } catch (searchErr) {
+          console.log('[GHL] Opportunity search failed:', searchErr.message);
         }
         if (!oppId) {
           oppError = `Opportunity creation failed: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
