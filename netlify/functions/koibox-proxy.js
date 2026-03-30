@@ -537,10 +537,10 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
  * - Add cancellation note
  */
 async function cancelAppointment(body, koiboxHeaders, corsHeaders) {
-  const { koibox_id, ghl_contact_id, reason } = body;
+  const { koibox_id, ghl_contact_id, email, phone, reason } = body;
 
-  if (!koibox_id && !ghl_contact_id) {
-    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id or ghl_contact_id required' }) };
+  if (!koibox_id && !ghl_contact_id && !email && !phone) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'koibox_id, ghl_contact_id, email, or phone required' }) };
   }
 
   // 1. Cancel in Koibox (estado 5 = cancelled)
@@ -568,12 +568,43 @@ async function cancelAppointment(body, koiboxHeaders, corsHeaders) {
     console.log('[Koibox] No koibox_id provided, skipping Koibox cancellation (GHL-only cancel)');
   }
 
-  // 2. Update GHL: opportunity + contact + note
-  let ghlResult = { status: 'skipped' };
+  // 2. Resolve GHL contact ID (fallback to email/phone if needed)
+  let resolvedContactId = ghl_contact_id || '';
   const ghlKey = process.env.VITE_GHL_API_KEY;
-  if (ghl_contact_id && ghlKey) {
+  if (ghlKey && resolvedContactId) {
+    // Verify the contact ID is valid
     try {
-      ghlResult = await syncCancellationToGHL(ghl_contact_id, ghlKey, koibox_id, reason);
+      const checkRes = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, {
+        headers: { 'Authorization': `Bearer ${ghlKey}`, 'Content-Type': 'application/json', 'Version': '2021-07-28' },
+      });
+      if (!checkRes.ok) {
+        console.log('[Cancel] Contact ID invalid, will try email/phone fallback');
+        resolvedContactId = '';
+      }
+    } catch { resolvedContactId = ''; }
+  }
+
+  const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
+  if (!resolvedContactId && ghlKey && email) {
+    try {
+      const r = await fetch(`${GHL_BASE}/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(email)}`,
+        { headers: { 'Authorization': `Bearer ${ghlKey}`, 'Content-Type': 'application/json', 'Version': '2021-07-28' } });
+      if (r.ok) { resolvedContactId = (await r.json())?.contact?.id || ''; }
+    } catch {}
+  }
+  if (!resolvedContactId && ghlKey && phone) {
+    try {
+      const r = await fetch(`${GHL_BASE}/contacts/search/duplicate?locationId=${locationId}&phone=${encodeURIComponent(phone)}`,
+        { headers: { 'Authorization': `Bearer ${ghlKey}`, 'Content-Type': 'application/json', 'Version': '2021-07-28' } });
+      if (r.ok) { resolvedContactId = (await r.json())?.contact?.id || ''; }
+    } catch {}
+  }
+
+  // 3. Update GHL: opportunity + contact + note
+  let ghlResult = { status: 'skipped' };
+  if (resolvedContactId && ghlKey) {
+    try {
+      ghlResult = await syncCancellationToGHL(resolvedContactId, ghlKey, koibox_id, reason);
     } catch (err) {
       ghlResult = { status: 'error', error: err.message };
       console.log('[Koibox→GHL] Cancel sync failed:', err.message);

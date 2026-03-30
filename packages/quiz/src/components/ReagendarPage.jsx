@@ -64,8 +64,10 @@ export default function ReagendarPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'cancel_appointment',
-          koibox_id: contactData.koibox_id,
+          koibox_id: contactData.koibox_id || '',
           ghl_contact_id: contactId,
+          email: contactData.contactEmail || '',
+          phone: contactData.contactPhone || '',
           reason: 'Cancelado por el paciente desde link mi-cita',
         }),
       });
