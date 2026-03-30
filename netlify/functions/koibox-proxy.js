@@ -741,10 +741,10 @@ async function getAppointment(body, koiboxHeaders, corsHeaders) {
  * Used by /mi-cita page: pass ghl_contact_id, get back appointment details + clinica.
  */
 async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
-  const { ghl_contact_id } = body;
+  const { ghl_contact_id, email, phone } = body;
 
-  if (!ghl_contact_id) {
-    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'ghl_contact_id required' }) };
+  if (!ghl_contact_id && !email && !phone) {
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'ghl_contact_id, email, or phone required' }) };
   }
 
   const ghlKey = process.env.VITE_GHL_API_KEY;
@@ -759,25 +759,85 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
   };
   const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 
-  // 1. Get contact name, email, phone from GHL
+  // 1. Resolve GHL contact ID — try direct lookup, fallback to email/phone search
+  let resolvedContactId = ghl_contact_id || '';
   let contactName = '';
   let contactEmail = '';
   let contactPhone = '';
   let _debug = {};
-  try {
-    const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
-    _debug.contactStatus = contactRes.status;
-    if (contactRes.ok) {
-      const contactData = await contactRes.json();
-      contactName = contactData?.contact?.firstName || contactData?.contact?.name || '';
-      contactEmail = contactData?.contact?.email || '';
-      contactPhone = contactData?.contact?.phone || '';
-    } else {
-      _debug.contactError = await contactRes.text();
+
+  // Try direct contact ID lookup
+  if (resolvedContactId) {
+    try {
+      const contactRes = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
+      _debug.contactStatus = contactRes.status;
+      if (contactRes.ok) {
+        const contactData = await contactRes.json();
+        contactName = contactData?.contact?.firstName || contactData?.contact?.name || '';
+        contactEmail = contactData?.contact?.email || '';
+        contactPhone = contactData?.contact?.phone || '';
+      } else {
+        console.log('[GetContactAppt] Contact ID lookup failed (status', contactRes.status, '), will try email/phone fallback');
+        resolvedContactId = ''; // clear to trigger fallback
+      }
+    } catch (err) {
+      console.log('[GetContactAppt] Contact fetch failed:', err.message);
+      resolvedContactId = '';
     }
-  } catch (err) {
-    console.log('[GetContactAppt] Contact fetch failed:', err.message);
-    _debug.contactException = err.message;
+  }
+
+  // Fallback: search by email, then phone
+  if (!resolvedContactId && email) {
+    try {
+      const searchRes = await fetch(
+        `${GHL_BASE}/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(email)}`,
+        { headers: ghlHeaders }
+      );
+      if (searchRes.ok) {
+        const data = await searchRes.json();
+        resolvedContactId = data?.contact?.id || '';
+        if (resolvedContactId) {
+          contactName = data?.contact?.firstName || data?.contact?.name || '';
+          contactEmail = data?.contact?.email || '';
+          contactPhone = data?.contact?.phone || '';
+          _debug.resolvedVia = 'email';
+          console.log('[GetContactAppt] Resolved contact via email:', resolvedContactId);
+        }
+      }
+    } catch (err) {
+      console.log('[GetContactAppt] Email search failed:', err.message);
+    }
+  }
+
+  if (!resolvedContactId && phone) {
+    try {
+      const searchRes = await fetch(
+        `${GHL_BASE}/contacts/search/duplicate?locationId=${locationId}&phone=${encodeURIComponent(phone)}`,
+        { headers: ghlHeaders }
+      );
+      if (searchRes.ok) {
+        const data = await searchRes.json();
+        resolvedContactId = data?.contact?.id || '';
+        if (resolvedContactId) {
+          contactName = data?.contact?.firstName || data?.contact?.name || '';
+          contactEmail = data?.contact?.email || '';
+          contactPhone = data?.contact?.phone || '';
+          _debug.resolvedVia = 'phone';
+          console.log('[GetContactAppt] Resolved contact via phone:', resolvedContactId);
+        }
+      }
+    } catch (err) {
+      console.log('[GetContactAppt] Phone search failed:', err.message);
+    }
+  }
+
+  if (!resolvedContactId) {
+    console.log('[GetContactAppt] Could not resolve GHL contact for:', ghl_contact_id, email, phone);
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, _debug }),
+    };
   }
 
   // 2. Find opportunity with koibox_id (try open first, fallback to all statuses)
@@ -786,7 +846,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
   try {
     let opportunities = [];
     const searchRes = await fetch(
-      `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${ghl_contact_id}&status=open`,
+      `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${resolvedContactId}&status=open`,
       { headers: ghlHeaders }
     );
     const searchData = await searchRes.json();
@@ -798,7 +858,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     // Fallback: search all statuses if no open opportunity found
     if (opportunities.length === 0) {
       const searchRes2 = await fetch(
-        `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${ghl_contact_id}`,
+        `${GHL_BASE}/opportunities/search?location_id=${locationId}&contact_id=${resolvedContactId}`,
         { headers: ghlHeaders }
       );
       const searchData2 = await searchRes2.json();
@@ -818,7 +878,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         console.log('[GetContactAppt] Opportunity:', opp.id, 'koibox_id:', koiboxId);
 
         // Get clinica from contact custom fields
-        const contactRes2 = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
+        const contactRes2 = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
         if (contactRes2.ok) {
           const cData = await contactRes2.json();
           const contactCfs = cData?.contact?.customFields || [];
@@ -827,7 +887,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         }
       }
     } else {
-      console.log('[GetContactAppt] No opportunities found for contact:', ghl_contact_id);
+      console.log('[GetContactAppt] No opportunities found for contact:', resolvedContactId);
     }
   } catch (err) {
     console.log('[GetContactAppt] Opportunity search failed:', err.message);

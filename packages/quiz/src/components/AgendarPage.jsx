@@ -41,7 +41,7 @@ export default function AgendarPage() {
     fetch('/.netlify/functions/koibox-proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_contact_appointment', ghl_contact_id: params.contactId }),
+      body: JSON.stringify({ action: 'get_contact_appointment', ghl_contact_id: params.contactId, email: params.email, phone: params.phone }),
     })
       .then(res => res.json())
       .then(data => {
