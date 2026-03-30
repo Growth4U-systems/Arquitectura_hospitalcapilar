@@ -134,14 +134,15 @@ exports.handler = async (event) => {
         { id: 'UdbclFWU2YGw0YYup4vm', field_value: bookingUrl },
       ];
       try {
-        await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+        const updatePayload = { customFields: allCustomFields };
+        console.log('[GHL] PUT contact payload:', JSON.stringify(updatePayload));
+        const updateRes = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT',
           headers: ghlHeaders,
-          body: JSON.stringify({
-            customFields: allCustomFields,
-          }),
+          body: JSON.stringify(updatePayload),
         });
-        console.log('[GHL] Custom fields + link_agendar set on contact:', contactId);
+        const updateData = await updateRes.json();
+        console.log('[GHL] PUT contact status:', updateRes.status, 'response:', JSON.stringify(updateData));
       } catch (linkErr) {
         console.log('[GHL] Custom fields update failed:', linkErr.message);
       }
@@ -161,7 +162,14 @@ exports.handler = async (event) => {
       if (scoreNum >= 70) priority = 'HOT';
       else if (scoreNum < 30) priority = 'COLD';
 
-      // Step A: Create opportunity (custom fields don't work on POST)
+      // Create opportunity with custom fields in one POST
+      const customFields = [
+        { id: OPP_CF.lead_priority, field_value: priority },
+        { id: OPP_CF.agent_message, field_value: agentMessage },
+        { id: OPP_CF.tratamiento_status, field_value: 'not_paid' },
+        { id: OPP_CF.link_agendados, field_value: bookingUrl },
+        { id: OPP_CF.ecp_opo, field_value: ecpValue },
+      ];
       const oppPayload = {
         pipelineId: PIPELINE_ID,
         locationId: body.locationId,
@@ -169,9 +177,10 @@ exports.handler = async (event) => {
         pipelineStageId: STAGE_NEW_LEAD,
         contactId,
         status: 'open',
-        monetaryValue: 195,
+        monetaryValue: 0,
+        customFields,
       };
-      console.log('[GHL] Creating opportunity:', JSON.stringify(oppPayload));
+      console.log('[GHL] Creating opportunity with custom fields:', JSON.stringify(oppPayload));
 
       const oppRes = await fetch(`${GHL_BASE}/opportunities/`, {
         method: 'POST',
@@ -179,32 +188,28 @@ exports.handler = async (event) => {
         body: JSON.stringify(oppPayload),
       });
       opportunityData = await oppRes.json();
-      console.log('[GHL] Opportunity response status:', oppRes.status, JSON.stringify(opportunityData));
+      console.log('[GHL] Opportunity response status:', oppRes.status, 'lead_priority:', priority, JSON.stringify(opportunityData));
 
       if (!oppRes.ok) {
         oppError = `Opportunity creation failed: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
       }
 
-      // Step B: Update opportunity with custom fields via PUT
+      // Fallback: if POST didn't save custom fields, update via PUT
       const oppId = opportunityData?.opportunity?.id;
-      if (oppId) {
+      const oppCF = opportunityData?.opportunity?.customFields;
+      const prioritySaved = Array.isArray(oppCF) && oppCF.some(f => f.id === OPP_CF.lead_priority && f.field_value);
+      if (oppId && !prioritySaved) {
+        console.log('[GHL] Custom fields not in POST response, updating via PUT...');
         try {
           const updateRes = await fetch(`${GHL_BASE}/opportunities/${oppId}`, {
             method: 'PUT',
             headers: ghlHeaders,
-            body: JSON.stringify({
-              customFields: [
-                { id: OPP_CF.lead_priority, field_value: priority },
-                { id: OPP_CF.agent_message, field_value: agentMessage },
-                { id: OPP_CF.tratamiento_status, field_value: 'not_paid' },
-                { id: OPP_CF.link_agendados, field_value: bookingUrl },
-                { id: OPP_CF.ecp_opo, field_value: ecpValue },
-              ],
-            }),
+            body: JSON.stringify({ customFields }),
           });
-          console.log('[GHL] Opportunity update status:', updateRes.status);
+          const updateBody = await updateRes.json();
+          console.log('[GHL] Opportunity PUT status:', updateRes.status, 'lead_priority:', priority, JSON.stringify(updateBody));
         } catch (updateErr) {
-          console.log('[GHL] Opportunity update failed:', updateErr.message);
+          console.log('[GHL] Opportunity PUT failed:', updateErr.message);
         }
       }
 
