@@ -38,20 +38,30 @@ exports.handler = async (event) => {
     const timestamp = new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' });
 
     // 1. Add tag "solicita_llamada" to contact
-    await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
-      method: 'POST',
-      headers: ghlHeaders,
-      body: JSON.stringify({ tags: ['solicita_llamada'] }),
-    });
+    try {
+      const tagRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify({ tags: ['solicita_llamada'] }),
+      });
+      if (!tagRes.ok) console.log('[GHL-CallRequest] Tag failed:', tagRes.status);
+    } catch (tagErr) {
+      console.log('[GHL-CallRequest] Tag error:', tagErr.message);
+    }
 
     // 2. Add note to contact with context
-    await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
-      method: 'POST',
-      headers: ghlHeaders,
-      body: JSON.stringify({
-        body: `📞 SOLICITA LLAMADA (${timestamp})\n\nEl paciente ${firstName} ha pulsado "Prefiero que me llamen" en la pantalla de resultados del quiz.\n\nPerfil clínico: ${ecp || 'No definido'}\n\nAcción requerida: Llamar al paciente para resolver dudas y agendar cita.`,
-      }),
-    });
+    try {
+      const noteRes = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify({
+          body: `📞 SOLICITA LLAMADA (${timestamp})\n\nEl paciente ${firstName} ha pulsado "Prefiero que me llamen" en la pantalla de resultados del quiz.\n\nPerfil clínico: ${ecp || 'No definido'}\n\nAcción requerida: Llamar al paciente para resolver dudas y agendar cita.`,
+        }),
+      });
+      if (!noteRes.ok) console.log('[GHL-CallRequest] Note failed:', noteRes.status);
+    } catch (noteErr) {
+      console.log('[GHL-CallRequest] Note error:', noteErr.message);
+    }
 
     console.log('[GHL-CallRequest] Tag + note added for contact:', contactId);
 

@@ -99,4 +99,28 @@ async function getLeadSourceByEmail(email) {
   }
 }
 
-module.exports = { getFirestore, updateLeadByEmail, getLeadSourceByEmail };
+/**
+ * Get full lead document from Firestore by email.
+ * Returns all quiz answers, source, consent, etc. or null.
+ */
+async function getLeadByEmail(email) {
+  const firestore = getFirestore();
+  if (!firestore || !email) return null;
+
+  try {
+    const snapshot = await firestore
+      .collection('quiz_leads')
+      .where('email', '==', email)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return null;
+    return snapshot.docs[0].data();
+  } catch (err) {
+    console.log('[Firestore] getLeadByEmail error:', err.message);
+    return null;
+  }
+}
+
+module.exports = { getFirestore, updateLeadByEmail, getLeadSourceByEmail, getLeadByEmail };

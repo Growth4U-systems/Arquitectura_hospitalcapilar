@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing Checklist — Hospital Capilar Quiz</title>
+  <style>
+    :root {
+      --primary: #4CA994;
+      --secondary: #2C3E50;
+      --light: #F0F7F6;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --success: #27ae60;
+      --gray: #95a5a6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f6fa;
+      color: var(--secondary);
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      background: var(--secondary);
+      color: white;
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+    }
+    header h1 { font-size: 28px; margin-bottom: 8px; }
+    header p { opacity: 0.8; font-size: 14px; }
+    .progress-bar {
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      height: 12px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: var(--primary);
+      height: 100%;
+      border-radius: 8px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .progress-text {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .section {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      user-select: none;
+    }
+    .section-header:hover { background: var(--light); }
+    .section-header h2 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+    .section-badge {
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .badge-count { background: var(--light); color: var(--primary); }
+    .badge-done { background: #d5f5e3; color: var(--success); }
+    .section-body { padding: 0; }
+    .section-body.collapsed { display: none; }
+    .subsection { border-bottom: 1px solid #f0f0f0; }
+    .subsection:last-child { border-bottom: none; }
+    .subsection-title {
+      padding: 12px 20px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--primary);
+      background: var(--light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .test-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 20px;
+      border-bottom: 1px solid #f8f8f8;
+      transition: background 0.2s;
+    }
+    .test-item:hover { background: #fafafa; }
+    .test-item.checked { opacity: 0.5; }
+    .test-item.checked .test-label { text-decoration: line-through; }
+    .test-item input[type="checkbox"] {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .test-content { flex: 1; }
+    .test-label { font-size: 14px; cursor: pointer; display: block; }
+    .test-detail {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 2px;
+    }
+    .test-url {
+      font-size: 11px;
+      color: var(--primary);
+      font-family: monospace;
+      background: var(--light);
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+    .test-expected {
+      font-size: 12px;
+      color: var(--secondary);
+      margin-top: 4px;
+      padding: 6px 10px;
+      background: #fffbe6;
+      border-left: 3px solid var(--warning);
+      border-radius: 0 4px 4px 0;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .tag-critical { background: #fde8e8; color: var(--danger); }
+    .tag-important { background: #fef3cd; color: #856404; }
+    .tag-nice { background: #d1ecf1; color: #0c5460; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-secondary { background: #ecf0f1; color: var(--secondary); }
+    .arrow { transition: transform 0.3s; font-size: 14px; }
+    .arrow.open { transform: rotate(90deg); }
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .filter-btn.active { border-color: var(--primary); background: var(--light); color: var(--primary); }
+    .note-box {
+      background: #eef6ff;
+      border-left: 4px solid #3498db;
+      padding: 12px 16px;
+      margin: 12px 20px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+    }
+    .result-field {
+      font-family: monospace;
+      font-size: 11px;
+      background: #f0f0f0;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    @media print {
+      body { background: white; padding: 10px; }
+      .section { box-shadow: none; border: 1px solid #ddd; }
+      .controls, .filter-bar { display: none; }
+      .section-body.collapsed { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Testing Checklist — Hospital Capilar Quiz</h1>
+      <p>Documento de validación de todos los flujos, nichos, puertas, pagos, integraciones y CTAs</p>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 0 tests completados (0%)</div>
+    </header>
+
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="expandAll()">Expandir todo</button>
+      <button class="btn btn-secondary" onclick="collapseAll()">Colapsar todo</button>
+      <button class="btn btn-danger" onclick="resetAll()">Resetear todo</button>
+      <button class="btn btn-secondary" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="filterTests('all', this)">Todos</button>
+      <button class="filter-btn" data-filter="critical" onclick="filterTests('critical', this)">Críticos</button>
+      <button class="filter-btn" data-filter="important" onclick="filterTests('important', this)">Importantes</button>
+      <button class="filter-btn" data-filter="unchecked" onclick="filterTests('unchecked', this)">Pendientes</button>
+    </div>
+
+    <div id="sections">
+
+      <!-- ============================================================ -->
+      <!-- SECTION 1: QUIZ LARGO -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="quiz-largo">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 1. Quiz Largo (Ruta: /)</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">1.1 Carga inicial</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-1-1"><label class="test-label" for="t1-1-1">La página carga sin errores en consola</label>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-1-2">La URL base funciona correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-1-3">PostHog dispara evento <span class="result-field">quiz_viewed</span></label>
+                <div class="test-detail">Verificar en PostHog → Events</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-1-4">
+              <div class="test-content">
+                <label class="test-label" for="t1-1-4">Se muestra la pantalla de bienvenida genérica (sin nicho)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.2 Flujo de preguntas</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-1">Pregunta de sexo (hombre/mujer) se muestra correctamente</label>
+                <div class="test-expected">Esperado: opciones "Hombre" y "Mujer" visibles</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-2">Seleccionar "Hombre" muestra flujo de preguntas masculinas</label>
+                <div class="test-expected">Esperado: preguntas sobre entradas, coronilla, patrón masculino</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-3">Seleccionar "Mujer" muestra flujo de preguntas femeninas</label>
+                <div class="test-expected">Esperado: preguntas sobre difuso, línea central, hormonal</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-4">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-4">Pregunta de edad muestra los rangos correctos</label>
+                <div class="test-expected">Esperado: 18-25, 26-35, 36-45, 46-55, 56-65, 65+</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-5">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-5">Pregunta de ubicación muestra todas las opciones</label>
+                <div class="test-expected">Esperado: Madrid, Murcia, Pontevedra, Otro</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-6">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-6">Pregunta de timeline (duración de caída)</label>
+                <div class="test-expected">Esperado: <3 meses, 3-12 meses, 1-3 años, 3+ años</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-7">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-7">Pregunta de tratamientos previos (multi-select)</label>
+                <div class="test-expected">Esperado: minoxidil, finasteride, clínica, trasplante, nada</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-8">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-8">Pregunta visual de patrón de caída muestra imágenes</label>
+                <div class="test-expected">Esperado: grid 2 columnas con imágenes de patrones</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-9">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-9">Botón "Atrás" navega a la pregunta anterior</label>
+                <div class="test-detail">PostHog: evento <span class="result-field">back_button_clicked</span></div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-2-10">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-10">Barra de progreso avanza correctamente</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="nice">
+              <input type="checkbox" id="t1-2-11">
+              <div class="test-content">
+                <label class="test-label" for="t1-2-11">PostHog dispara <span class="result-field">question_answered</span> en cada pregunta</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.3 Puerta DERIVACIÓN — Cuero cabelludo</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-3-1">Si problema = "cuero-cabelludo" → Frame DERIVACION</label>
+                <div class="test-expected">Esperado: pantalla de derivación a dermatología, SIN botón de agendar cita</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-3-2">Si diagnóstico = "frontal-fibrosante" → Frame DERIVACION</label>
+                <div class="test-expected">Esperado: mismo resultado que cuero cabelludo</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-3-3">Si diagnóstico = "areata" → Frame DERIVACION</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-3-4">
+              <div class="test-content">
+                <label class="test-label" for="t1-3-4">En DERIVACION: NO se envía lead a GHL como oportunidad comercial</label>
+                <div class="test-detail">Verificar en GHL que no se crea oportunidad</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.4 Puerta WAITLIST — Fuera de zona</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-4-1">Si ubicación = "otro" → Frame WAITLIST</label>
+                <div class="test-expected">Esperado: pantalla "Te avisamos cuando abramos en tu zona", campo email, SIN calendario</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-4-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-4-2">WAITLIST NO muestra calendario de cita</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-4-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-4-3">Lead de WAITLIST se guarda en GHL con tag "waitlist"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.5 Frame A — HOT (Score ≥60)</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-5-1">Hombre, Madrid, 3+ años, minoxidil, alto impacto → Score ≥60 → FRAME_A</label>
+                <div class="test-expected">Esperado: CTA verde "Agendar cita ahora", mensajes de urgencia</div>
+                <div class="test-detail">lead_priority = HOT en GHL</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-5-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-5-2">CTA de FRAME_A lleva al calendario de Koibox</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/agendar</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.6 Frame C — WARM (Score 40-60)</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-6-1">Score entre 40-60 o formato=llamada → FRAME_C</label>
+                <div class="test-expected">Esperado: CTA "Llamarme en 24h", formulario de teléfono</div>
+                <div class="test-detail">lead_priority = WARM en GHL</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.7 Frame D — COLD (Score &lt;40)</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-7-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-7-1">Score &lt;40 o formato=info → FRAME_D</label>
+                <div class="test-expected">Esperado: CTA "Descargar guía", campo de email, baja presión</div>
+                <div class="test-detail">lead_priority = COLD en GHL</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.8 Formulario de lead</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-8-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-1">Formulario muestra campos: nombre, email, teléfono</label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-8-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-2">Validación: email formato válido, teléfono con formato correcto</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-8-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-3">Submit crea contacto en GHL con datos correctos</label>
+                <div class="test-expected">Esperado: contacto nuevo o existente actualizado en GHL</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-8-4">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-4">Submit crea oportunidad en GHL con score, ECP, door, priority</label>
+                <div class="test-expected">Esperado: oportunidad en pipeline con monetaryValue=195, stageId=New Lead</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-8-5">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-5">PostHog: <span class="result-field">lead_form_submitted</span> con lead_score</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-8-6">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-6">Lead guardado en Firebase <span class="result-field">quiz_leads</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-8-7">
+              <div class="test-content">
+                <label class="test-label" for="t1-8-7">Lead enviado a Salesforce (Web-to-Lead)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">1.9 Scoring — verificar cálculo</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t1-9-1">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-1">Timeline 3+ años = +30 puntos</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-2">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-2">Timeline 1-3 años = +20, &lt;3 meses = -15</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-3">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-3">Tratamiento previo: minoxidil/finasteride = +15, clínica = +20, trasplante = +25</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-4">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-4">Ubicación: madrid/murcia/pontevedra = +15, otra España = +5, fuera = -20</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-5">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-5">Impacto alto/crítico = +15</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-6">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-6">Inversión "abierto" = +20, "50-150€"/"150-300€" = +10</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t1-9-7">
+              <div class="test-content">
+                <label class="test-label" for="t1-9-7">Score final está en rango 0-100 (normalizado de 0-150)</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 2: QUIZ CORTO (RÁPIDO) -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="quiz-corto">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 2. Quiz Corto / Rápido (Ruta: /rapido/{nicho})</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">2.1 Ruta /rapido/jovenes — "El Espejo"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-1-1">Página carga con bienvenida de nicho "El Espejo"</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/jovenes</div>
+                <div class="test-expected">Esperado: badge "Alopecia Temprana: Actúa Antes"</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-1-2">Tiene 3-5 preguntas (NO el quiz completo)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-1-3">ECP asignado = "Joven con alopecia temprana"</label>
+                <div class="test-detail">Verificar en GHL → campo ecp del contacto</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t2-1-4">
+              <div class="test-content">
+                <label class="test-label" for="t2-1-4">CTA = agendar_consulta (hombre → no bono)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.2 Ruta /rapido/mujeres — "Es Normal"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-2-1">Página carga con bienvenida "Es Normal"</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/mujeres</div>
+                <div class="test-expected">Esperado: badge "Especialistas en Alopecia Femenina"</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-2-2">ECP asignado = "Mujer con caída hormonal"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-2-3">CTA = pagar_bono (mujeres SIEMPRE pagan bono)</label>
+                <div class="test-expected">Esperado: pantalla de pago con precio 195€ antes del calendario</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.3 Ruta /rapido/postparto — "Lo Que Vino Con el Bebé"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-3-1">Página carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/postparto</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-3-2">ECP = "Caída postparto"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-3-3">CTA = pagar_bono (mujer → bono obligatorio)</label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.4 Ruta /rapido/que-me-pasa — "¿Qué Me Pasa?"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-4-1">Página carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/que-me-pasa</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-4-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-4-2">ECP = "Sin diagnóstico gateway"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t2-4-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-4-3">CTA = solicitar_llamada</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.5 Ruta /rapido/segunda-opinion — "Ya Me Engañaron"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-5-1">Página carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/segunda-opinion</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-5-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-5-2">ECP = "Mala experiencia otra clínica"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t2-5-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-5-3">CTA = solicitar_llamada</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.6 Ruta /rapido/farmacia-sin-salida — "La Farmacia Sin Salida"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-6-1">Página carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/farmacia-sin-salida</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-6-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-6-2">ECP = "OTC frustrado sin resultado"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t2-6-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-6-3">CTA = solicitar_llamada</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">2.7 Ruta /rapido/post-trasplante — "La Inversión"</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-7-1">
+              <div class="test-content">
+                <label class="test-label" for="t2-7-1">Página carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/post-trasplante</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t2-7-2">
+              <div class="test-content">
+                <label class="test-label" for="t2-7-2">ECP = "Post-trasplante mantenimiento"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t2-7-3">
+              <div class="test-content">
+                <label class="test-label" for="t2-7-3">CTA = agendar_consulta</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 3: FORM DIRECTO -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="form-directo">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 3. Form Directo (Ruta: /form/{nicho})</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">3.1 Comportamiento general del form directo</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-1-1">Form directo NO muestra preguntas de quiz — solo formulario de datos</label>
+                <div class="test-expected">Esperado: campos nombre, email, teléfono directamente</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-1-2">Form directo siempre resulta en FRAME_A (formato=directo → +25 puntos)</label>
+                <div class="test-expected">Esperado: Score alto, lead_priority = HOT</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">3.2 /form/jovenes</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-2-1">Carga correctamente, muestra form con branding "El Espejo"</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/jovenes</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-2-2">Submit → GHL contacto con ECP "Joven con alopecia temprana"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">3.3 /form/mujeres</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-3-1">Carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/mujeres</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-3-2">Submit → CTA pagar_bono (mujeres pagan bono)</label>
+                <div class="test-expected">Esperado: se muestra pantalla de pago 195€</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">3.4 /form/postparto</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-4-1">Carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/postparto</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-4-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-4-2">Submit → CTA pagar_bono</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">3.5 /form/que-me-pasa</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-5-1">Carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/que-me-pasa</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t3-5-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-5-2">Submit → CTA solicitar_llamada</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">3.6 /form/farmacia-sin-salida</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t3-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t3-6-1">Carga correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/farmacia-sin-salida</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t3-6-2">
+              <div class="test-content">
+                <label class="test-label" for="t3-6-2">Submit → CTA solicitar_llamada</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 4: UTMs -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="utm">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 4. UTM Parameters</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">4.1 Captura de UTMs</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-1-1">UTMs se capturan al cargar la página</label>
+                <div class="test-url">?utm_source=facebook&utm_medium=paid_social&utm_campaign=quiz-rapido-mujeres&utm_content=ad_test&utm_term=caida_pelo</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t4-1-2">UTMs persisten durante todo el quiz (sessionStorage / localStorage)</label>
+                <div class="test-expected">Esperado: navegar entre preguntas NO pierde UTMs</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">4.2 UTMs → GHL</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-2-1"><span class="result-field">utm_source</span> llega al campo GHL correcto</label>
+                <div class="test-detail">Custom field ID: MisB9YJJAH7cnh8JOtQn</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t4-2-2"><span class="result-field">utm_medium</span> llega al campo GHL correcto</label>
+                <div class="test-detail">Custom field ID: vykx7m6bcfbYMXRqToYP</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t4-2-3"><span class="result-field">utm_campaign</span> llega al campo GHL correcto</label>
+                <div class="test-detail">Custom field ID: 3fUI7GO9o7oZ7ddMNnFf</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-2-4">
+              <div class="test-content">
+                <label class="test-label" for="t4-2-4"><span class="result-field">utm_content</span> y <span class="result-field">utm_term</span> llegan correctamente</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-2-5">
+              <div class="test-content">
+                <label class="test-label" for="t4-2-5"><span class="result-field">fbclid</span> y <span class="result-field">gclid</span> se capturan si presentes</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">4.3 UTMs → Firebase</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-3-1">UTMs guardados en <span class="result-field">quiz_leads.source</span> en Firebase</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">4.4 UTMs → Salesforce</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-4-1">UTMs enviados via Web-to-Lead (g4u_utm_source, g4u_utm_medium, etc.)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">4.5 UTMs → PostHog</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-5-1">Evento <span class="result-field">quiz_started</span> incluye UTMs como propiedades</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">4.6 Escenarios de UTMs por canal</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t4-6-1">Meta Ads: utm_source=facebook, utm_medium=paid_social</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/rapido/mujeres?utm_source=facebook&utm_medium=paid_social&utm_campaign=quiz-rapido-mujeres&utm_content=ad_test</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t4-6-2">
+              <div class="test-content">
+                <label class="test-label" for="t4-6-2">Google Ads: utm_source=google, utm_medium=cpc, gclid presente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/form/jovenes?utm_source=google&utm_medium=cpc&utm_campaign=form-directo-jovenes&gclid=test123</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t4-6-3">
+              <div class="test-content">
+                <label class="test-label" for="t4-6-3">Orgánico: sin UTMs → source queda vacío o "direct"</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 5: PAGOS (STRIPE + BONO) -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="pagos">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 5. Pagos — Bono Diagnóstico (Stripe)</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">5.1 Flujo de pago — Mujeres</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t5-1-1">Mujeres (mujeres/postparto) ven pantalla de pago con precio 195€</label>
+                <div class="test-expected">Esperado: card con precio, testimonios, objeciones, FAQs, botón Stripe</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t5-1-2">Botón de pago abre Stripe Checkout con datos correctos</label>
+                <div class="test-expected">Esperado: Stripe muestra 195€, datos del contacto pre-rellenados</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t5-1-3">Metadata de Stripe incluye: contactId, nombre, ecp, ubicacion, source</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">5.2 Pago exitoso</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t5-2-1">Redirect a success URL con session_id</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/?pago=exito&session_id={ID}</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t5-2-2">Webhook de Stripe actualiza GHL: <span class="result-field">tratamiento_status = paid</span></label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t5-2-3">Tag GHL cambia de <span class="result-field">bono_pendiente</span> a <span class="result-field">bono_pagado</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t5-2-4">
+              <div class="test-content">
+                <label class="test-label" for="t5-2-4">Después del pago → se muestra calendario para agendar cita</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">5.3 Pago cancelado</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t5-3-1">Si usuario cancela pago → redirect a cancel URL</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/?pago=cancelado</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t5-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t5-3-2">Lead se mantiene en GHL con tag <span class="result-field">bono_pendiente</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t5-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t5-3-3">GHL <span class="result-field">tratamiento_status</span> permanece en "not_paid"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">5.4 Hombres NO pagan bono</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t5-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t5-4-1">Nichos masculinos (jovenes, segunda-opinion, farmacia, post-trasplante) NO muestran paywall</label>
+                <div class="test-expected">Esperado: van directo a calendario o llamada, sin pantalla de pago</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 6: KOIBOX BOOKING -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="koibox">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 6. Koibox — Agendar Cita</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">6.1 Calendario de disponibilidad</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-1-1">Página /agendar carga el calendario correctamente</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/agendar</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t6-1-2">Selector de clínica muestra: Madrid, Murcia, Pontevedra</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t6-1-3">Al seleccionar clínica → se cargan slots disponibles (30 días)</label>
+                <div class="test-expected">Esperado: llamada a Koibox get_availability, slots de 30 min entre 09:00-20:00</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t6-1-4">
+              <div class="test-content">
+                <label class="test-label" for="t6-1-4">Slots ocupados NO se muestran</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">6.2 Creación de cita</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-2-1">Seleccionar slot → cita creada en Koibox</label>
+                <div class="test-expected">Esperado: Koibox devuelve appointmentId, servicio = primera_consulta_diagnostico (103385)</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t6-2-2">Cita aparece en panel de Koibox con datos del paciente</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t6-2-3">Lead sincronizado/creado en Koibox (sync_lead)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">6.3 Sync cita → GHL</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-1">Oportunidad GHL se mueve a stage "Booked"</label>
+                <div class="test-detail">Stage ID: f9e5c1cf-7701-4883-ac96-f16b3d78c0d5</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-2">Campos GHL actualizados: <span class="result-field">koibox_booking_id</span>, <span class="result-field">appointment_date</span>, <span class="result-field">appointment_hour</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-3">Contacto GHL tiene: <span class="result-field">fecha_cita</span>, <span class="result-field">hora_cita</span>, <span class="result-field">clinica_cita</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t6-3-4">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-4">Nota añadida a oportunidad GHL con detalles de cita</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-3-5">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-5">Mujeres con cita + pago: tag <span class="result-field">bono_pagado</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-3-6">
+              <div class="test-content">
+                <label class="test-label" for="t6-3-6">Mujeres con cita SIN pago: tag <span class="result-field">bono_pendiente</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">6.4 Sync cita → Firebase</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t6-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-4-1">Firebase <span class="result-field">quiz_leads</span> actualizado con appointmentStatus='booked'</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">6.5 PostHog booking</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t6-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-5-1">PostHog evento <span class="result-field">appointment_booked</span> disparado</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">6.6 Link de agendar para comercial</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t6-6-1">Campo GHL <span class="result-field">link_agendar</span> contiene URL correcta con contactId, nombre, email, phone</label>
+                <div class="test-url">https://diagnostico.hospitalcapilar.com/agendar?contactId={id}&nombre={name}&email={email}&phone={phone}</div>
+                <div class="test-expected">Esperado: Noemí puede abrir el link y ver calendario pre-rellenado</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t6-6-2">
+              <div class="test-content">
+                <label class="test-label" for="t6-6-2">Abrir link_agendar → /agendar lee query params y pre-rellena datos</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 7: GHL CRM INTEGRATION -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="ghl">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 7. CRM — GoHighLevel (GHL)</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">7.1 Creación de contacto</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t7-1-1">Contacto nuevo creado con: firstName, lastName, email, phone</label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t7-1-2">Si contacto ya existe (mismo email/phone) → se actualiza, no duplica</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t7-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t7-1-3">Tag "new_lead" añadido al contacto</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">7.2 Custom fields del contacto</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t7-2-1">Campo <span class="result-field">ecp</span> tiene el ECP correcto del nicho</label>
+                <div class="test-detail">Field ID: cFIcdJlT9sfnC3KMSwDD</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t7-2-2">Campo <span class="result-field">door</span> tiene el frame correcto (FRAME_A, FRAME_C, FRAME_D, WAITLIST, DERIVACION)</label>
+                <div class="test-detail">Field ID: 8xnKCjpUh0dWR9EZEKdL</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">7.3 Oportunidad</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t7-3-1">Oportunidad creada en pipeline correcto</label>
+                <div class="test-detail">Pipeline: xXCgpUIEizlqdrmGrJkg, Stage: fbed92b1... (New Lead)</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t7-3-2">monetaryValue = 195</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t7-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t7-3-3">Custom fields de oportunidad: <span class="result-field">lead_priority</span> (HOT/WARM/COLD)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t7-3-4">
+              <div class="test-content">
+                <label class="test-label" for="t7-3-4">Campo <span class="result-field">agent_message</span> contiene script completo para comercial</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t7-3-5">
+              <div class="test-content">
+                <label class="test-label" for="t7-3-5">Campo <span class="result-field">tratamiento_status</span> = "not_paid" inicialmente</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 8: 48H CONFIRMATION -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="confirmation">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 8. Confirmación 48h y Recordatorios</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="note-box">
+            Nota: Este flujo depende de GHL Workflows (automaciones). Verificar que los workflows estén activos.
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">8.1 Recordatorios</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t8-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t8-1-1">SMS/email de recordatorio enviado 24h antes de la cita</label>
+                <div class="test-expected">Esperado: "Tu cita es mañana a las {hora} en HC {clínica}. Confirma aquí: [link]"</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t8-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t8-1-2">Segundo recordatorio a las 48h si no confirma</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">8.2 Cancelación automática</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t8-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t8-2-1">Si NO confirma en 48h → cita cancelada en Koibox</label>
+                <div class="test-expected">Esperado: slot liberado, Koibox appointment eliminado</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t8-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t8-2-2">Contacto GHL recibe tag <span class="result-field">sin_confirmar_48h</span></label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t8-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t8-2-3">Equipo comercial notificado (tarea en GHL)</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 9: RESULTADO / CONTENIDO -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="resultados">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 9. Pantalla de Resultados — Contenido por ECP</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">9.1 ECP: "Joven con alopecia temprana"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-1-1">Objeciones mostradas: "Ya probé minoxidil", "Es muy caro", "No sé si es el momento"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t9-1-2">Testimonios relevantes (2 testimonios curados para jóvenes)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.2 ECP: "Mujer con caída hormonal"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-2-1">Objeciones: "Mi médico dice estrés", "¿Y si es temporal?", "Ya me hicieron análisis"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t9-2-2">Contenido incluido: tricoscopía, analítica hormonal, valoración 30 min, plan tratamiento</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.3 ECP: "Caída postparto"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-3-1">Objeciones: "Me dicen es normal", "¿Puedo tratarme amamantando?", "Ya se pasará sola"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.4 ECP: "Mala experiencia otra clínica"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-4-1">Objeciones: "Me engañaron una vez", "Todas prometen lo mismo", "No quiero presión"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.5 ECP: "OTC frustrado sin resultado"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-5-1">Objeciones: "Gasté €500+ sin resultado", "Minoxidil no funciona", "Ya no creo en nada"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.6 ECP: "Post-trasplante mantenimiento"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-6-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-6-1">Contenido relevante para mantenimiento post-cirugía</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">9.7 ECP: "Sin diagnóstico gateway"</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t9-7-1">
+              <div class="test-content">
+                <label class="test-label" for="t9-7-1">Contenido gateway — orientación sin diagnóstico previo</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 10: EDGE CASES -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="edge-cases">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 10. Edge Cases y Errores</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">10.1 Returning lead</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t10-1-1">Si localStorage tiene <span class="result-field">hc_quiz_lead</span> → mostrar "¡Bienvenido de vuelta!"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t10-1-2">Form pre-rellena nombre/email del lead anterior</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">10.2 Errores de red / API</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t10-2-1">Si GHL falla → el quiz NO se rompe, usuario ve mensaje de error amigable</label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t10-2-2">Si Koibox falla → mensaje de error, opción de reintentar</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t10-2-3">Si Stripe falla → usuario puede reintentar pago</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">10.3 Mobile / Responsive</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-3-1">
+              <div class="test-content">
+                <label class="test-label" for="t10-3-1">Quiz funciona correctamente en iPhone (Safari)</label>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-3-2">
+              <div class="test-content">
+                <label class="test-label" for="t10-3-2">Quiz funciona correctamente en Android (Chrome)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-3-3">
+              <div class="test-content">
+                <label class="test-label" for="t10-3-3">Calendario de Koibox es usable en pantalla pequeña</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-3-4">
+              <div class="test-content">
+                <label class="test-label" for="t10-3-4">Stripe Checkout funciona en móvil</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">10.4 Abandono de quiz</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-4-1">
+              <div class="test-content">
+                <label class="test-label" for="t10-4-1">PostHog evento <span class="result-field">quiz_abandoned</span> se dispara al salir</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">10.5 Validaciones de formulario</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-5-1">
+              <div class="test-content">
+                <label class="test-label" for="t10-5-1">Email inválido → error visible, NO envía a GHL</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="t10-5-2">
+              <div class="test-content">
+                <label class="test-label" for="t10-5-2">Teléfono inválido → error visible</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t10-5-3">
+              <div class="test-content">
+                <label class="test-label" for="t10-5-3">Campos vacíos → botón deshabilitado o error</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 11: ESCENARIOS COMPLETOS E2E -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="e2e">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 11. Escenarios End-to-End (E2E)</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="note-box">
+            Cada escenario E2E debe ejecutarse de principio a fin, verificando CADA paso en GHL, Koibox, Firebase y PostHog.
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 1: Hombre HOT — Quiz Largo → Agendar → Cita confirmada</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-1">Entrar a / con UTMs de Facebook</label>
+                <div class="test-url">/?utm_source=facebook&utm_medium=paid_social&utm_campaign=quiz-largo-generico</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-2">Completar: Hombre, 30 años, Madrid, 3+ años, minoxidil, entradas, alto impacto, presencial</label>
+                <div class="test-expected">Esperado: Score ≥60, FRAME_A, ECP genérico</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-3">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-3">Rellenar form → Ver CTA "Agendar cita"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-4">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-4">GHL: contacto creado, oportunidad con priority=HOT, UTMs correctos</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-5">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-5">Clic en CTA → /agendar → seleccionar Madrid → seleccionar slot</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-6">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-6">Koibox: cita creada correctamente</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-1-7">
+              <div class="test-content">
+                <label class="test-label" for="te2e-1-7">GHL: oportunidad movida a "Booked", campos de cita rellenados</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 2: Mujer — Quiz Rápido "mujeres" → Pagar bono → Agendar</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-1">Entrar a /rapido/mujeres con UTMs de Google</label>
+                <div class="test-url">/rapido/mujeres?utm_source=google&utm_medium=cpc&utm_campaign=quiz-rapido-mujeres</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-2">Completar quiz corto (3-5 preguntas)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-3">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-3">Form → Ver pantalla de pago 195€ (CTA pagar_bono)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-4">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-4">Pagar con Stripe (tarjeta de test: 4242...)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-5">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-5">GHL: tratamiento_status=paid, tag bono_pagado</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-2-6">
+              <div class="test-content">
+                <label class="test-label" for="te2e-2-6">Ver calendario → agendar cita → Koibox nota "BONO PAGADO"</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 3: Mujer postparto — Form Directo → Pago cancelado</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-3-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-3-1">Entrar a /form/postparto</label>
+                <div class="test-url">/form/postparto?utm_source=instagram&utm_medium=paid_social</div>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-3-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-3-2">Submit form → pantalla de pago</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-3-3">
+              <div class="test-content">
+                <label class="test-label" for="te2e-3-3">Cancelar pago en Stripe → redirect a ?pago=cancelado</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-3-4">
+              <div class="test-content">
+                <label class="test-label" for="te2e-3-4">GHL: contacto existe con tag bono_pendiente, tratamiento_status=not_paid</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 4: Usuario fuera de zona → WAITLIST</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-4-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-4-1">Completar quiz largo, ubicación = "otro" (Barcelona, por ejemplo)</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-4-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-4-2">Resultado: WAITLIST, SIN calendario, mensaje "te avisamos"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="te2e-4-3">
+              <div class="test-content">
+                <label class="test-label" for="te2e-4-3">GHL: contacto con tag "waitlist", door=WAITLIST</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 5: Cuero cabelludo → DERIVACIÓN</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-5-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-5-1">Quiz largo, problema = "cuero-cabelludo"</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-5-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-5-2">Resultado: DERIVACION, recomendación dermatología, SIN CTA comercial</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 6: Quiz rápido "farmacia-sin-salida" → Llamada</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="te2e-6-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-6-1">Entrar a /rapido/farmacia-sin-salida con UTMs</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="te2e-6-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-6-2">Completar quiz → CTA solicitar_llamada</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="te2e-6-3">
+              <div class="test-content">
+                <label class="test-label" for="te2e-6-3">GHL: ECP = "OTC frustrado sin resultado", priority correcta</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">E2E 7: Comercial usa link_agendar</div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-7-1">
+              <div class="test-content">
+                <label class="test-label" for="te2e-7-1">Copiar link_agendar de GHL → abrir en navegador</label>
+                <div class="test-expected">Esperado: página /agendar con datos pre-rellenados del contacto</div>
+              </div>
+              <span class="tag tag-critical">CRÍTICO</span>
+            </div>
+            <div class="test-item" data-priority="critical">
+              <input type="checkbox" id="te2e-7-2">
+              <div class="test-content">
+                <label class="test-label" for="te2e-7-2">Agendar cita desde link → cita vinculada al contacto existente en GHL</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 12: POSTHOG ANALYTICS -->
+      <!-- ============================================================ -->
+      <div class="section" data-section="posthog">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h2><span class="arrow open">▶</span> 12. PostHog — Analytics Events</h2>
+          <span class="section-badge badge-count" data-section-count></span>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-title">12.1 Eventos del ciclo de vida</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-1-1">
+              <div class="test-content">
+                <label class="test-label" for="t12-1-1"><span class="result-field">quiz_viewed</span> al cargar página</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-1-2">
+              <div class="test-content">
+                <label class="test-label" for="t12-1-2"><span class="result-field">quiz_started</span> al responder primera pregunta</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-1-3">
+              <div class="test-content">
+                <label class="test-label" for="t12-1-3"><span class="result-field">quiz_completed</span> al terminar todas las preguntas</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-1-4">
+              <div class="test-content">
+                <label class="test-label" for="t12-1-4"><span class="result-field">quiz_abandoned</span> al salir a mitad de quiz</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-title">12.2 Eventos de conversión</div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-2-1">
+              <div class="test-content">
+                <label class="test-label" for="t12-2-1"><span class="result-field">lead_form_submitted</span> con lead_score</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-2-2">
+              <div class="test-content">
+                <label class="test-label" for="t12-2-2"><span class="result-field">appointment_booked</span> al confirmar cita</label>
+              </div>
+            </div>
+            <div class="test-item" data-priority="important">
+              <input type="checkbox" id="t12-2-3">
+              <div class="test-content">
+                <label class="test-label" for="t12-2-3"><span class="result-field">quiz_result</span> con ecp, score, frame, device</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /sections -->
+
+  </div><!-- /container -->
+
+  <script>
+    // Persist state in localStorage
+    const STORAGE_KEY = 'hc_testing_checklist';
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const state = JSON.parse(saved);
+          document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (state[cb.id]) {
+              cb.checked = true;
+              cb.closest('.test-item')?.classList.add('checked');
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
+    function saveState() {
+      const state = {};
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) state[cb.id] = true;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // Checkbox handler
+    document.addEventListener('change', e => {
+      if (e.target.type === 'checkbox') {
+        const item = e.target.closest('.test-item');
+        if (item) {
+          item.classList.toggle('checked', e.target.checked);
+        }
+        saveState();
+        updateProgress();
+        updateSectionCounts();
+      }
+    });
+
+    // Toggle sections
+    function toggleSection(header) {
+      const body = header.nextElementSibling;
+      const arrow = header.querySelector('.arrow');
+      body.classList.toggle('collapsed');
+      arrow.classList.toggle('open');
+    }
+
+    function expandAll() {
+      document.querySelectorAll('.section-body').forEach(b => b.classList.remove('collapsed'));
+      document.querySelectorAll('.arrow').forEach(a => a.classList.add('open'));
+    }
+
+    function collapseAll() {
+      document.querySelectorAll('.section-body').forEach(b => b.classList.add('collapsed'));
+      document.querySelectorAll('.arrow').forEach(a => a.classList.remove('open'));
+    }
+
+    function resetAll() {
+      if (!confirm('¿Seguro que quieres resetear todos los checkboxes?')) return;
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.test-item')?.classList.remove('checked');
+      });
+      saveState();
+      updateProgress();
+      updateSectionCounts();
+    }
+
+    // Progress
+    function updateProgress() {
+      const total = document.querySelectorAll('input[type="checkbox"]').length;
+      const checked = document.querySelectorAll('input[type="checkbox"]:checked').length;
+      const pct = total ? Math.round((checked / total) * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressText').textContent = `${checked} / ${total} tests completados (${pct}%)`;
+    }
+
+    function updateSectionCounts() {
+      document.querySelectorAll('.section').forEach(section => {
+        const total = section.querySelectorAll('input[type="checkbox"]').length;
+        const checked = section.querySelectorAll('input[type="checkbox"]:checked').length;
+        const badge = section.querySelector('[data-section-count]');
+        if (badge) {
+          badge.textContent = `${checked}/${total}`;
+          badge.className = checked === total && total > 0
+            ? 'section-badge badge-done'
+            : 'section-badge badge-count';
+        }
+      });
+    }
+
+    // Filter
+    function filterTests(filter, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.querySelectorAll('.test-item').forEach(item => {
+        const priority = item.dataset.priority;
+        const checked = item.querySelector('input[type="checkbox"]')?.checked;
+
+        if (filter === 'all') {
+          item.style.display = '';
+        } else if (filter === 'critical') {
+          item.style.display = priority === 'critical' ? '' : 'none';
+        } else if (filter === 'important') {
+          item.style.display = (priority === 'critical' || priority === 'important') ? '' : 'none';
+        } else if (filter === 'unchecked') {
+          item.style.display = checked ? 'none' : '';
+        }
+      });
+    }
+
+    // Init
+    loadState();
+    updateProgress();
+    updateSectionCounts();
+  </script>
+</body>
+</html>

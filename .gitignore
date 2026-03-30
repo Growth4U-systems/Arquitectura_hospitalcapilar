@@ -32,5 +32,11 @@ dist-ssr
 .claude/
 .specify/
 
+# Astro generated
+.astro/
+
+# Deno
+deno.lock
+
 # Local Netlify folder
 .netlify

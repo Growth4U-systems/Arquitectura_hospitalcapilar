@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payloads API Koibox — G4U Quiz Integration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #6BA89E;
+    --teal-light: #E8F4F1;
+    --teal-dark: #4CA994;
+    --navy: #2C3E50;
+    --navy-light: #34495E;
+    --purple: #a886cd;
+    --purple-light: #F3EDF9;
+    --white: #FFFFFF;
+    --bg: #FAFBFC;
+    --text: #2C3E50;
+    --text-light: #5D6D7E;
+    --text-lighter: #95A5A6;
+    --border: #E8ECEF;
+    --shadow: 0 4px 24px rgba(44,62,80,0.08);
+    --shadow-lg: 0 12px 48px rgba(44,62,80,0.12);
+    --radius: 16px;
+    --radius-sm: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: 'Raleway', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* Header */
+  .doc-header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 2px solid var(--border);
+  }
+  .doc-header svg { height: 52px; margin-bottom: 20px; }
+  .doc-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .doc-header p {
+    font-size: 1rem;
+    color: var(--text-light);
+  }
+  .doc-meta {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .tag-teal { background: var(--teal-light); color: var(--teal-dark); }
+  .tag-navy { background: #EBF0F5; color: var(--navy); }
+  .tag-purple { background: var(--purple-light); color: var(--purple); }
+
+  /* Flow summary */
+  .flow-box {
+    background: var(--white);
+    border: 2px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow);
+  }
+  .flow-box h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--teal-dark);
+    margin-bottom: 16px;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .flow-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: white;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .flow-text {
+    font-size: 0.88rem;
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .flow-text small {
+    display: block;
+    font-weight: 400;
+    color: var(--text-light);
+    font-size: 0.78rem;
+  }
+  .flow-arrow {
+    font-size: 1.2rem;
+    color: var(--text-lighter);
+    margin: 0 12px;
+  }
+
+  /* Endpoint sections */
+  .endpoint {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--teal);
+  }
+  .endpoint.patch { border-left-color: var(--purple); }
+  .endpoint.get { border-left-color: var(--navy); }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .method-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.5px;
+  }
+  .method-get { background: var(--navy); }
+  .method-post { background: var(--teal-dark); }
+  .method-patch { background: var(--purple); }
+
+  .endpoint-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .endpoint h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .endpoint > p {
+    font-size: 0.88rem;
+    color: var(--text-light);
+    margin-bottom: 16px;
+  }
+
+  /* Code blocks */
+  pre {
+    background: #1a252f;
+    color: #E8ECEF;
+    border-radius: var(--radius-sm);
+    padding: 20px 24px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  pre .comment { color: #7f8c8d; }
+  pre .key { color: #6BA89E; }
+  pre .string { color: #a886cd; }
+  pre .number { color: #E67E22; }
+
+  .code-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-lighter);
+    margin-bottom: 8px;
+    margin-top: 12px;
+  }
+
+  /* Config table */
+  .config-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .config-table th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-lighter);
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .config-table td {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .config-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--teal-dark);
+  }
+  .config-table tr:last-child td { border-bottom: none; }
+
+  /* Notes */
+  .note {
+    display: flex;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    margin-top: 12px;
+  }
+  .note-info { background: var(--teal-light); color: var(--navy); }
+  .note-warn { background: #FFF5E6; color: #8B6914; border-left: 3px solid #E67E22; }
+
+  /* Footer */
+  .doc-footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px solid var(--border);
+    color: var(--text-lighter);
+    font-size: 0.82rem;
+  }
+
+  /* Print */
+  @media print {
+    .page { max-width: 100%; padding: 24px; }
+    .endpoint, .flow-box { break-inside: avoid; box-shadow: none; border: 1px solid var(--border); }
+    pre { font-size: 0.75rem; }
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 24px 16px; }
+    .doc-header h1 { font-size: 1.5rem; }
+    .flow-steps { flex-direction: column; align-items: flex-start; }
+    .flow-arrow { transform: rotate(90deg); margin: 4px 0 4px 10px; }
+    .endpoint { padding: 20px; }
+    pre { padding: 14px 16px; font-size: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 100" fill="none">
+      <circle cx="100" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="100" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="140" cy="28" r="18" stroke="#6BA89E" stroke-width="3" fill="none"/>
+      <circle cx="140" cy="28" r="10" stroke="#6BA89E" stroke-width="2.5" fill="none"/>
+      <circle cx="140" cy="28" r="3" fill="#6BA89E"/>
+      <circle cx="180" cy="28" r="18" fill="#6BA89E"/>
+      <text x="140" y="72" text-anchor="middle" font-family="Raleway, Arial, sans-serif" font-size="22" font-weight="400" letter-spacing="2">
+        <tspan fill="#6BA89E">HOSPITAL</tspan><tspan fill="#2C3E50" font-weight="700">CAPILAR</tspan>
+      </text>
+    </svg>
+    <h1>Payloads API Koibox</h1>
+    <p>Documentacion tecnica de la integracion G4U Quiz &rarr; Koibox</p>
+    <div class="doc-meta">
+      <span class="tag tag-teal">Growth4U</span>
+      <span class="tag tag-navy">Marzo 2026</span>
+      <span class="tag tag-purple">API v1</span>
+    </div>
+  </div>
+
+  <!-- Auth & Base -->
+  <div class="endpoint get" style="border-left-color: var(--text-lighter); margin-bottom: 32px;">
+    <h3>Configuracion General</h3>
+    <table class="config-table">
+      <tr><th>Parametro</th><th>Valor</th></tr>
+      <tr><td>Base URL</td><td>https://api.koibox.cloud/api</td></tr>
+      <tr><td>Auth Header</td><td><code>X-Koibox-Key: {API_KEY}</code></td></tr>
+      <tr><td>Content-Type</td><td><code>application/json</code></td></tr>
+    </table>
+    <table class="config-table" style="margin-top: 16px;">
+      <tr><th>ID</th><th>Concepto</th><th>Valor</th></tr>
+      <tr><td>103385</td><td>Servicio</td><td>Primera Consulta Medica Diagnostico (0 EUR)</td></tr>
+      <tr><td>103413</td><td>Servicio</td><td>Lead Fresquito (0 EUR)</td></tr>
+      <tr><td>30257</td><td>Empleado</td><td>Hueco de agenda campana quiz online</td></tr>
+      <tr><td>680</td><td>Provincia</td><td>Madrid</td></tr>
+      <tr><td>697</td><td>Provincia</td><td>Murcia</td></tr>
+      <tr><td>718</td><td>Provincia</td><td>Pontevedra</td></tr>
+    </table>
+  </div>
+
+  <!-- Flow summary -->
+  <div class="flow-box">
+    <h2>Flujo Completo de Integracion</h2>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-text">Buscar paciente<small>GET por telefono/email</small></div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-text">Crear o actualizar<small>POST si nuevo, PATCH si existe</small></div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-text">Extraer ID interno<small>clientData.id del response</small></div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-text">Crear cita con ID<small>POST /agenda/ con cliente: ID</small></div>
+      </div>
+    </div>
+    <div class="note note-info" style="margin-top: 16px;">
+      <span>&#9432;</span>
+      <span>Todas las operaciones posteriores (cancelar, reagendar) usan el <strong>ID interno numerico</strong> de Koibox, nunca telefono ni email.</span>
+    </div>
+  </div>
+
+  <!-- 1. Search client -->
+  <div class="endpoint get">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <span class="endpoint-path">/api/clientes/?movil={telefono}</span>
+    </div>
+    <h3>1. Buscar cliente existente</h3>
+    <p>Buscamos primero por telefono, si no hay resultado buscamos por email. Esto evita crear duplicados.</p>
+
+    <div class="code-label">Request</div>
+<pre><span class="comment">// Busqueda por telefono (prioridad)</span>
+GET /api/clientes/?movil=%2B34612345678
+
+<span class="comment">// Si no hay resultado, busqueda por email</span>
+GET /api/clientes/?email=maria%40ejemplo.com
+
+Headers: {
+  <span class="key">"X-Koibox-Key"</span>: <span class="string">"{API_KEY}"</span>
+}</pre>
+
+    <div class="code-label">Response (si existe)</div>
+<pre>{
+  <span class="key">"count"</span>: <span class="number">1</span>,
+  <span class="key">"results"</span>: [{
+    <span class="key">"id"</span>: <span class="number">12345</span>,         <span class="comment">// &larr; Este es el ID interno que usamos</span>
+    <span class="key">"nombre"</span>: <span class="string">"Maria"</span>,
+    <span class="key">"apellido1"</span>: <span class="string">"Garcia Lopez"</span>,
+    <span class="key">"email"</span>: <span class="string">"maria@ejemplo.com"</span>,
+    <span class="key">"movil"</span>: <span class="string">"+34612345678"</span>
+  }]
+}</pre>
+  </div>
+
+  <!-- 2. Create client -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <span class="endpoint-path">/api/clientes/</span>
+    </div>
+    <h3>2. Crear cliente nuevo</h3>
+    <p>Si la busqueda no devuelve resultados, creamos el paciente. Separamos nombre y apellido automaticamente.</p>
+
+    <div class="code-label">Request Body</div>
+<pre>{
+  <span class="key">"nombre"</span>: <span class="string">"Maria"</span>,
+  <span class="key">"apellido1"</span>: <span class="string">"Garcia Lopez"</span>,
+  <span class="key">"email"</span>: <span class="string">"maria@ejemplo.com"</span>,
+  <span class="key">"movil"</span>: <span class="string">"+34612345678"</span>,
+  <span class="key">"sexo"</span>: <span class="string">"M"</span>,              <span class="comment">// H = hombre, M = mujer</span>
+  <span class="key">"notas"</span>: <span class="string">"Quiz resultado: alopecia androgenetica..."</span>,
+  <span class="key">"origen"</span>: <span class="string">"w"</span>,             <span class="comment">// w = web</span>
+  <span class="key">"provincia"</span>: <span class="number">680</span>           <span class="comment">// 680=Madrid, 697=Murcia, 718=Pontevedra</span>
+}</pre>
+
+    <div class="code-label">Response</div>
+<pre>{
+  <span class="key">"id"</span>: <span class="number">12345</span>,              <span class="comment">// &larr; ID interno para operaciones posteriores</span>
+  <span class="key">"nombre"</span>: <span class="string">"Maria"</span>,
+  <span class="key">"apellido1"</span>: <span class="string">"Garcia Lopez"</span>,
+  ...
+}</pre>
+  </div>
+
+  <!-- 3. Update client -->
+  <div class="endpoint patch">
+    <div class="endpoint-header">
+      <span class="method-badge method-patch">PATCH</span>
+      <span class="endpoint-path">/api/clientes/{koibox_client_id}/</span>
+    </div>
+    <h3>3. Actualizar cliente existente</h3>
+    <p>Si el paciente ya existe, solo actualizamos las notas, anadiendo la informacion del quiz sin sobreescribir.</p>
+
+    <div class="code-label">Request Body</div>
+<pre>PATCH /api/clientes/<span class="number">12345</span>/
+
+{
+  <span class="key">"notas"</span>: <span class="string">"{notas_existentes}\n---\n[G4U Quiz] {nuevas_notas}"</span>
+}</pre>
+
+    <div class="note note-info">
+      <span>&#9432;</span>
+      <span>Concatenamos las notas nuevas con las existentes usando un separador <code>---</code>, nunca sobreescribimos.</span>
+    </div>
+  </div>
+
+  <!-- 4. Create appointment -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method-badge method-post">POST</span>
+      <span class="endpoint-path">/api/agenda/</span>
+    </div>
+    <h3>4. Crear cita</h3>
+    <p>Creamos la cita vinculada al paciente usando su ID interno de Koibox. El titulo incluye el nombre del paciente.</p>
+
+    <div class="code-label">Request Body</div>
+<pre>{
+  <span class="key">"titulo"</span>: <span class="string">"Diagnostico Capilar - Maria Garcia"</span>,
+  <span class="key">"fecha"</span>: <span class="string">"2026-03-28"</span>,
+  <span class="key">"hora_inicio"</span>: <span class="string">"10:00"</span>,
+  <span class="key">"hora_fin"</span>: <span class="string">"10:30"</span>,
+  <span class="key">"user"</span>: <span class="number">30257</span>,                    <span class="comment">// ID empleado/hueco de agenda</span>
+  <span class="key">"servicios"</span>: [<span class="number">103385</span>],            <span class="comment">// Primera Consulta Diagnostico (0 EUR)</span>
+  <span class="key">"cliente"</span>: <span class="number">12345</span>,                 <span class="comment">// &larr; ID interno Koibox del paciente</span>
+  <span class="key">"notas"</span>: <span class="string">"Reserva desde quiz online — BONO DIAGNOSTICO PAGADO"</span>
+}</pre>
+
+    <div class="code-label">Response</div>
+<pre>{
+  <span class="key">"id"</span>: <span class="number">67890</span>,              <span class="comment">// &larr; ID de la cita (para cancelar/reagendar)</span>
+  <span class="key">"titulo"</span>: <span class="string">"Diagnostico Capilar - Maria Garcia"</span>,
+  <span class="key">"fecha"</span>: <span class="string">"2026-03-28"</span>,
+  <span class="key">"hora_inicio"</span>: <span class="string">"10:00"</span>,
+  <span class="key">"hora_fin"</span>: <span class="string">"10:30"</span>,
+  ...
+}</pre>
+
+    <div class="note note-warn">
+      <span>&#9888;</span>
+      <span>Las notas varian segun si el paciente ha pagado el bono diagnostico o no. Se verifica contra GHL antes de crear la cita.</span>
+    </div>
+  </div>
+
+  <!-- 5. Cancel appointment -->
+  <div class="endpoint patch">
+    <div class="endpoint-header">
+      <span class="method-badge method-patch">PATCH</span>
+      <span class="endpoint-path">/api/agenda/{koibox_appointment_id}/</span>
+    </div>
+    <h3>5. Cancelar cita</h3>
+    <p>Se cancela cambiando el estado a 5. Se usa cuando el paciente no confirma en 48h o cancela manualmente.</p>
+
+    <div class="code-label">Request Body</div>
+<pre>PATCH /api/agenda/<span class="number">67890</span>/
+
+{
+  <span class="key">"estado"</span>: <span class="number">5</span>                       <span class="comment">// 5 = cancelada</span>
+}</pre>
+  </div>
+
+  <!-- 6. Availability -->
+  <div class="endpoint get">
+    <div class="endpoint-header">
+      <span class="method-badge method-get">GET</span>
+      <span class="endpoint-path">/api/agenda/?fecha={fecha}&amp;user={employee_id}</span>
+    </div>
+    <h3>6. Consultar disponibilidad</h3>
+    <p>Consultamos las citas existentes para una fecha y calculamos los huecos libres del lado del cliente.</p>
+
+    <div class="code-label">Request</div>
+<pre>GET /api/agenda/?fecha=<span class="string">2026-03-28</span>&user=<span class="number">30257</span></pre>
+
+    <div class="code-label">Logica de disponibilidad</div>
+<pre><span class="comment">// Calculamos huecos libres client-side:</span>
+<span class="comment">// - Horario: 09:00 - 20:00</span>
+<span class="comment">// - Slots de 30 minutos</span>
+<span class="comment">// - Excluimos slots que coinciden con citas existentes</span>
+<span class="comment">// - Excluimos slots en el pasado (si fecha = hoy)</span></pre>
+
+    <table class="config-table" style="margin-top: 12px;">
+      <tr><th>Clinica</th><th>Horario</th><th>Duracion slot</th></tr>
+      <tr><td>Madrid</td><td>09:00 - 20:00</td><td>30 min</td></tr>
+      <tr><td>Murcia</td><td>09:00 - 20:00</td><td>30 min</td></tr>
+      <tr><td>Pontevedra</td><td>09:00 - 20:00</td><td>30 min</td></tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <p>Hospital Capilar &times; Growth4U &mdash; Documentacion tecnica de integracion</p>
+    <p style="margin-top: 4px;">Generado: Marzo 2026 &nbsp;&middot;&nbsp; Contacto: philipe@growth4u.io</p>
+  </div>
+
+</div>
+
+</body>
+</html>

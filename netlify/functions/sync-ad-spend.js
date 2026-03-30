@@ -1,3 +1,5 @@
+const { sendAlert } = require('./lib/alert');
+
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
 
 /**
@@ -38,6 +40,15 @@ exports.handler = async () => {
   }
 
   console.log(`[AdSpend] Done. Sent ${allCampaigns.length} events to PostHog. Errors: ${results.errors.length}`);
+
+  // Alert if any ad platform sync failed
+  if (results.errors.length > 0) {
+    await sendAlert('sync-ad-spend', `Ad spend sync had ${results.errors.length} error(s)`, {
+      severity: 'warning',
+      date: yesterday,
+      errors: results.errors,
+    });
+  }
 
   return {
     statusCode: 200,

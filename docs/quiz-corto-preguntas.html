@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Corto — Preguntas para Validación</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #2C3E50; line-height: 1.6; }
+  h1 { color: #2C3E50; border-bottom: 3px solid #4CA994; padding-bottom: 10px; }
+  h2 { color: #4CA994; margin-top: 40px; }
+  table { border-collapse: collapse; width: 100%; margin: 15px 0 30px; }
+  th { background: #f0f7f6; color: #2C3E50; text-align: left; }
+  th, td { border: 1px solid #d1d5db; padding: 10px 14px; }
+  tr:nth-child(even) { background: #f9fafb; }
+  .tagline { background: #f0f7f6; border-left: 4px solid #4CA994; padding: 10px 16px; margin: 10px 0 20px; font-style: italic; color: #4CA994; }
+  .nota { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 16px; margin: 10px 0 20px; color: #92400e; }
+  ol { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Quiz Corto — Preguntas para Validación</h1>
+
+<h2>Pregunta 1 — Sexo biológico</h2>
+<p><strong>"¿Cuál es tu sexo biológico?"</strong></p>
+<div class="tagline">La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para un diagnóstico preciso.</div>
+<table>
+  <tr><th>Opción</th><th>Valor</th></tr>
+  <tr><td>👨 Hombre</td><td>hombre</td></tr>
+  <tr><td>👩 Mujer</td><td>mujer</td></tr>
+</table>
+
+<h2>Pregunta 2 — Situación</h2>
+<p><strong>"¿Qué describe mejor tu situación?"</strong></p>
+<div class="nota">Nota: Actualmente se muestran TODAS las opciones independientemente del sexo. Podemos filtrar por sexo si lo preferís.</div>
+<table>
+  <tr><th>Opción</th><th>ECP asignado</th></tr>
+  <tr><td>Se me cae el pelo y no sé por qué</td><td>Hombre con caída sin diagnóstico</td></tr>
+  <tr><td>Noto las entradas / la coronilla</td><td>Hombre con caída sin diagnóstico</td></tr>
+  <tr><td>Soy joven y ya estoy perdiendo pelo</td><td>Joven con alopecia temprana</td></tr>
+  <tr><td>Pierdo pelo desde el embarazo/parto</td><td>Caída postparto</td></tr>
+  <tr><td>Creo que mi caída es hormonal</td><td>Mujer con caída hormonal</td></tr>
+  <tr><td>Ya me operé pero sigo perdiendo</td><td>Post-trasplante mantenimiento</td></tr>
+  <tr><td>Tuve mala experiencia en otra clínica</td><td>Mala experiencia otra clínica</td></tr>
+  <tr><td>Problemas en el cuero cabelludo</td><td>No candidato — derivación</td></tr>
+</table>
+
+<h2>Pregunta 3 — Tiempo</h2>
+<p><strong>"¿Hace cuánto notas este problema?"</strong></p>
+<table>
+  <tr><th>Opción</th><th>Valor</th></tr>
+  <tr><td>Menos de 3 meses</td><td>&lt;3m</td></tr>
+  <tr><td>3 - 12 meses</td><td>3-12m</td></tr>
+  <tr><td>1 - 3 años</td><td>1-3a</td></tr>
+  <tr><td>Más de 3 años</td><td>3a+</td></tr>
+</table>
+
+<h2>Pregunta 4 — Urgencia</h2>
+<p><strong>"¿Cómo de urgente es para ti resolver esto?"</strong></p>
+<table>
+  <tr><th>Opción</th><th>Valor</th></tr>
+  <tr><td>Quiero solución ya, estoy listo/a para actuar</td><td>alta</td></tr>
+  <tr><td>Me preocupa pero quiero entender mis opciones</td><td>media</td></tr>
+  <tr><td>Solo quiero informarme por ahora</td><td>baja</td></tr>
+</table>
+
+<h2>Pregunta 5 — Formulario de captura</h2>
+<p><strong>"¡Ya casi está! Para preparar tu pre-diagnóstico, necesitamos tus datos:"</strong></p>
+<table>
+  <tr><th>Campo</th><th>Tipo</th></tr>
+  <tr><td>Nombre completo</td><td>Texto libre</td></tr>
+  <tr><td>Email</td><td>Email</td></tr>
+  <tr><td>Teléfono</td><td>Teléfono</td></tr>
+  <tr><td>¿Cerca de qué clínica te queda mejor?</td><td>Select (ver opciones abajo)</td></tr>
+</table>
+
+<p><strong>Opciones de ubicación:</strong></p>
+<table>
+  <tr><th>Grupo</th><th>Opciones</th></tr>
+  <tr><td>Clínicas Operativas</td><td>Madrid, Murcia, Pontevedra</td></tr>
+  <tr><td>Próximas aperturas (2026)</td><td>A Coruña, Móstoles, Albacete, Valladolid, Burgos, Valencia</td></tr>
+  <tr><td>Otra</td><td>Otra ciudad</td></tr>
+</table>
+
+<h2>Pantalla de Resultados</h2>
+<p>Tras completar el formulario, el usuario ve:</p>
+<ol>
+  <li><strong>Resumen de respuestas</strong> — Situación, Tiempo y Urgencia en 3 columnas</li>
+  <li><strong>Perfil Capilar</strong> — Título + texto personalizado según el ECP asignado</li>
+  <li><strong>Recomendación contextual</strong> — Texto adaptado según urgencia + tiempo</li>
+  <li><strong>CTAs</strong> — WhatsApp (principal) + Llamar (secundario)</li>
+</ol>
+
+<p><strong>Mensajes de resultado por ECP:</strong></p>
+<table>
+  <tr><th>ECP</th><th>Título</th><th>Mensaje</th></tr>
+  <tr><td>Hombre sin diagnóstico</td><td>Tu caída necesita un diagnóstico profesional</td><td>Sin una tricoscopía y analítica, cualquier tratamiento es una apuesta. En 30 minutos sabrás exactamente qué tienes.</td></tr>
+  <tr><td>Joven alopecia temprana</td><td>Actuar temprano es la mejor decisión</td><td>Cuanto antes se diagnostica, más opciones tienes. La caída no se frena sola — pero con diagnóstico a tiempo, los resultados son excelentes.</td></tr>
+  <tr><td>Mujer caída hormonal</td><td>Tu caída puede estar conectada a un desbalance hormonal</td><td>Necesitas una analítica hormonal cruzada con estudio capilar. Es la pieza que falta entre tu pelo y tu salud.</td></tr>
+  <tr><td>Caída postparto</td><td>Necesitas saber si es temporal o algo más</td><td>El efluvio postparto es temporal en la mayoría de casos. Pero a veces revela una alopecia subyacente. Un diagnóstico te saca de dudas.</td></tr>
+  <tr><td>Post-trasplante</td><td>Tu trasplante necesita un plan de mantenimiento</td><td>El pelo trasplantado no se cae, pero el nativo sí. Un diagnóstico evalúa tu situación actual y protege tu inversión.</td></tr>
+  <tr><td>Mala experiencia</td><td>Entendemos que tengas dudas</td><td>Hospital Capilar es un centro médico, no estético. Médicos que diagnostican con datos y te dicen la verdad. Sin presión.</td></tr>
+  <tr><td>Cuero cabelludo (derivación)</td><td>Tu caso requiere un dermatólogo</td><td>Lo que describes parece un problema dermatológico del cuero cabelludo. Te recomendamos visitar un dermatólogo especializado.</td></tr>
+</table>
+
+</body>
+</html>

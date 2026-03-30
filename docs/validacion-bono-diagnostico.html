@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
+  h1 { color: #2C3E50; border-bottom: 3px solid #4CA994; padding-bottom: 10px; }
+  h2 { color: #2C3E50; margin-top: 40px; }
+  h3 { color: #4CA994; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+  th { background-color: #f5f5f5; font-weight: bold; }
+  .green-row td { background-color: #e8f5e9; }
+  .orange-row td { background-color: #fff3e0; }
+  .gray-row td { background-color: #f5f5f5; }
+  .question-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+  .question-box strong { color: #1976d2; }
+  .flow-box { background: #fafafa; border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; white-space: pre-line; font-size: 14px; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #888; font-style: italic; }
+  ul { margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<h1>VALIDACION MEDICA - Bono Diagnostico 195 euros</h1>
+
+<h2>Contexto</h2>
+<p>Hospital Capilar ofrece un diagnostico presencial que incluye:</p>
+<ul>
+  <li>Tricoscopia digital</li>
+  <li>Analitica hormonal completa</li>
+  <li>Valoracion medica personalizada</li>
+  <li>Plan de tratamiento</li>
+</ul>
+<p><strong>Precio: 195 euros</strong></p>
+<p>Nuestro quiz online clasifica a los pacientes en perfiles. Segun el perfil, el paciente ve una accion diferente al final del quiz.</p>
+<p><strong>Necesitamos validacion medica</strong> sobre que perfiles deberian pagar el bono de 195 euros y cuales deberian ir directo a consulta gratuita.</p>
+
+<hr>
+
+<h2>Preguntas del Quiz (lo que ve el paciente)</h2>
+<p>El paciente responde estas preguntas en orden. Algunas solo aparecen segun respuestas anteriores.</p>
+
+<h3>Bloque 1: Identificacion</h3>
+
+<table>
+  <tr><th>#</th><th>Pregunta</th><th>Opciones</th><th>Notas</th></tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Empecemos. Cual es tu sexo?</strong></td>
+    <td>Hombre / Mujer</td>
+    <td>Determina las opciones de la pregunta 3</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>En que rango de edad estas?</strong></td>
+    <td>18-25 / 26-35 / 36-45 / 46-55 / +55</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>3a</td>
+    <td><strong>Cual es tu principal preocupacion con tu pelo?</strong><br>(si es HOMBRE)</td>
+    <td>
+      - Se me cae el pelo / pierdo densidad<br>
+      - Las entradas retroceden<br>
+      - Me opere y el pelo sigue cayendo<br>
+      - Tuve mala experiencia en otra clinica<br>
+      - Problemas en el cuero cabelludo (caspa, granos, irritacion)
+    </td>
+    <td>Esta pregunta define el perfil (ECP) del paciente</td>
+  </tr>
+  <tr>
+    <td>3b</td>
+    <td><strong>Cual es tu principal preocupacion con tu pelo?</strong><br>(si es MUJER)</td>
+    <td>
+      - Noto que pierdo densidad / se me ve el cuero cabelludo<br>
+      - Se me cae desde el embarazo / parto<br>
+      - Creo que es hormonal (tiroides, ovarios, menopausia, pildora)<br>
+      - Se me cae mucho mas de lo normal (estres, cambio de estacion)<br>
+      - Problemas en el cuero cabelludo (caspa, granos, irritacion)
+    </td>
+    <td>Esta pregunta define el perfil (ECP) del paciente</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>Hace cuanto notas este problema?</strong></td>
+    <td>Menos de 3 meses / 3-12 meses / 1-3 anos / Mas de 3 anos</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>Que has probado hasta ahora para frenar la caida?</strong><br>(seleccion multiple)</td>
+    <td>
+      - Nada todavia<br>
+      - Champu anticaida / suplementos (Pilexil, biotina, Olistic...)<br>
+      - Minoxidil<br>
+      - Finasteride / Dutasteride<br>
+      - Tratamientos en clinica (PRP, mesoterapia, laser...)<br>
+      - Trasplante capilar<br>
+      - Otro tratamiento medico
+    </td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><strong>Tienes alguna de estas condiciones?</strong><br>(solo mujeres con caida hormonal/densidad/general)</td>
+    <td>
+      - Ovarios poliquisticos (SOP/PCOS)<br>
+      - Problemas de tiroides<br>
+      - Menopausia o perimenopausia<br>
+      - Deje anticonceptivos recientemente<br>
+      - Anemia o deficit de hierro<br>
+      - Ninguna de estas / No lo se
+    </td>
+    <td>Solo aparece si es mujer con sospecha hormonal</td>
+  </tr>
+  <tr>
+    <td>7a</td>
+    <td><strong>Donde te operaste?</strong><br>(solo si eligio "Me opere y el pelo sigue cayendo")</td>
+    <td>En Hospital Capilar / En otra clinica en Espana / En Turquia / En otro pais</td>
+    <td>Solo post-trasplante</td>
+  </tr>
+  <tr>
+    <td>7b</td>
+    <td><strong>En que clinica fue?</strong><br>(solo si eligio "Mala experiencia")</td>
+    <td>Insparya / Svenson / Medical Hair / IMD / Dorsia / Otra</td>
+    <td>Solo mala experiencia</td>
+  </tr>
+</table>
+
+<h3>Bloque 2: Profundidad</h3>
+
+<table>
+  <tr><th>#</th><th>Pregunta</th><th>Opciones</th></tr>
+  <tr>
+    <td>8</td>
+    <td><strong>Cuanto te afecta este problema en tu dia a dia?</strong></td>
+    <td>Poco / Bastante (evito situaciones) / Mucho (afecta autoestima) / Es lo que mas me preocupa</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td><strong>Sabes que tipo de alopecia tienes?</strong></td>
+    <td>Si, me lo diagnostico un medico / Creo saberlo pero sin diagnostico formal / No tengo ni idea</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td><strong>Que necesitarias para dar el siguiente paso?</strong></td>
+    <td>Saber que tengo y opciones / Ver resultados de personas como yo / Que un medico me explique sin presion / Que el precio sea razonable</td>
+  </tr>
+  <tr>
+    <td>11a</td>
+    <td><strong>Te preocupan los efectos secundarios de los tratamientos?</strong><br>(hombres o quienes probaron minoxidil/finasteride)</td>
+    <td>Si mucho, es lo que me frena / Algo, pero dispuesto con supervision / No especialmente</td>
+  </tr>
+  <tr>
+    <td>11b</td>
+    <td><strong>Has visitado algun profesional por este tema?</strong><br>(resto de pacientes)</td>
+    <td>No, primera vez / Si, dermatologo general / Si, otra clinica capilar / Si, medico de cabecera</td>
+  </tr>
+</table>
+
+<h3>Bloque 3: Disposicion</h3>
+
+<table>
+  <tr><th>#</th><th>Pregunta</th><th>Opciones</th></tr>
+  <tr>
+    <td>12</td>
+    <td><strong>Que resultado esperas conseguir?</strong></td>
+    <td>Frenar la caida / Recuperar densidad sin cirugia / Saber si necesito cirugia o tratamiento / Mantener resultados de mi cirugia</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td><strong>Cuanto estarias dispuesto/a a invertir al mes?</strong></td>
+    <td>Menos de 50 euros / 50-150 euros / 150-300 euros / Lo que sea necesario</td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td><strong>Como te gustaria dar el siguiente paso?</strong></td>
+    <td>Reservar consulta presencial / Que me llamen / Quiero empezar ya / Necesito mas informacion</td>
+  </tr>
+</table>
+
+<h3>Bloque 4: Datos de contacto</h3>
+<p>Nombre, email, telefono, ciudad</p>
+
+<div class="question-box">
+  <strong>PREGUNTA PARA EL MEDICO:</strong> Falta alguna pregunta clinicamente relevante para clasificar mejor al paciente? Hay alguna pregunta que sobre o confunda?
+</div>
+
+<hr>
+
+<h2>Logica propuesta</h2>
+
+<h3>CONSULTA GRATUITA (sin cobrar bono)</h3>
+<p>Estos perfiles tienen alta probabilidad de ser tratables. Si les quitamos barreras, van a convertir en clinica.</p>
+
+<table>
+  <tr><th>Perfil</th><th>Por que gratis</th></tr>
+  <tr class="green-row"><td><strong>Hombre con caida sin diagnostico</strong></td><td>Casi siempre hay tratamiento (PRP, trasplante, medicacion). Alta conversion en clinica.</td></tr>
+  <tr class="green-row"><td><strong>Joven (18-25) con alopecia temprana</strong></td><td>Intervencion temprana = mas efectiva. Si entra, convierte.</td></tr>
+  <tr class="green-row"><td><strong>Post-trasplante (mantenimiento)</strong></td><td>Ya conoce el proceso. Necesita seguimiento, va a contratar.</td></tr>
+</table>
+
+<div class="question-box">
+  <strong>PREGUNTA PARA EL MEDICO:</strong> Estais de acuerdo en que estos 3 perfiles NO paguen el bono y vayan directo a consulta? Hay algun riesgo de que no sean tratables?
+</div>
+
+<h3>BONO DE DIAGNOSTICO 195 euros</h3>
+<p>Estos perfiles necesitan diagnostico especializado pero el resultado es incierto. El bono filtra a quienes no estan comprometidos y cubre el coste del diagnostico si no se puede tratar.</p>
+
+<table>
+  <tr><th>Perfil</th><th>Por que cobrar</th></tr>
+  <tr class="orange-row"><td><strong>Mujer con caida hormonal</strong></td><td>Puede no ser tratable. Necesita analitica hormonal cruzada con estudio capilar para saberlo.</td></tr>
+  <tr class="orange-row"><td><strong>Caida postparto / efluvio telogeno</strong></td><td>Puede resolverse solo (efluvio temporal) o ser una AGA subyacente. Sin diagnostico no se sabe.</td></tr>
+  <tr class="orange-row"><td><strong>Alopecia atipica (areata, frontal fibrosante, etc.)</strong></td><td>Requiere diagnostico especializado obligatorio. Resultado muy variable.</td></tr>
+</table>
+
+<div class="question-box">
+  <strong>PREGUNTA PARA EL MEDICO:</strong> Estos perfiles estan bien clasificados como "bono obligatorio"? Hay otros perfiles que deberian estar aqui?
+</div>
+
+<h3>OTROS PERFILES</h3>
+
+<table>
+  <tr><th>Perfil</th><th>Accion</th><th>Motivo</th></tr>
+  <tr class="gray-row"><td><strong>Mala experiencia en otra clinica</strong></td><td>Solo llamada telefonica</td><td>Necesita confianza. Si le pides pago, se va.</td></tr>
+  <tr class="gray-row"><td><strong>Problema de cuero cabelludo</strong></td><td>Derivar a dermatologo</td><td>No es candidato comercial.</td></tr>
+  <tr class="gray-row"><td><strong>Fuera de zona geografica</strong></td><td>Lista de espera</td><td>No hay clinica cerca. Se le avisa cuando abra.</td></tr>
+</table>
+
+<div class="question-box">
+  <strong>PREGUNTA PARA EL MEDICO:</strong> Los pacientes con mala experiencia en otra clinica deberian tener algun tipo de evaluacion especial?
+</div>
+
+<hr>
+
+<h2>Resumen visual</h2>
+
+<div class="flow-box">
+QUIZ COMPLETADO
+       |
+       v
+  Que perfil es?
+       |
+       |--- Hombre caida / Joven / Post-trasplante
+       |         |
+       |         v
+       |    CONSULTA GRATUITA  -->  Conversion en clinica
+       |
+       |--- Mujer hormonal / Postparto / Alopecia rara
+       |         |
+       |         v
+       |    BONO 195 euros  -->  Diagnostico especializado
+       |
+       |--- Mala experiencia
+       |         |
+       |         v
+       |    LLAMADA SIN COMPROMISO  -->  Generar confianza
+       |
+       |--- Cuero cabelludo
+       |         |
+       |         v
+       |    DERIVAR A DERMATOLOGO
+       |
+       |--- Fuera de zona
+                 |
+                 v
+            LISTA DE ESPERA
+</div>
+
+<hr>
+
+<h2>Preguntas abiertas para el equipo medico</h2>
+
+<ol>
+  <li><strong>Hay perfiles que estamos clasificando como "gratuitos" que deberian pagar bono?</strong><br>
+  <span style="color:#888">(Ejemplo: un joven de 18-25 podria tener una alopecia atipica que requiera diagnostico?)</span></li>
+
+  <li><strong>Hay perfiles que estamos clasificando como "bono" que deberian ser gratuitos?</strong><br>
+  <span style="color:#888">(Ejemplo: una mujer con caida hormonal clara deberia ir directo a consulta?)</span></li>
+
+  <li><strong>Falta algun perfil que no estemos contemplando?</strong><br>
+  <span style="color:#888">(Ejemplo: pacientes con tratamientos previos fallidos, pacientes con enfermedades autoinmunes, etc.)</span></li>
+
+  <li><strong>El efluvio telogeno deberia ser categoria aparte del postparto?</strong><br>
+  <span style="color:#888">(Actualmente estan juntos, pero pueden tener pronosticos diferentes)</span></li>
+
+  <li><strong>Las alopecias atipicas (areata, frontal fibrosante) necesitan un flujo completamente diferente?</strong><br>
+  <span style="color:#888">(Ejemplo: deberian ir a un especialista distinto dentro de HC?)</span></li>
+</ol>
+
+<div class="footer">
+  Documento preparado por el equipo tecnico de Growth4U para validacion medica.<br>
+  Por favor, dejad vuestros comentarios directamente en este documento.
+</div>
+
+</body>
+</html>

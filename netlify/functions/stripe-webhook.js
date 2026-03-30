@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { updateLeadByEmail, getLeadSourceByEmail } = require('./lib/firebase-admin');
+const { sendAlert } = require('./lib/alert');
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
@@ -79,6 +80,11 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: JSON.stringify({ received: true }) };
   } catch (err) {
     console.log('[Stripe Webhook] Error:', err.message);
+    await sendAlert('stripe-webhook', `Payment webhook failed: ${err.message}`, {
+      severity: 'critical',
+      error: err.message,
+      signature_present: !!sig,
+    });
     return { statusCode: 400, body: `Webhook error: ${err.message}` };
   }
 };

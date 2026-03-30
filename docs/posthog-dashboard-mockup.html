@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostHog Dashboard — Hospital Capilar</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1d1f27; color: #e0e0e0; }
+
+  .header { background: #1d1f27; border-bottom: 1px solid #333; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header .badge { background: #2c6df6; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .header .date-range { margin-left: auto; background: #2a2c35; padding: 6px 14px; border-radius: 6px; font-size: 13px; color: #aaa; border: 1px solid #444; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 16px; padding: 20px 24px; }
+  .card { background: #22242e; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+  .card-header { padding: 14px 16px; border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 14px; font-weight: 600; }
+  .card-header .type { font-size: 11px; color: #888; background: #2a2c35; padding: 2px 8px; border-radius: 4px; }
+  .card-body { padding: 16px; }
+
+  .full-width { grid-column: 1 / -1; }
+
+  /* KPI Row */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; padding: 20px 24px; }
+  .kpi { background: #22242e; border: 1px solid #333; border-radius: 8px; padding: 16px; text-align: center; }
+  .kpi .value { font-size: 28px; font-weight: 700; color: #fff; }
+  .kpi .label { font-size: 12px; color: #888; margin-top: 4px; }
+  .kpi .change { font-size: 12px; margin-top: 6px; }
+  .kpi .change.up { color: #4ade80; }
+  .kpi .change.down { color: #f87171; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 0; }
+  .funnel-step { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+  .funnel-bar-wrap { flex: 1; position: relative; }
+  .funnel-bar { height: 36px; border-radius: 4px; display: flex; align-items: center; padding-left: 12px; font-size: 13px; font-weight: 500; color: #fff; transition: width 0.5s; }
+  .funnel-label { width: 140px; font-size: 13px; color: #ccc; text-align: right; flex-shrink: 0; }
+  .funnel-stats { width: 120px; font-size: 12px; color: #888; flex-shrink: 0; }
+  .funnel-arrow { text-align: center; color: #555; font-size: 16px; padding: 2px 0; margin-left: 152px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: #888; font-weight: 500; padding: 8px 12px; border-bottom: 1px solid #333; }
+  td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid #2a2c35; }
+  tr:hover { background: #2a2c35; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .good { color: #4ade80; }
+  .warn { color: #facc15; }
+  .bad { color: #f87171; }
+
+  /* Bar chart (horizontal) */
+  .hbar { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .hbar-label { width: 100px; font-size: 12px; color: #ccc; text-align: right; flex-shrink: 0; }
+  .hbar-track { flex: 1; background: #2a2c35; border-radius: 3px; height: 22px; position: relative; }
+  .hbar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; color: #fff; font-weight: 500; }
+  .hbar-value { font-size: 12px; color: #aaa; width: 50px; flex-shrink: 0; }
+
+  /* Stacked breakdown */
+  .breakdown-row { display: flex; gap: 2px; height: 28px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .breakdown-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #fff; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ccc; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Mini sparkline (CSS only) */
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 40px; }
+  .spark-bar { width: 8px; background: #2c6df6; border-radius: 2px 2px 0 0; opacity: 0.7; }
+
+  /* Section header */
+  .section-header { padding: 20px 24px 8px; font-size: 16px; font-weight: 600; color: #fff; border-top: 1px solid #333; margin-top: 8px; }
+
+  /* Colors */
+  .c-meta { background: #1877f2; }
+  .c-google { background: #34a853; }
+  .c-seo { background: #a855f7; }
+  .c-tiktok { background: #ff0050; }
+  .c-direct { background: #6b7280; }
+  .c-other { background: #78716c; }
+
+  .c-largo { background: #2c6df6; }
+  .c-corto { background: #f59e0b; }
+  .c-form { background: #10b981; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Hospital Capilar — Funnel Analytics</h1>
+  <span class="badge">LIVE</span>
+  <div class="date-range">1 Mar — 19 Mar 2026 (19 days)</div>
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="value">4,218</div>
+    <div class="label">Visitantes</div>
+    <div class="change up">+23% vs prev</div>
+  </div>
+  <div class="kpi">
+    <div class="value">2,847</div>
+    <div class="label">Quiz Iniciado</div>
+    <div class="change up">+18%</div>
+  </div>
+  <div class="kpi">
+    <div class="value">1,423</div>
+    <div class="label">Quiz Completado</div>
+    <div class="change up">+12%</div>
+  </div>
+  <div class="kpi">
+    <div class="value">892</div>
+    <div class="label">Leads</div>
+    <div class="change up">+31%</div>
+  </div>
+  <div class="kpi">
+    <div class="value">187</div>
+    <div class="label">Citas Agendadas</div>
+    <div class="change up">+45%</div>
+  </div>
+  <div class="kpi">
+    <div class="value">142</div>
+    <div class="label">Asistieron</div>
+    <div class="change down">-3% no-show</div>
+  </div>
+</div>
+
+<!-- SECTION: FUNNEL COMPLETO -->
+<div class="section-header">Embudo completo</div>
+<div class="grid">
+
+  <!-- Main Funnel -->
+  <div class="card full-width">
+    <div class="card-header">
+      <h3>Funnel: Visitante &rarr; Paciente</h3>
+      <span class="type">Funnel</span>
+    </div>
+    <div class="card-body">
+      <div class="funnel">
+        <div class="funnel-step">
+          <div class="funnel-label">$pageview</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#2c6df6;">4,218</div></div>
+          <div class="funnel-stats">100%</div>
+        </div>
+        <div class="funnel-arrow">&#x25BC; 67.5%</div>
+        <div class="funnel-step">
+          <div class="funnel-label">quiz_started</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:67.5%;background:#3b7cf7;">2,847</div></div>
+          <div class="funnel-stats">67.5%</div>
+        </div>
+        <div class="funnel-arrow">&#x25BC; 50.0%</div>
+        <div class="funnel-step">
+          <div class="funnel-label">quiz_completed</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:33.7%;background:#5b93f8;">1,423</div></div>
+          <div class="funnel-stats">33.7%</div>
+        </div>
+        <div class="funnel-arrow">&#x25BC; 62.7%</div>
+        <div class="funnel-step">
+          <div class="funnel-label">form_submitted</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:21.2%;background:#7aabf9;">892</div></div>
+          <div class="funnel-stats">21.2%</div>
+        </div>
+        <div class="funnel-arrow">&#x25BC; 21.0%</div>
+        <div class="funnel-step">
+          <div class="funnel-label">appointment_booked</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:4.4%;background:#9ac2fa;">187</div></div>
+          <div class="funnel-stats">4.4%</div>
+        </div>
+        <div class="funnel-arrow">&#x25BC; 75.9%</div>
+        <div class="funnel-step">
+          <div class="funnel-label">appointment_attended</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:3.4%;background:#4ade80;">142</div></div>
+          <div class="funnel-stats">3.4%</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:#1a1c24;border-radius:6px;display:flex;gap:32px;">
+        <div><span style="color:#888;font-size:12px;">Conversion total (visit &rarr; attend)</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">3.4%</span></div>
+        <div><span style="color:#888;font-size:12px;">Lead &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">21.0%</span></div>
+        <div><span style="color:#888;font-size:12px;">No-show rate</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">24.1%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: POR FUENTE DE TRÁFICO -->
+<div class="section-header">Por fuente de tráfico</div>
+<div class="grid">
+
+  <!-- Traffic Source Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Leads y citas por fuente</h3>
+      <span class="type">Table</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr><th>Fuente</th><th class="num">Visitas</th><th class="num">Leads</th><th class="num">% Leads</th><th class="num">Citas</th><th class="num">Lead→Cita</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span style="color:#1877f2;">&#9679;</span> Meta</td><td class="num">2,190</td><td class="num">463</td><td class="num">51.9%</td><td class="num">98</td><td class="num good">21.2%</td></tr>
+          <tr><td><span style="color:#34a853;">&#9679;</span> Google Ads</td><td class="num">892</td><td class="num">214</td><td class="num">24.0%</td><td class="num">52</td><td class="num good">24.3%</td></tr>
+          <tr><td><span style="color:#a855f7;">&#9679;</span> SEO</td><td class="num">535</td><td class="num">107</td><td class="num">12.0%</td><td class="num">21</td><td class="num warn">19.6%</td></tr>
+          <tr><td><span style="color:#ff0050;">&#9679;</span> TikTok</td><td class="num">360</td><td class="num">54</td><td class="num">6.1%</td><td class="num">9</td><td class="num warn">16.7%</td></tr>
+          <tr><td><span style="color:#6b7280;">&#9679;</span> Directo</td><td class="num">157</td><td class="num">36</td><td class="num">4.0%</td><td class="num">5</td><td class="num warn">13.9%</td></tr>
+          <tr><td><span style="color:#78716c;">&#9679;</span> Otro</td><td class="num">84</td><td class="num">18</td><td class="num">2.0%</td><td class="num">2</td><td class="num bad">11.1%</td></tr>
+          <tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td><td class="num">4,218</td><td class="num">892</td><td class="num">100%</td><td class="num">187</td><td class="num">21.0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Conversion by Source -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Conversión por fuente (lead &rarr; cita)</h3>
+      <span class="type">Table</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr><th>Fuente</th><th class="num">Leads</th><th class="num">Citas</th><th class="num">Conv %</th><th class="num">No-show</th><th class="num">Show %</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span style="color:#1877f2;">&#9679;</span> Meta</td><td class="num">463</td><td class="num">98</td><td class="num good">21.2%</td><td class="num">22</td><td class="num warn">77.6%</td></tr>
+          <tr><td><span style="color:#34a853;">&#9679;</span> Google Ads</td><td class="num">214</td><td class="num">52</td><td class="num good">24.3%</td><td class="num">10</td><td class="num good">80.8%</td></tr>
+          <tr><td><span style="color:#a855f7;">&#9679;</span> SEO</td><td class="num">107</td><td class="num">21</td><td class="num warn">19.6%</td><td class="num">3</td><td class="num good">85.7%</td></tr>
+          <tr><td><span style="color:#ff0050;">&#9679;</span> TikTok</td><td class="num">54</td><td class="num">9</td><td class="num warn">16.7%</td><td class="num">5</td><td class="num bad">44.4%</td></tr>
+          <tr><td><span style="color:#6b7280;">&#9679;</span> Directo</td><td class="num">36</td><td class="num">5</td><td class="num warn">13.9%</td><td class="num">3</td><td class="num bad">40.0%</td></tr>
+          <tr><td><span style="color:#78716c;">&#9679;</span> Otro</td><td class="num">18</td><td class="num">2</td><td class="num bad">11.1%</td><td class="num">2</td><td class="num bad">0.0%</td></tr>
+          <tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td><td class="num">892</td><td class="num">187</td><td class="num">21.0%</td><td class="num">45</td><td class="num">75.9%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Leads by Source (stacked) -->
+  <div class="card full-width">
+    <div class="card-header">
+      <h3>Leads diarios por fuente</h3>
+      <span class="type">Trend (stacked)</span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;">
+        <!-- Simulated daily stacked bars -->
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:15px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:8px;" class="c-tiktok"></div>
+          <div style="height:15px;" class="c-seo"></div>
+          <div style="height:22px;" class="c-google"></div>
+          <div style="height:35px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:4px;" class="c-direct"></div>
+          <div style="height:6px;" class="c-tiktok"></div>
+          <div style="height:12px;" class="c-seo"></div>
+          <div style="height:20px;" class="c-google"></div>
+          <div style="height:40px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:3px;" class="c-other"></div>
+          <div style="height:6px;" class="c-direct"></div>
+          <div style="height:10px;" class="c-tiktok"></div>
+          <div style="height:14px;" class="c-seo"></div>
+          <div style="height:25px;" class="c-google"></div>
+          <div style="height:38px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:1px;" class="c-other"></div>
+          <div style="height:3px;" class="c-direct"></div>
+          <div style="height:4px;" class="c-tiktok"></div>
+          <div style="height:10px;" class="c-seo"></div>
+          <div style="height:18px;" class="c-google"></div>
+          <div style="height:28px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:7px;" class="c-tiktok"></div>
+          <div style="height:11px;" class="c-seo"></div>
+          <div style="height:22px;" class="c-google"></div>
+          <div style="height:45px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:3px;" class="c-other"></div>
+          <div style="height:4px;" class="c-direct"></div>
+          <div style="height:9px;" class="c-tiktok"></div>
+          <div style="height:16px;" class="c-seo"></div>
+          <div style="height:30px;" class="c-google"></div>
+          <div style="height:50px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:1px;" class="c-other"></div>
+          <div style="height:2px;" class="c-direct"></div>
+          <div style="height:5px;" class="c-tiktok"></div>
+          <div style="height:8px;" class="c-seo"></div>
+          <div style="height:15px;" class="c-google"></div>
+          <div style="height:25px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:4px;" class="c-other"></div>
+          <div style="height:6px;" class="c-direct"></div>
+          <div style="height:8px;" class="c-tiktok"></div>
+          <div style="height:13px;" class="c-seo"></div>
+          <div style="height:24px;" class="c-google"></div>
+          <div style="height:42px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:3px;" class="c-direct"></div>
+          <div style="height:6px;" class="c-tiktok"></div>
+          <div style="height:11px;" class="c-seo"></div>
+          <div style="height:20px;" class="c-google"></div>
+          <div style="height:48px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:7px;" class="c-tiktok"></div>
+          <div style="height:14px;" class="c-seo"></div>
+          <div style="height:26px;" class="c-google"></div>
+          <div style="height:52px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:1px;" class="c-other"></div>
+          <div style="height:2px;" class="c-direct"></div>
+          <div style="height:3px;" class="c-tiktok"></div>
+          <div style="height:6px;" class="c-seo"></div>
+          <div style="height:10px;" class="c-google"></div>
+          <div style="height:18px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:1px;" class="c-other"></div>
+          <div style="height:2px;" class="c-direct"></div>
+          <div style="height:3px;" class="c-tiktok"></div>
+          <div style="height:5px;" class="c-seo"></div>
+          <div style="height:9px;" class="c-google"></div>
+          <div style="height:15px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:3px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:8px;" class="c-tiktok"></div>
+          <div style="height:15px;" class="c-seo"></div>
+          <div style="height:28px;" class="c-google"></div>
+          <div style="height:55px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:4px;" class="c-direct"></div>
+          <div style="height:7px;" class="c-tiktok"></div>
+          <div style="height:12px;" class="c-seo"></div>
+          <div style="height:22px;" class="c-google"></div>
+          <div style="height:46px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:9px;" class="c-tiktok"></div>
+          <div style="height:13px;" class="c-seo"></div>
+          <div style="height:24px;" class="c-google"></div>
+          <div style="height:44px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:3px;" class="c-other"></div>
+          <div style="height:6px;" class="c-direct"></div>
+          <div style="height:10px;" class="c-tiktok"></div>
+          <div style="height:16px;" class="c-seo"></div>
+          <div style="height:28px;" class="c-google"></div>
+          <div style="height:56px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:1px;" class="c-other"></div>
+          <div style="height:3px;" class="c-direct"></div>
+          <div style="height:5px;" class="c-tiktok"></div>
+          <div style="height:10px;" class="c-seo"></div>
+          <div style="height:18px;" class="c-google"></div>
+          <div style="height:35px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:2px;" class="c-other"></div>
+          <div style="height:4px;" class="c-direct"></div>
+          <div style="height:6px;" class="c-tiktok"></div>
+          <div style="height:11px;" class="c-seo"></div>
+          <div style="height:20px;" class="c-google"></div>
+          <div style="height:40px;" class="c-meta"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">
+          <div style="height:3px;" class="c-other"></div>
+          <div style="height:5px;" class="c-direct"></div>
+          <div style="height:8px;" class="c-tiktok"></div>
+          <div style="height:14px;" class="c-seo"></div>
+          <div style="height:26px;" class="c-google"></div>
+          <div style="height:50px;" class="c-meta"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;">
+        <span>1 Mar</span><span>5 Mar</span><span>10 Mar</span><span>15 Mar</span><span>19 Mar</span>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
+        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
+        <div class="legend-item"><div class="legend-dot c-seo"></div>SEO</div>
+        <div class="legend-item"><div class="legend-dot c-tiktok"></div>TikTok</div>
+        <div class="legend-item"><div class="legend-dot c-direct"></div>Directo</div>
+        <div class="legend-item"><div class="legend-dot c-other"></div>Otro</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: POR TIPO DE FUNNEL -->
+<div class="section-header">Por tipo de funnel</div>
+<div class="grid">
+
+  <!-- Funnel Type Comparison -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Comparativa por funnel</h3>
+      <span class="type">Table</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr><th>Funnel</th><th class="num">Visitas</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="color:#2c6df6;">&#9679;</span> Quiz Largo</td>
+            <td class="num">2,450</td><td class="num">542</td><td class="num good">22.1%</td>
+            <td class="num">128</td>
+          </tr>
+          <tr>
+            <td><span style="color:#f59e0b;">&#9679;</span> Quiz Corto</td>
+            <td class="num">1,120</td><td class="num">215</td><td class="num warn">19.2%</td>
+            <td class="num">38</td>
+          </tr>
+          <tr>
+            <td><span style="color:#10b981;">&#9679;</span> Formulario Directo</td>
+            <td class="num">648</td><td class="num">135</td><td class="num good">20.8%</td>
+            <td class="num">21</td>
+          </tr>
+          <tr style="font-weight:600;border-top:2px solid #444;">
+            <td>Total</td><td class="num">4,218</td><td class="num">892</td><td class="num">21.2%</td>
+            <td class="num">187</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;color:#888;margin-bottom:6px;">Distribución de leads</div>
+        <div class="breakdown-row">
+          <div class="breakdown-seg c-largo" style="flex:542;">Quiz Largo 60.8%</div>
+          <div class="breakdown-seg c-corto" style="flex:215;">Corto 24.1%</div>
+          <div class="breakdown-seg c-form" style="flex:135;">Form 15.1%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funnel by Nicho -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Leads por nicho</h3>
+      <span class="type">Breakdown</span>
+    </div>
+    <div class="card-body">
+      <div class="hbar">
+        <div class="hbar-label">hombres-caida</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:38%;background:#2c6df6;">339</div></div>
+        <div class="hbar-value">38.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">mujeres</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:18%;background:#ec4899;">161</div></div>
+        <div class="hbar-value">18.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">jovenes</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:14%;background:#f59e0b;">125</div></div>
+        <div class="hbar-value">14.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">segunda-opinion</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:12%;background:#10b981;">107</div></div>
+        <div class="hbar-value">12.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">post-trasplante</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:8%;background:#a855f7;">71</div></div>
+        <div class="hbar-value">8.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">postparto</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:5%;background:#f87171;">45</div></div>
+        <div class="hbar-value">5.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">farmacia-sin-salida</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:3%;background:#6b7280;">27</div></div>
+        <div class="hbar-value">3.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">que-me-pasa</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:2%;background:#78716c;">17</div></div>
+        <div class="hbar-value">2.0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: CALIDAD Y NO-SHOWS -->
+<div class="section-header">Calidad de leads y asistencia</div>
+<div class="grid">
+
+  <!-- No-Show Rate by Source -->
+  <div class="card">
+    <div class="card-header">
+      <h3>No-show rate por fuente</h3>
+      <span class="type">Table</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr><th>Fuente</th><th class="num">Citas</th><th class="num">No-show</th><th class="num">Rate</th><th>Visual</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SEO</td><td class="num">21</td><td class="num">3</td><td class="num good">14.3%</td>
+            <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:14.3%;height:100%;background:#4ade80;border-radius:3px;"></div></div></td>
+          </tr>
+          <tr>
+            <td>Google Ads</td><td class="num">52</td><td class="num">10</td><td class="num warn">19.2%</td>
+            <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:19.2%;height:100%;background:#facc15;border-radius:3px;"></div></div></td>
+          </tr>
+          <tr>
+            <td>Meta</td><td class="num">98</td><td class="num">22</td><td class="num warn">22.4%</td>
+            <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:22.4%;height:100%;background:#facc15;border-radius:3px;"></div></div></td>
+          </tr>
+          <tr>
+            <td>TikTok</td><td class="num">9</td><td class="num">5</td><td class="num bad">55.6%</td>
+            <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:55.6%;height:100%;background:#f87171;border-radius:3px;"></div></div></td>
+          </tr>
+          <tr>
+            <td>Directo</td><td class="num">5</td><td class="num">3</td><td class="num bad">60.0%</td>
+            <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:60%;height:100%;background:#f87171;border-radius:3px;"></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;padding:10px;background:#1a1c24;border-radius:6px;font-size:12px;color:#f59e0b;">
+        &#9888; TikTok y Directo tienen &gt;50% no-show — considerar confirmación extra o bono obligatorio
+      </div>
+    </div>
+  </div>
+
+  <!-- ECP Classification -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Clasificación ECP</h3>
+      <span class="type">Breakdown</span>
+    </div>
+    <div class="card-body">
+      <div class="hbar">
+        <div class="hbar-label">Alopecia M</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:42%;background:#2c6df6;">375</div></div>
+        <div class="hbar-value">42.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">Alopecia F</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:15%;background:#ec4899;">134</div></div>
+        <div class="hbar-value">15.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">Joven</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:14%;background:#f59e0b;">125</div></div>
+        <div class="hbar-value">14.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">2a Opinión</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:12%;background:#10b981;">107</div></div>
+        <div class="hbar-value">12.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">Post-trasplante</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:8%;background:#a855f7;">71</div></div>
+        <div class="hbar-value">8.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">Hormonal/Postparto</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:5%;background:#f87171;">45</div></div>
+        <div class="hbar-value">5.0%</div>
+      </div>
+      <div class="hbar">
+        <div class="hbar-label">Otros</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:4%;background:#6b7280;">35</div></div>
+        <div class="hbar-value">4.0%</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SECTION: FUTURO (CPL/CAC/ROAS) -->
+<div class="section-header" style="color:#555;">
+  Coste y ROI <span style="font-size:12px;background:#333;padding:2px 8px;border-radius:4px;margin-left:8px;">PRONTO</span>
+</div>
+<div class="grid" style="opacity:0.4;">
+  <div class="card">
+    <div class="card-header">
+      <h3>CPL por fuente</h3>
+      <span class="type">Table</span>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr><th>Fuente</th><th class="num">Spend</th><th class="num">Leads</th><th class="num">CPL</th><th class="num">Agendadas</th><th class="num">Coste/Agenda</th><th class="num">CAC</th><th class="num">Revenue</th><th class="num">ROAS</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Meta</td><td class="num">€1,200</td><td class="num">463</td><td class="num">€2.59</td><td class="num">98</td><td class="num">€12.24</td><td class="num">€15.79</td><td class="num">€14,820</td><td class="num good">12.4x</td></tr>
+          <tr><td>Google Ads</td><td class="num">€980</td><td class="num">214</td><td class="num">€4.58</td><td class="num">52</td><td class="num">€18.85</td><td class="num">€24.50</td><td class="num">€8,060</td><td class="num good">8.2x</td></tr>
+          <tr><td>TikTok</td><td class="num">€400</td><td class="num">54</td><td class="num">€7.41</td><td class="num">9</td><td class="num bad">€44.44</td><td class="num bad">€100.00</td><td class="num">€780</td><td class="num warn">2.0x</td></tr>
+          <tr><td>SEO</td><td class="num">€0</td><td class="num">107</td><td class="num good">€0</td><td class="num">21</td><td class="num good">€0</td><td class="num good">€0</td><td class="num">€4,095</td><td class="num good">∞</td></tr>
+          <tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td><td class="num">€2,580</td><td class="num">838</td><td class="num">€3.08</td><td class="num">180</td><td class="num">€14.33</td><td class="num">€18.03</td><td class="num">€27,755</td><td class="num good">10.8x</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div style="padding:24px;text-align:center;color:#555;font-size:12px;">
+  Mockup del dashboard PostHog — Hospital Capilar — Datos dummy para validar layout
+</div>
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 const { getLeadSourceByEmail } = require('./lib/firebase-admin');
+const { sendAlert } = require('./lib/alert');
 
 const GHL_KEY = process.env.VITE_GHL_API_KEY;
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
@@ -62,9 +63,11 @@ async function sendBatch(events) {
 // Scheduled function: runs every hour
 exports.handler = async (event) => {
   if (!GHL_KEY || !POSTHOG_KEY) {
+    await sendAlert('sync-ghl-posthog', 'Missing GHL or PostHog API keys — sync disabled', { severity: 'critical' });
     return { statusCode: 500, body: 'Missing GHL or PostHog API keys' };
   }
 
+  try {
   console.log('[GHL→PostHog Sync] Starting...');
   const opps = await fetchAllOpportunities();
   console.log(`[GHL→PostHog Sync] Found ${opps.length} opportunities`);
@@ -134,10 +137,20 @@ exports.handler = async (event) => {
   }
 
   // Send in batches of 50
+  let batchFailures = 0;
   for (let i = 0; i < events.length; i += 50) {
     const batch = events.slice(i, i + 50);
     const ok = await sendBatch(batch);
+    if (!ok) batchFailures++;
     console.log(`[GHL→PostHog Sync] Batch ${Math.floor(i / 50) + 1}: ${batch.length} events → ${ok ? 'OK' : 'FAILED'}`);
+  }
+
+  if (batchFailures > 0) {
+    await sendAlert('sync-ghl-posthog', `${batchFailures} batch(es) failed to send to PostHog`, {
+      severity: 'warning',
+      total_events: events.length,
+      batch_failures: batchFailures,
+    });
   }
 
   const summary = {};
@@ -150,4 +163,14 @@ exports.handler = async (event) => {
     statusCode: 200,
     body: JSON.stringify({ synced: events.length, summary }),
   };
+
+  } catch (err) {
+    console.error('[GHL→PostHog Sync] Fatal error:', err.message);
+    await sendAlert('sync-ghl-posthog', `Sync crashed: ${err.message}`, {
+      severity: 'critical',
+      error: err.message,
+      stack: err.stack?.substring(0, 300),
+    });
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
 };

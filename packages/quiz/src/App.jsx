@@ -23,13 +23,21 @@ function App() {
       {/* Hospital Capilar Quiz — generic */}
       <Route path="/" element={<HospitalCapilarQuiz />} />
 
-      {/* Niche quiz — direct start, no landing page */}
-      <Route path="/mujeres" element={<HospitalCapilarQuiz nicho="mujeres" />} />
-      <Route path="/jovenes" element={<HospitalCapilarQuiz nicho="jovenes" />} />
-      <Route path="/hombres-caida" element={<HospitalCapilarQuiz nicho="hombres-caida" />} />
-      <Route path="/segunda-opinion" element={<HospitalCapilarQuiz nicho="segunda-opinion" />} />
-      <Route path="/post-trasplante" element={<HospitalCapilarQuiz nicho="post-trasplante" />} />
+      {/* Niche quiz — 7 nichos */}
+      <Route path="/el-espejo" element={<HospitalCapilarQuiz nicho="el-espejo" />} />
+      <Route path="/es-normal" element={<HospitalCapilarQuiz nicho="es-normal" />} />
       <Route path="/postparto" element={<HospitalCapilarQuiz nicho="postparto" />} />
+      <Route path="/que-me-pasa" element={<HospitalCapilarQuiz nicho="que-me-pasa" />} />
+      <Route path="/ya-me-engañaron" element={<HospitalCapilarQuiz nicho="ya-me-engañaron" />} />
+      <Route path="/farmacia-sin-salida" element={<HospitalCapilarQuiz nicho="farmacia-sin-salida" />} />
+      <Route path="/la-inversion" element={<HospitalCapilarQuiz nicho="la-inversion" />} />
+
+      {/* Legacy redirects — old slugs → new slugs */}
+      <Route path="/jovenes" element={<HospitalCapilarQuiz nicho="el-espejo" />} />
+      <Route path="/mujeres" element={<HospitalCapilarQuiz nicho="es-normal" />} />
+      <Route path="/segunda-opinion" element={<HospitalCapilarQuiz nicho="ya-me-engañaron" />} />
+      <Route path="/post-trasplante" element={<HospitalCapilarQuiz nicho="la-inversion" />} />
+      <Route path="/hombres-caida" element={<HospitalCapilarQuiz nicho="que-me-pasa" />} />
 
       {/* Preview mode */}
       <Route path="/preview/:slug" element={<PreviewPage />} />
