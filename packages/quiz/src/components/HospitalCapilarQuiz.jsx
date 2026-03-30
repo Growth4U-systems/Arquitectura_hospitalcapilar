@@ -348,7 +348,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     {
       id: 'patron_perdida', block: 1,
       title: '¿Dónde notas principalmente la pérdida de pelo?',
-      type: 'single',
+      type: 'multiple',
       dependsOn: (ans) => ans.problema !== 'post-cirugia' && ans.problema !== 'mala-experiencia',
       options: [
         { label: 'Entradas / línea frontal', value: 'entradas' },
