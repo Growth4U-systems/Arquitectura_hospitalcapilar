@@ -301,6 +301,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
     }
 
     analytics.trackQuizCompleted(answers);
+    analytics.trackFormSubmitted({ name: form.nombre, email: form.email, phone: form.telefono }, answers);
     analytics.trackEvent('short_quiz_completed', { nicho, ecp, contactScore });
     analytics.trackEvent('lead_classified', { ecp, traffic_source: classifyTrafficSource(utmParams), funnel_type: 'quiz_corto', nicho });
 
