@@ -34,6 +34,19 @@ export default function AgendarPage() {
 
   const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
 
+  // A/B test bono pricing — 50/50 split, persisted in sessionStorage
+  const STRIPE_LINKS = {
+    195: 'https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04',
+    125: 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06',
+  };
+  const [bonoPrice] = useState(() => {
+    const stored = sessionStorage.getItem('hc_bono_price');
+    if (stored === '125' || stored === '195') return Number(stored);
+    const price = Math.random() < 0.5 ? 125 : 195;
+    sessionStorage.setItem('hc_bono_price', String(price));
+    return price;
+  });
+
   // Check if contact already has an appointment + bono status
   useEffect(() => {
     if (!params.contactId) {
@@ -76,7 +89,7 @@ export default function AgendarPage() {
 
   // Bono gate — woman ECP who hasn't paid yet
   if (bonoRequired && !existingAppt) {
-    const stripeUrl = `https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04?prefilled_email=${encodeURIComponent(params.email || '')}`;
+    const stripeUrl = `${STRIPE_LINKS[bonoPrice]}?prefilled_email=${encodeURIComponent(params.email || '')}`;
     return (
       <div className="min-h-screen bg-[#F7F8FA]">
         <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold">
@@ -122,7 +135,7 @@ export default function AgendarPage() {
             className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center text-lg shadow-lg flex items-center justify-center gap-2"
           >
             <CreditCard size={20} />
-            Completar pago — 195€
+            Completar pago — {bonoPrice}€
           </a>
 
           <p className="text-center text-xs text-gray-400 mt-4">
