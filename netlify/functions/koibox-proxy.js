@@ -385,6 +385,18 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     }
   }
 
+  // 0b. Block women ECPs who haven't paid the bono
+  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
+  const isWomanEcp = contactEcp && WOMEN_ECPS.some(e => contactEcp.toLowerCase().includes(e));
+  if (isWomanEcp && !bonoPaid) {
+    console.log('[Koibox] BLOCKED — Woman ECP without bono payment:', contactEcp);
+    return {
+      statusCode: 403,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'bono_required', message: 'Para agendar necesitas completar el pago del bono diagnóstico.' }),
+    };
+  }
+
   // 1. Sync client first (find or create)
   let clientId = body.koibox_client_id;
   if (!clientId && (email || movil)) {
@@ -875,6 +887,23 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     };
   }
 
+  // 1b. Read ECP from contact custom fields
+  let contactEcp = '';
+  let bonoPaid = false;
+  if (resolvedContactId) {
+    try {
+      const contactEcpRes = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
+      if (contactEcpRes.ok) {
+        const ecpData = await contactEcpRes.json();
+        const ecpCfs = ecpData?.contact?.customFields || [];
+        const ecpField = ecpCfs.find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD');
+        contactEcp = ecpField?.value || '';
+      }
+    } catch (err) {
+      console.log('[GetContactAppt] ECP fetch failed:', err.message);
+    }
+  }
+
   // 2. Find opportunity with koibox_id (try open first, fallback to all statuses)
   let koiboxId = '';
   let clinica = '';
@@ -917,6 +946,11 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         koiboxId = koiboxField?.fieldValue || koiboxField?.value || '';
         console.log('[GetContactAppt] Opportunity:', opp.id, 'koibox_id:', koiboxId);
 
+        // Check payment status on opportunity
+        const statusField = cfs.find(f => f.id === 'Hk81fRW2HaTqlry4I1L0');
+        bonoPaid = !!(statusField?.value?.startsWith('paid') || statusField?.fieldValue?.startsWith('paid'));
+        console.log('[GetContactAppt] Payment status:', statusField?.value || statusField?.fieldValue, 'bonoPaid:', bonoPaid);
+
         // Get clinica from contact custom fields
         const contactRes2 = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
         if (contactRes2.ok) {
@@ -957,6 +991,8 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
               contactName,
               contactEmail,
               contactPhone,
+              contactEcp,
+              bonoPaid,
               clinica: clinicaCita,
               appointment: {
                 fecha: fechaCita,
@@ -974,7 +1010,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, _debug }),
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid, _debug }),
     };
   }
 
@@ -985,7 +1021,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid }),
       };
     }
     const data = await res.json();
@@ -995,7 +1031,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, previouslyCancelled: true }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid, previouslyCancelled: true }),
       };
     }
 
@@ -1009,6 +1045,8 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         contactEmail,
         contactPhone,
         koibox_id: koiboxId,
+        contactEcp,
+        bonoPaid,
         clinica: clinica || '',
         appointment: {
           id: data.id,

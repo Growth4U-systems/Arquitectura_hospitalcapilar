@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Loader2, ShieldAlert, CreditCard } from 'lucide-react';
 import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
@@ -30,8 +30,11 @@ export default function AgendarPage() {
 
   const [existingAppt, setExistingAppt] = useState(null); // null = loading, false = no appt, object = has appt
   const [checking, setChecking] = useState(!!params.contactId);
+  const [bonoRequired, setBonoRequired] = useState(false); // true = woman ECP without payment
 
-  // Check if contact already has an appointment
+  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
+
+  // Check if contact already has an appointment + bono status
   useEffect(() => {
     if (!params.contactId) {
       setChecking(false);
@@ -45,6 +48,13 @@ export default function AgendarPage() {
     })
       .then(res => res.json())
       .then(data => {
+        // Check bono gate: woman ECP who hasn't paid
+        const ecp = (data.contactEcp || '').toLowerCase();
+        const isWomanEcp = WOMEN_ECPS.some(e => ecp.includes(e));
+        if (isWomanEcp && !data.bonoPaid) {
+          setBonoRequired(true);
+        }
+
         if (data.hasAppointment) {
           setExistingAppt(data);
         } else {
@@ -60,6 +70,67 @@ export default function AgendarPage() {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#4CA994] animate-spin" />
+      </div>
+    );
+  }
+
+  // Bono gate — woman ECP who hasn't paid yet
+  if (bonoRequired && !existingAppt) {
+    const stripeUrl = `https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04?prefilled_email=${encodeURIComponent(params.email || '')}`;
+    return (
+      <div className="min-h-screen bg-[#F7F8FA]">
+        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold">
+          Hospital Capilar — Agendar Consulta Diagnóstica
+        </div>
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert size={32} className="text-amber-600" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
+              Pago pendiente
+            </h2>
+            <p className="text-gray-500 text-sm max-w-sm mx-auto">
+              Para poder agendar tu consulta diagnóstica, primero necesitas completar el pago del bono.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tu diagnóstico incluye</p>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-[#4CA994] mt-0.5">✓</span>
+                Tricoscopía digital completa
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4CA994] mt-0.5">✓</span>
+                Analítica hormonal completa
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4CA994] mt-0.5">✓</span>
+                Valoración médica personalizada
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4CA994] mt-0.5">✓</span>
+                Plan de tratamiento a medida
+              </li>
+            </ul>
+          </div>
+
+          <a
+            href={stripeUrl}
+            className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center text-lg shadow-lg flex items-center justify-center gap-2"
+          >
+            <CreditCard size={20} />
+            Completar pago — 195€
+          </a>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            El bono se descuenta del tratamiento si decides continuar.
+            <br />
+            ¿Dudas? Llámanos al <a href="tel:+34623457218" className="text-[#4CA994] font-semibold">623 457 218</a>
+          </p>
+        </div>
       </div>
     );
   }

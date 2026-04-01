@@ -100,6 +100,8 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
           clinica: CLINICS[selectedClinic]?.name || selectedClinic,
         });
         if (onBooked) onBooked(data);
+      } else if (data.error === 'bono_required') {
+        alert('Para poder agendar tu cita, primero necesitas completar el pago del bono diagnóstico.');
       } else if (data.error === 'daily_limit_reached') {
         alert('No quedan huecos disponibles para este día. Por favor selecciona otra fecha.');
         setSelectedSlot(null);
