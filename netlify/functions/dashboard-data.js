@@ -49,10 +49,10 @@ exports.handler = async (event) => {
   }
 
   const days = parseInt(params.days) || 30;
-  const interval = `${days} day`;
 
   try {
-    const dateFilter = `AND timestamp >= '${LAUNCH_DATE}' AND timestamp > now() - interval ${interval}`;
+    // Use the later of LAUNCH_DATE or (now - days) as the start boundary
+    const dateFilter = `AND timestamp >= greatest(toDateTime('${LAUNCH_DATE}'), now() - interval ${days} day)`;
 
     const [
       kpiPageviews,
@@ -75,7 +75,7 @@ exports.handler = async (event) => {
     ] = await Promise.all([
       // KPIs
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_started' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'quiz_completed' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'form_submitted' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
