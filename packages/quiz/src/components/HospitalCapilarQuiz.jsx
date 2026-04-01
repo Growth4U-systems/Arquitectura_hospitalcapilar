@@ -251,6 +251,17 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   const theme = { primary: '#4CA994', secondary: '#2C3E50', light: '#F0F7F6', white: '#FFFFFF' };
 
   // ============================================
+  // TRACK QUIZ STARTED WHEN SKIPPING INTRO
+  // ============================================
+  useEffect(() => {
+    if (skipIntro && stepIndex === 0) {
+      quizStartTime.current = Date.now();
+      questionStartTime.current = Date.now();
+      analytics.trackQuizStarted();
+    }
+  }, []);
+
+  // ============================================
   // RETURNING LEAD DETECTION
   // ============================================
   useEffect(() => {
