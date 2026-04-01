@@ -300,6 +300,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       console.error('Firestore save error:', err);
     }
 
+    analytics.trackQuizCompleted(answers);
     analytics.trackEvent('short_quiz_completed', { nicho, ecp, contactScore });
     analytics.trackEvent('lead_classified', { ecp, traffic_source: classifyTrafficSource(utmParams), funnel_type: 'quiz_corto', nicho });
 
