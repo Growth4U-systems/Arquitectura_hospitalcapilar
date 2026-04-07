@@ -27,18 +27,18 @@ const EMPLOYEES = {
 
 // Working hours per clinic (24h format)
 const WORKING_HOURS = {
-  madrid:     { open: '09:00', close: '20:00' },
-  pontevedra: { open: '09:00', close: '20:00' },
-  murcia:     { open: '09:00', close: '20:00' },
+  madrid:     { open: '09:00', close: '16:00' },
+  pontevedra: { open: '09:00', close: '16:00' },
+  murcia:     { open: '09:00', close: '16:00' },
 };
 
 const SLOT_DURATION = 30; // minutes
 
-// Max confirmed appointments per clinic per day (Koibox restriction: 4 agendas/day)
+// Max confirmed appointments per clinic per day
 const MAX_DAILY_APPOINTMENTS = {
-  madrid: 4,
-  pontevedra: 4,
-  murcia: 4,
+  madrid: 6,
+  pontevedra: 6,
+  murcia: 6,
 };
 
 exports.handler = async (event) => {
@@ -267,7 +267,7 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
   const appointments = allAppointments.filter(a => a.user === employeeId && a.estado !== 5);
 
   // Check daily appointment limit
-  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 4;
+  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 6;
   const confirmedCount = appointments.length;
   const dailyLimitReached = confirmedCount >= maxDaily;
 
@@ -412,7 +412,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   }
 
   // 2. Check daily appointment limit before creating
-  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 4;
+  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 6;
   try {
     const checkRes = await fetch(
       `${KOIBOX_BASE}/agenda/?fecha__gte=${fecha}&fecha__lte=${fecha}&limit=50`,
