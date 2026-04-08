@@ -55,7 +55,6 @@ export default function ReagendarPage() {
   }, [contactId]);
 
   const handleCancel = async () => {
-    if (!confirm('¿Estás seguro de que quieres cancelar tu cita? Esta acción no se puede deshacer.')) return;
     setCancelling(true);
 
     try {
