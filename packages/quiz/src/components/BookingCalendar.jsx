@@ -228,17 +228,24 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
   return (
     <div>
       {/* Clinic header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-[#4CA994]" />
-          <span className="font-bold text-sm text-gray-900">Hospital Capilar {CLINICS[selectedClinic]?.name}</span>
+          <MapPin size={16} className="text-[#4CA994] shrink-0" />
+          <div>
+            <span className="font-bold text-sm text-gray-900">Hospital Capilar {CLINICS[selectedClinic]?.name}</span>
+            {CLINICS[selectedClinic]?.address && (
+              <p className="text-xs text-gray-400">{CLINICS[selectedClinic].address}</p>
+            )}
+          </div>
         </div>
-        <button
-          onClick={() => { setSelectedClinic(null); setSelectedDate(null); setSelectedSlot(null); }}
-          className="text-xs text-[#4CA994] hover:underline"
-        >
-          Cambiar clínica
-        </button>
+        {Object.keys(CLINICS).length > 1 && (
+          <button
+            onClick={() => { setSelectedClinic(null); setSelectedDate(null); setSelectedSlot(null); }}
+            className="text-xs text-[#4CA994] hover:underline mt-1"
+          >
+            Cambiar clínica
+          </button>
+        )}
       </div>
 
       {/* Calendar */}
