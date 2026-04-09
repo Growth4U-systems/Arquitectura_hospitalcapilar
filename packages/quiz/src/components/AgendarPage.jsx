@@ -198,9 +198,11 @@ export default function AgendarPage() {
   // No appointment — show booking calendar
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
-      <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
-        <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
-        <span>Agendar Consulta Diagnóstica</span>
+      <div className="bg-[#2C3E50] text-white py-3 px-4">
+        <div className="max-w-lg mx-auto flex items-center justify-center gap-2 text-sm font-semibold">
+          <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
+          <span>Agendar Consulta Diagnóstica</span>
+        </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
