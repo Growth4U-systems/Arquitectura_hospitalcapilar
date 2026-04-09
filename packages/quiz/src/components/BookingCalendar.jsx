@@ -4,15 +4,17 @@ import { safeFetch } from '../utils/safeFetch';
 
 const CLINICS = {
   madrid: { name: 'Madrid', address: 'Calle del Moscatelar, Nº11, 28043 Madrid' },
-  pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
-  murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
+  // pontevedra & murcia disabled for initial pilot — only Madrid
+  // pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
+  // murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
 };
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBooked, onBack, rescheduleFrom }) => {
-  const [selectedClinic, setSelectedClinic] = useState(ubicacion || null);
+  const clinicKeys = Object.keys(CLINICS);
+  const [selectedClinic, setSelectedClinic] = useState(ubicacion || (clinicKeys.length === 1 ? clinicKeys[0] : null));
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [slots, setSlots] = useState([]);

@@ -32,7 +32,7 @@ const WORKING_HOURS = {
   murcia:     { open: '09:00', close: '16:00' },
 };
 
-const SLOT_DURATION = 30; // minutes
+const SLOT_DURATION = 60; // minutes
 
 // Max confirmed appointments per clinic per day
 const MAX_DAILY_APPOINTMENTS = {

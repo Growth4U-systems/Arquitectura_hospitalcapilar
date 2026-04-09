@@ -4,8 +4,9 @@ import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
   madrid: { name: 'Madrid', address: 'Calle del Moscatelar, Nº11, 28043 Madrid' },
-  pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
-  murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
+  // pontevedra & murcia disabled for initial pilot — only Madrid
+  // pontevedra: { name: 'Pontevedra', address: 'Praza de Barcelos, 6, 36002 Pontevedra' },
+  // murcia: { name: 'Murcia', address: 'Paseo de Florencia, Rda. Sur, 13, 30010 Murcia' },
 };
 
 const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];

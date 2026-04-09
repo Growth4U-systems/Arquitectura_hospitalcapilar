@@ -4,8 +4,9 @@ import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
   madrid: { name: 'Madrid' },
-  pontevedra: { name: 'Pontevedra' },
-  murcia: { name: 'Murcia' },
+  // pontevedra & murcia disabled for initial pilot — only Madrid
+  // pontevedra: { name: 'Pontevedra' },
+  // murcia: { name: 'Murcia' },
 };
 
 const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
