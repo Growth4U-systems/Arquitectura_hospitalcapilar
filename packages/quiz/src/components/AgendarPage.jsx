@@ -93,8 +93,9 @@ export default function AgendarPage() {
     const stripeUrl = `${STRIPE_LINKS[bonoPrice]}?prefilled_email=${encodeURIComponent(params.email || '')}`;
     return (
       <div className="min-h-screen bg-[#F7F8FA]">
-        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold">
-          Hospital Capilar — Agendar Consulta Diagnóstica
+        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
+          <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
+          <span>Agendar Consulta Diagnóstica</span>
         </div>
         <div className="max-w-lg mx-auto px-4 py-8">
           <div className="text-center mb-6">
@@ -156,8 +157,9 @@ export default function AgendarPage() {
 
     return (
       <div className="min-h-screen bg-[#F7F8FA]">
-        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold">
-          Hospital Capilar — Agendar Consulta Diagnóstica
+        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
+          <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
+          <span>Agendar Consulta Diagnóstica</span>
         </div>
         <div className="max-w-lg mx-auto px-4 py-6">
           <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 shadow-sm">
