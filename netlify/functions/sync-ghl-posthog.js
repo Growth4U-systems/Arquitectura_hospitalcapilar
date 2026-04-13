@@ -210,7 +210,7 @@ exports.handler = async (event) => {
         event: eventName,
         distinct_id: distinctId,
         timestamp: eventTimestamp,
-        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}` },
+        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v2` },
       });
     }
   }
