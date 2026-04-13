@@ -138,7 +138,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     d.setHours(0, 0, 0, 0);
     if (d < today) return false;
     if (d > maxDate) return false;
-    if (d.getDay() === 0) return false; // Sunday
+    if (d.getDay() === 0 || d.getDay() === 6) return false; // Sunday & Saturday
     return true;
   };
 
