@@ -57,7 +57,7 @@ exports.handler = async () => {
       date: yesterday,
       google_campaigns: results.google.length,
       meta_campaigns: results.meta.length,
-      posthog: { ok: posthogOk, skipped: posthogSkipped, failed: posthogFailed },
+      posthog: { ok: posthogOk, skipped: posthogSkipped, failed: posthogFailed, key_prefix: (process.env.VITE_POSTHOG_KEY || '').substring(0, 15) },
       errors: results.errors,
     }),
   };
