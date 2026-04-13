@@ -92,8 +92,55 @@ async function fetchGoogleAdsSpend(date) {
 
   const { access_token } = await tokenRes.json();
 
-  // 2. Query campaign metrics
-  const query = `
+  const apiHeaders = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${access_token}`,
+    'developer-token': developerToken,
+  };
+
+  if (mccId) {
+    apiHeaders['login-customer-id'] = mccId;
+  }
+
+  const apiUrl = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:searchStream`;
+
+  async function runQuery(query) {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: apiHeaders,
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Google Ads API ${res.status}: ${errBody.substring(0, 200)}`);
+    }
+    return res.json();
+  }
+
+  // 2. Find campaigns that point to our landing pages (diagnostico.hospitalcapilar.com)
+  const adsData = await runQuery(`
+    SELECT campaign.id, ad_group_ad.ad.final_urls
+    FROM ad_group_ad
+    WHERE campaign.status = 'ENABLED'
+  `);
+
+  const ourCampaignIds = new Set();
+  for (const batch of adsData) {
+    for (const row of (batch.results || [])) {
+      const urls = row.adGroupAd?.ad?.finalUrls || [];
+      if (urls.some(u => u.includes('diagnostico.hospitalcapilar.com'))) {
+        ourCampaignIds.add(String(row.campaign?.id || ''));
+      }
+    }
+  }
+
+  console.log(`[AdSpend] Google Ads: ${ourCampaignIds.size} campaigns target diagnostico.hospitalcapilar.com`);
+
+  if (ourCampaignIds.size === 0) return [];
+
+  // 3. Query metrics only for our campaigns
+  const idList = [...ourCampaignIds].join(', ');
+  const metricsData = await runQuery(`
     SELECT
       campaign.name,
       campaign.id,
@@ -103,38 +150,11 @@ async function fetchGoogleAdsSpend(date) {
       metrics.conversions
     FROM campaign
     WHERE segments.date = '${date}'
-      AND metrics.cost_micros > 0
-  `;
+      AND campaign.id IN (${idList})
+  `);
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${access_token}`,
-    'developer-token': developerToken,
-  };
-
-  if (mccId) {
-    headers['login-customer-id'] = mccId;
-  }
-
-  const res = await fetch(
-    `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:searchStream`,
-    {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query }),
-    }
-  );
-
-  if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`Google Ads API ${res.status}: ${errBody.substring(0, 200)}`);
-  }
-
-  const data = await res.json();
-
-  // searchStream returns array of result batches
   const campaigns = [];
-  for (const batch of data) {
+  for (const batch of metricsData) {
     for (const row of (batch.results || [])) {
       campaigns.push({
         source: 'google_ads',
