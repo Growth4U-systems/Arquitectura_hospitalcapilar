@@ -1,5 +1,13 @@
-const { getLeadSourceByEmail } = require('./lib/firebase-admin');
 const { sendAlert } = require('./lib/alert');
+
+// Lazy-load Firebase to avoid crash if FIREBASE_SERVICE_ACCOUNT is missing
+let getLeadSourceByEmail;
+try {
+  getLeadSourceByEmail = require('./lib/firebase-admin').getLeadSourceByEmail;
+} catch (e) {
+  console.log('[GHL Sync] Firebase admin not available, continuing without attribution');
+  getLeadSourceByEmail = async () => ({});
+}
 
 const GHL_KEY = process.env.VITE_GHL_API_KEY;
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
