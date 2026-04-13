@@ -33,11 +33,9 @@ exports.handler = async () => {
     console.log('[AdSpend] Meta Ads error:', err.message);
   }
 
-  // Send all campaigns to PostHog
+  // Send all campaigns to PostHog (await all to prevent premature process exit)
   const allCampaigns = [...results.google, ...results.meta];
-  for (const campaign of allCampaigns) {
-    trackAdSpend(campaign);
-  }
+  await Promise.all(allCampaigns.map(campaign => trackAdSpend(campaign)));
 
   console.log(`[AdSpend] Done. Sent ${allCampaigns.length} events to PostHog. Errors: ${results.errors.length}`);
 
@@ -204,9 +202,12 @@ async function fetchMetaAdsSpend(date) {
 
 // ─── PostHog ───────────────────────────────────────────
 
-function trackAdSpend(campaign) {
+async function trackAdSpend(campaign) {
   const posthogKey = process.env.VITE_POSTHOG_KEY;
-  if (!posthogKey) return;
+  if (!posthogKey) {
+    console.log('[PostHog] Missing VITE_POSTHOG_KEY, skipping ad spend capture');
+    return;
+  }
 
   const payload = {
     api_key: posthogKey,
@@ -219,11 +220,18 @@ function trackAdSpend(campaign) {
     },
   };
 
-  fetch(`${POSTHOG_HOST}/capture/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(err => console.log('[PostHog] Ad spend capture failed:', err.message));
+  try {
+    const res = await fetch(`${POSTHOG_HOST}/capture/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.log(`[PostHog] Ad spend capture failed (${res.status}): ${campaign.source} ${campaign.date}`);
+    }
+  } catch (err) {
+    console.log('[PostHog] Ad spend capture failed:', err.message);
+  }
 }
 
 // ─── Helpers ───────────────────────────────────────────
