@@ -378,9 +378,11 @@ function changeDays(d) {
   document.querySelectorAll('.date-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days) === d));
   fetchData();
 }
-function updateDateRange(days) {
+function updateDateRange(days, launchDate) {
   const end = new Date();
-  const start = new Date(end - days * 86400000);
+  const daysAgo = new Date(end - days * 86400000);
+  const launch = launchDate ? new Date(launchDate) : daysAgo;
+  const start = launch > daysAgo ? launch : daysAgo;
   const opts = { day: 'numeric', month: 'short' };
   document.getElementById('dateRange').textContent =
     start.toLocaleDateString('es-ES', opts) + ' — ' + end.toLocaleDateString('es-ES', opts) + ' (' + days + ' dias)';
@@ -412,6 +414,7 @@ async function fetchData() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderDashboard(data);
+    updateDateRange(currentDays, data.launch_date);
     if (data.launch_date) {
       const ld = new Date(data.launch_date);
       document.getElementById('launchBadge').textContent = 'Desde ' + ld.toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'numeric'});
