@@ -243,6 +243,7 @@ async function trackAdSpend(campaign) {
     properties: {
       ...campaign,
       $lib: 'server-netlify',
+      $insert_id: `ad_spend_${campaign.source}_${campaign.campaign_id}_${campaign.date}`,
     },
   };
 

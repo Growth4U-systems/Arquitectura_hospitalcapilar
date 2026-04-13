@@ -170,7 +170,7 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // Ad spend by source (from ad_spend_daily events)
+      // Ad spend by source (from ad_spend_daily events, deduplicated by $insert_id)
       hogqlQuery(apiKey, `
         SELECT
           properties.source as ad_source,
@@ -180,12 +180,14 @@ exports.handler = async (event) => {
           sum(toIntOrZero(toString(properties.conversions))) as total_conversions
         FROM events
         WHERE event = 'ad_spend_daily'
+          AND properties.$insert_id IS NOT NULL
+          AND properties.source IN ('google_ads', 'meta_ads')
           ${dateFilter}
         GROUP BY properties.source
         ORDER BY total_spend DESC
       `),
 
-      // Ad spend daily trend
+      // Ad spend daily trend (deduplicated)
       hogqlQuery(apiKey, `
         SELECT
           properties.date as spend_date,
@@ -193,6 +195,8 @@ exports.handler = async (event) => {
           sum(toFloatOrZero(toString(properties.spend))) as daily_spend
         FROM events
         WHERE event = 'ad_spend_daily'
+          AND properties.$insert_id IS NOT NULL
+          AND properties.source IN ('google_ads', 'meta_ads')
           ${dateFilter}
         GROUP BY properties.date, properties.source
         ORDER BY spend_date ASC

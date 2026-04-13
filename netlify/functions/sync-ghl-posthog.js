@@ -35,11 +35,13 @@ async function fetchAllOpportunities() {
   let startAfterId = '';
   let hasMore = true;
 
-  // GHL opportunities/search does NOT support startDate/endDate filtering
-  // Deduplication is handled via $insert_id on each event
   while (hasMore) {
     const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=20${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
     const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`GHL API ${res.status}: ${errText.substring(0, 200)}`);
+    }
     const data = await res.json();
     const opps = data.opportunities || [];
     all = all.concat(opps);
@@ -97,7 +99,6 @@ exports.handler = async (event) => {
     const eventTimestamp = opp.lastStageChangeAt || opp.updatedAt || opp.createdAt || new Date().toISOString();
 
     const baseProps = {
-      distinct_id: distinctId,
       $lib: 'ghl-sync-scheduled',
       contact_name: contact.name || opp.name || '',
       contact_email: email,
@@ -108,12 +109,13 @@ exports.handler = async (event) => {
       ...leadSource,
     };
 
-    // Send $set to update person properties (no $identify — merge happens via frontend posthog.identify)
+    // Send $set to update person properties
     if (email) {
       events.push({
         event: '$set',
+        distinct_id: email,
+        timestamp: eventTimestamp,
         properties: {
-          distinct_id: email,
           $set: {
             email,
             name: contact.name || opp.name || '',
@@ -123,15 +125,15 @@ exports.handler = async (event) => {
             ...leadSource,
           },
         },
-        timestamp: eventTimestamp,
       });
     }
 
     for (const eventName of eventsToSend) {
       events.push({
         event: eventName,
-        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}` },
+        distinct_id: distinctId,
         timestamp: eventTimestamp,
+        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}` },
       });
     }
   }
