@@ -208,20 +208,22 @@ async function fetchMetaAdsSpend(date) {
 
   const data = await res.json();
 
-  return (data.data || []).map(row => {
-    // Extract lead conversions from actions array
-    const leadAction = (row.actions || []).find(a => a.action_type === 'lead');
-    return {
-      source: 'meta_ads',
-      campaign_name: row.campaign_name || '',
-      campaign_id: row.campaign_id || '',
-      spend: parseFloat(row.spend || '0'),
-      clicks: parseInt(row.clicks || '0', 10),
-      impressions: parseInt(row.impressions || '0', 10),
-      conversions: leadAction ? parseInt(leadAction.value, 10) : 0,
-      date,
-    };
-  });
+  // Filter only G4U campaigns (our quiz landing pages)
+  return (data.data || [])
+    .filter(row => (row.campaign_name || '').includes('G4U'))
+    .map(row => {
+      const leadAction = (row.actions || []).find(a => a.action_type === 'lead');
+      return {
+        source: 'meta_ads',
+        campaign_name: row.campaign_name || '',
+        campaign_id: row.campaign_id || '',
+        spend: parseFloat(row.spend || '0'),
+        clicks: parseInt(row.clicks || '0', 10),
+        impressions: parseInt(row.impressions || '0', 10),
+        conversions: leadAction ? parseInt(leadAction.value, 10) : 0,
+        date,
+      };
+    });
 }
 
 // ─── PostHog ───────────────────────────────────────────
