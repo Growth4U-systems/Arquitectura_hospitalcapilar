@@ -232,11 +232,11 @@ async function trackAdSpend(campaign) {
   const payload = {
     api_key: posthogKey,
     event: 'ad_spend_daily',
+    distinct_id: `ads-${campaign.source}`,
+    timestamp: new Date().toISOString(),
     properties: {
       ...campaign,
-      distinct_id: `ads-${campaign.source}`,
       $lib: 'server-netlify',
-      timestamp: new Date().toISOString(),
     },
   };
 
