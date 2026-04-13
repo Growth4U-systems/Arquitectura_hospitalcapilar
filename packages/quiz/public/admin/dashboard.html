@@ -829,10 +829,12 @@ function renderAdSpend(data) {
     rows.push({ source: adSrc, spend, clicks, leads, booked, cpl, cpa });
   });
 
-  // KPIs
+  // KPIs — use global booked count (not just matched-by-source) for CPA
+  const globalBooked = data.kpis?.appointment_booked || 0;
+  const globalLeads = data.kpis?.form_submitted || 0;
   document.getElementById('kpi-total-spend').textContent = fmtEur(totalSpend);
-  document.getElementById('kpi-avg-cpl').textContent = totalLeads > 0 ? fmtEurDec(totalSpend / totalLeads) : '-';
-  document.getElementById('kpi-avg-cpa').textContent = totalBooked > 0 ? fmtEurDec(totalSpend / totalBooked) : '-';
+  document.getElementById('kpi-avg-cpl').textContent = globalLeads > 0 ? fmtEurDec(totalSpend / globalLeads) : '-';
+  document.getElementById('kpi-avg-cpa').textContent = globalBooked > 0 ? fmtEurDec(totalSpend / globalBooked) : '-';
   document.getElementById('kpi-total-ad-clicks').textContent = fmt(totalClicks);
 
   // Table

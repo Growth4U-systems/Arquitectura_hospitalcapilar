@@ -78,18 +78,18 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'form_submitted' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
 
-      // By traffic source: leads, booked, attended, no-show (unique persons)
+      // By traffic source: leads (unique persons), booked/attended/no-show (unique $insert_id from GHL)
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
           count(DISTINCT if(event = 'form_submitted', person_id, NULL)) as leads,
-          count(DISTINCT if(event = 'appointment_booked', person_id, NULL)) as booked,
-          count(DISTINCT if(event = 'appointment_attended', person_id, NULL)) as attended,
-          count(DISTINCT if(event = 'appointment_no_show', person_id, NULL)) as no_show
+          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked,
+          count(DISTINCT if(event = 'appointment_attended', properties.$insert_id, NULL)) as attended,
+          count(DISTINCT if(event = 'appointment_no_show', properties.$insert_id, NULL)) as no_show
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked', 'appointment_attended', 'appointment_no_show')
           ${dateFilter}
@@ -97,12 +97,12 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // By funnel type (unique persons)
+      // By funnel type (unique persons for leads, $insert_id for bookings)
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
           count(DISTINCT if(event = 'form_submitted', person_id, NULL)) as leads,
-          count(DISTINCT if(event = 'appointment_booked', person_id, NULL)) as booked
+          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked')
           ${dateFilter}
