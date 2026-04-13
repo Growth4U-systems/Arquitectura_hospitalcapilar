@@ -35,9 +35,12 @@ exports.handler = async () => {
 
   // Send all campaigns to PostHog (await all to prevent premature process exit)
   const allCampaigns = [...results.google, ...results.meta];
-  await Promise.all(allCampaigns.map(campaign => trackAdSpend(campaign)));
+  const posthogResults = await Promise.all(allCampaigns.map(campaign => trackAdSpend(campaign)));
+  const posthogOk = posthogResults.filter(r => r === 'ok').length;
+  const posthogSkipped = posthogResults.filter(r => r === 'skipped').length;
+  const posthogFailed = posthogResults.filter(r => r === 'failed').length;
 
-  console.log(`[AdSpend] Done. Sent ${allCampaigns.length} events to PostHog. Errors: ${results.errors.length}`);
+  console.log(`[AdSpend] Done. PostHog: ${posthogOk} ok, ${posthogSkipped} skipped, ${posthogFailed} failed. Errors: ${results.errors.length}`);
 
   // Alert if any ad platform sync failed
   if (results.errors.length > 0) {
@@ -54,6 +57,7 @@ exports.handler = async () => {
       date: yesterday,
       google_campaigns: results.google.length,
       meta_campaigns: results.meta.length,
+      posthog: { ok: posthogOk, skipped: posthogSkipped, failed: posthogFailed },
       errors: results.errors,
     }),
   };
@@ -226,7 +230,7 @@ async function trackAdSpend(campaign) {
   const posthogKey = process.env.VITE_POSTHOG_KEY;
   if (!posthogKey) {
     console.log('[PostHog] Missing VITE_POSTHOG_KEY, skipping ad spend capture');
-    return;
+    return 'skipped';
   }
 
   const payload = {
@@ -248,9 +252,12 @@ async function trackAdSpend(campaign) {
     });
     if (!res.ok) {
       console.log(`[PostHog] Ad spend capture failed (${res.status}): ${campaign.source} ${campaign.date}`);
+      return 'failed';
     }
+    return 'ok';
   } catch (err) {
     console.log('[PostHog] Ad spend capture failed:', err.message);
+    return 'failed';
   }
 }
 
