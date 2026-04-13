@@ -117,7 +117,7 @@ async function fetchGoogleAdsSpend(date) {
   }
 
   const res = await fetch(
-    `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:searchStream`,
+    `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:searchStream`,
     {
       method: 'POST',
       headers,
