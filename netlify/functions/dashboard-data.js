@@ -82,14 +82,14 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
 
-      // By traffic source: leads, booked, attended, no-show
+      // By traffic source: leads, booked, attended, no-show (unique persons)
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
-          countIf(event = 'form_submitted') as leads,
-          countIf(event = 'appointment_booked') as booked,
-          countIf(event = 'appointment_attended') as attended,
-          countIf(event = 'appointment_no_show') as no_show
+          count(DISTINCT if(event = 'form_submitted', person_id, NULL)) as leads,
+          count(DISTINCT if(event = 'appointment_booked', person_id, NULL)) as booked,
+          count(DISTINCT if(event = 'appointment_attended', person_id, NULL)) as attended,
+          count(DISTINCT if(event = 'appointment_no_show', person_id, NULL)) as no_show
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked', 'appointment_attended', 'appointment_no_show')
           ${dateFilter}
@@ -97,12 +97,12 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // By funnel type
+      // By funnel type (unique persons)
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
-          countIf(event = 'form_submitted') as leads,
-          countIf(event = 'appointment_booked') as booked
+          count(DISTINCT if(event = 'form_submitted', person_id, NULL)) as leads,
+          count(DISTINCT if(event = 'appointment_booked', person_id, NULL)) as booked
         FROM events
         WHERE event IN ('form_submitted', 'appointment_booked')
           ${dateFilter}
@@ -110,9 +110,9 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // By nicho
+      // By nicho (unique persons)
       hogqlQuery(apiKey, `
-        SELECT properties.nicho as nicho, count() as cnt
+        SELECT properties.nicho as nicho, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'form_submitted'
           ${dateFilter}
@@ -120,9 +120,9 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // ECP classification
+      // ECP classification (unique persons)
       hogqlQuery(apiKey, `
-        SELECT properties.ecp as ecp, count() as cnt
+        SELECT properties.ecp as ecp, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'lead_classified'
           ${dateFilter}
@@ -130,9 +130,9 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // Daily leads (total)
+      // Daily leads (unique persons)
       hogqlQuery(apiKey, `
-        SELECT toDate(timestamp) as day, count() as cnt
+        SELECT toDate(timestamp) as day, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'form_submitted'
           ${dateFilter}
@@ -140,9 +140,9 @@ exports.handler = async (event) => {
         ORDER BY day ASC
       `),
 
-      // Daily leads by source
+      // Daily leads by source (unique persons)
       hogqlQuery(apiKey, `
-        SELECT toDate(timestamp) as day, properties.traffic_source as source, count() as cnt
+        SELECT toDate(timestamp) as day, properties.traffic_source as source, count(DISTINCT person_id) as cnt
         FROM events
         WHERE event = 'form_submitted'
           ${dateFilter}
