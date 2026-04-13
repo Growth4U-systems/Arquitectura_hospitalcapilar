@@ -7,7 +7,15 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com';
  * Pulls yesterday's campaign spend from Google Ads and Meta Ads,
  * then sends each campaign as an `ad_spend_daily` event to PostHog.
  */
-exports.handler = async () => {
+exports.handler = async (event) => {
+  // Support backfill via query param: ?backfill=2026-04-04
+  const params = event.queryStringParameters || {};
+  const backfillFrom = params.backfill;
+
+  if (backfillFrom) {
+    return backfillRange(backfillFrom);
+  }
+
   const yesterday = getYesterday();
   console.log(`[AdSpend] Syncing spend for ${yesterday}`);
 
@@ -262,6 +270,52 @@ async function trackAdSpend(campaign) {
     console.log('[PostHog] Ad spend capture failed:', err.message);
     return 'failed';
   }
+}
+
+// ─── Backfill ─────────────────────────────────────────
+
+async function backfillRange(fromDate) {
+  const today = new Date().toISOString().split('T')[0];
+  const dates = [];
+  let d = new Date(fromDate);
+  while (d.toISOString().split('T')[0] < today) {
+    dates.push(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate() + 1);
+  }
+
+  console.log(`[AdSpend Backfill] ${dates.length} days from ${fromDate} to ${dates[dates.length - 1]}`);
+
+  let totalGoogle = 0, totalMeta = 0, totalEvents = 0, errors = [];
+
+  for (const date of dates) {
+    try {
+      const google = await fetchGoogleAdsSpend(date);
+      const meta = await fetchMetaAdsSpend(date);
+      const all = [...google, ...meta];
+      await Promise.all(all.map(c => trackAdSpend(c)));
+      totalGoogle += google.length;
+      totalMeta += meta.length;
+      totalEvents += all.length;
+      console.log(`[Backfill] ${date}: ${google.length}G + ${meta.length}M`);
+    } catch (err) {
+      errors.push(`${date}: ${err.message}`);
+      console.log(`[Backfill] ${date} error: ${err.message}`);
+    }
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      backfill: true,
+      days: dates.length,
+      from: fromDate,
+      to: dates[dates.length - 1],
+      google_total: totalGoogle,
+      meta_total: totalMeta,
+      events_sent: totalEvents,
+      errors,
+    }),
+  };
 }
 
 // ─── Helpers ───────────────────────────────────────────
