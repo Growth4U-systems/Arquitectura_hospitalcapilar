@@ -161,7 +161,7 @@ exports.handler = async (event) => {
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ synced: events.length, summary }),
+    body: JSON.stringify({ synced: events.length, summary, opportunities: opps.length }),
   };
 
   } catch (err) {
