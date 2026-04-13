@@ -13,8 +13,70 @@ const GHL_KEY = process.env.VITE_GHL_API_KEY;
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 const POSTHOG_KEY = process.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
+const POSTHOG_PERSONAL_KEY = process.env.POSTHOG_PERSONAL_API_KEY;
+const POSTHOG_PROJECT_ID = '137870';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
+
+// Lookup lead attribution from PostHog by email
+// Searches for person by email, then gets traffic_source from their events
+async function getLeadSourceFromPostHog(email) {
+  if (!POSTHOG_PERSONAL_KEY || !email) return {};
+
+  try {
+    // Search for person by email in PostHog
+    const searchRes = await fetch(
+      `${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/persons/?search=${encodeURIComponent(email)}&limit=1`,
+      { headers: { 'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}` } }
+    );
+    if (!searchRes.ok) return {};
+    const searchData = await searchRes.json();
+    const person = searchData.results?.[0];
+    if (!person) return {};
+
+    // Get traffic_source from person properties or their events
+    const props = person.properties || {};
+    if (props.traffic_source) {
+      return {
+        traffic_source: props.traffic_source,
+        funnel_type: props.funnel_type || null,
+        nicho: props.nicho || null,
+      };
+    }
+
+    // Fallback: query their form_submitted event
+    const distinctId = person.distinct_ids?.[0];
+    if (!distinctId) return {};
+
+    const query = `SELECT properties.traffic_source, properties.funnel_type, properties.nicho
+      FROM events WHERE event = 'form_submitted'
+      AND distinct_id = '${distinctId.replace(/'/g, "''")}'
+      ORDER BY timestamp DESC LIMIT 1`;
+
+    const qRes = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
+    });
+
+    if (!qRes.ok) return {};
+    const qData = await qRes.json();
+    const row = qData.results?.[0];
+    if (!row) return {};
+
+    return {
+      traffic_source: row[0] || null,
+      funnel_type: row[1] || null,
+      nicho: row[2] || null,
+    };
+  } catch (e) {
+    console.log('[PostHog] Lead source lookup failed:', e.message);
+    return {};
+  }
+}
 
 const STAGES = {
   'fbed92b1-5e91-4b86-820f-44b9f66f8b73': 'new_lead',
@@ -93,13 +155,20 @@ exports.handler = async (event) => {
     const email = contact.email || '';
     const distinctId = email || opp.id;
 
-    // Try to get attribution from Firestore lead
+    // Get attribution: try PostHog first (person properties from quiz), then Firebase fallback
     let leadSource = {};
     if (email) {
       try {
-        leadSource = await getLeadSourceByEmail(email);
+        leadSource = await getLeadSourceFromPostHog(email);
       } catch (e) {
-        // Firestore may not be configured, continue without attribution
+        // PostHog lookup failed, try Firebase
+      }
+      if (!leadSource.traffic_source) {
+        try {
+          leadSource = await getLeadSourceByEmail(email);
+        } catch (e) {
+          // Firebase also failed, continue without attribution
+        }
       }
     }
 
