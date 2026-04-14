@@ -22,43 +22,48 @@ const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
 async function getLeadSourceFromPostHog(email) {
   if (!POSTHOG_PERSONAL_KEY || !email) return {};
 
-  const safeEmail = email.replace(/'/g, "''");
-  const query = `
-    SELECT properties.traffic_source, properties.funnel_type, properties.nicho
-    FROM events
-    WHERE event = 'form_submitted'
-      AND person.properties.email = '${safeEmail}'
-    ORDER BY timestamp DESC
-    LIMIT 1
-  `;
+  try {
+    const safeEmail = email.replace(/'/g, "''");
+    const query = `
+      SELECT properties.traffic_source, properties.funnel_type, properties.nicho
+      FROM events
+      WHERE event IN ('quiz_completed', 'short_quiz_completed')
+        AND person.properties.email = '${safeEmail}'
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `;
 
-  const res = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
-  });
+    const res = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
+    });
 
-  if (!res.ok) {
-    console.log(`[PostHog] Attribution query failed (${res.status}) for ${email}`);
+    if (!res.ok) {
+      console.log(`[PostHog] Attribution query failed (${res.status}) for ${email}`);
+      return {};
+    }
+
+    const data = await res.json();
+    const row = data.results?.[0];
+    if (!row) {
+      console.log(`[PostHog] No quiz event found for ${email}`);
+      return {};
+    }
+
+    console.log(`[PostHog] Attribution for ${email}: ${row[0]}, ${row[1]}, ${row[2]}`);
+    return {
+      traffic_source: row[0] || null,
+      funnel_type: row[1] || null,
+      nicho: row[2] || null,
+    };
+  } catch (e) {
+    console.log(`[PostHog] Attribution lookup error for ${email}:`, e.message);
     return {};
   }
-
-  const data = await res.json();
-  const row = data.results?.[0];
-  if (!row) {
-    console.log(`[PostHog] No form_submitted found for ${email}`);
-    return {};
-  }
-
-  console.log(`[PostHog] Attribution for ${email}: ${row[0]}, ${row[1]}, ${row[2]}`);
-  return {
-    traffic_source: row[0] || null,
-    funnel_type: row[1] || null,
-    nicho: row[2] || null,
-  };
 }
 
 const STAGES = {
