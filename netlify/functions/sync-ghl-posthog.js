@@ -18,64 +18,47 @@ const POSTHOG_PROJECT_ID = '137870';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
 
-// Lookup lead attribution from PostHog by email
-// Searches for person by email, then gets traffic_source from their events
+// Lookup lead attribution from PostHog by email using HogQL
 async function getLeadSourceFromPostHog(email) {
   if (!POSTHOG_PERSONAL_KEY || !email) return {};
 
-  try {
-    // Search for person by email in PostHog
-    const searchRes = await fetch(
-      `${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/persons/?search=${encodeURIComponent(email)}&limit=1`,
-      { headers: { 'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}` } }
-    );
-    if (!searchRes.ok) return {};
-    const searchData = await searchRes.json();
-    const person = searchData.results?.[0];
-    if (!person) return {};
+  const safeEmail = email.replace(/'/g, "''");
+  const query = `
+    SELECT properties.traffic_source, properties.funnel_type, properties.nicho
+    FROM events
+    WHERE event = 'form_submitted'
+      AND person.properties.email = '${safeEmail}'
+    ORDER BY timestamp DESC
+    LIMIT 1
+  `;
 
-    // Get traffic_source from person properties or their events
-    const props = person.properties || {};
-    if (props.traffic_source) {
-      return {
-        traffic_source: props.traffic_source,
-        funnel_type: props.funnel_type || null,
-        nicho: props.nicho || null,
-      };
-    }
+  const res = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
+  });
 
-    // Fallback: query their form_submitted event
-    const distinctId = person.distinct_ids?.[0];
-    if (!distinctId) return {};
-
-    const query = `SELECT properties.traffic_source, properties.funnel_type, properties.nicho
-      FROM events WHERE event = 'form_submitted'
-      AND distinct_id = '${distinctId.replace(/'/g, "''")}'
-      ORDER BY timestamp DESC LIMIT 1`;
-
-    const qRes = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
-    });
-
-    if (!qRes.ok) return {};
-    const qData = await qRes.json();
-    const row = qData.results?.[0];
-    if (!row) return {};
-
-    return {
-      traffic_source: row[0] || null,
-      funnel_type: row[1] || null,
-      nicho: row[2] || null,
-    };
-  } catch (e) {
-    console.log('[PostHog] Lead source lookup failed:', e.message);
+  if (!res.ok) {
+    console.log(`[PostHog] Attribution query failed (${res.status}) for ${email}`);
     return {};
   }
+
+  const data = await res.json();
+  const row = data.results?.[0];
+  if (!row) {
+    console.log(`[PostHog] No form_submitted found for ${email}`);
+    return {};
+  }
+
+  console.log(`[PostHog] Attribution for ${email}: ${row[0]}, ${row[1]}, ${row[2]}`);
+  return {
+    traffic_source: row[0] || null,
+    funnel_type: row[1] || null,
+    nicho: row[2] || null,
+  };
 }
 
 const STAGES = {
