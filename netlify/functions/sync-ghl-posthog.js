@@ -224,11 +224,31 @@ exports.handler = async (event) => {
   for (const e of events) {
     summary[e.event] = (summary[e.event] || 0) + 1;
   }
-  console.log('[GHL→PostHog Sync] Summary:', JSON.stringify(summary));
+
+  // Count leads by stage for dashboard KPI
+  const stageCounts = {};
+  for (const opp of opps) {
+    const stage = STAGES[opp.pipelineStageId] || 'unknown';
+    stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+  }
+
+  // Send pipeline summary as a single event (dashboard reads this for lead count)
+  await sendBatch([{
+    event: 'ghl_pipeline_summary',
+    distinct_id: 'ghl-sync',
+    timestamp: new Date().toISOString(),
+    properties: {
+      total_contacts: opps.length,
+      ...stageCounts,
+      $insert_id: `pipeline_summary_${new Date().toISOString().split('T')[0]}`,
+    },
+  }]);
+
+  console.log('[GHL→PostHog Sync] Summary:', JSON.stringify(summary), 'Contacts:', opps.length);
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ synced: events.length, summary, opportunities: opps.length }),
+    body: JSON.stringify({ synced: events.length, summary, opportunities: opps.length, stages: stageCounts }),
   };
 
   } catch (err) {

@@ -75,7 +75,7 @@ exports.handler = async (event) => {
       // KPIs
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.session_id) FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT toIntOrZero(toString(max(properties.total_contacts))) FROM events WHERE event = 'ghl_pipeline_summary' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
