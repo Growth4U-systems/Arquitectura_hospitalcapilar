@@ -144,7 +144,7 @@ exports.handler = async (event) => {
             properties.$pathname LIKE '%/form/%', 'formulario_directo',
             'quiz_largo'
           ) as funnel,
-          countIf(event = '$pageview') as visits,
+          count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
           countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads
         FROM events
         WHERE event IN ('$pageview', 'form_submitted', 'direct_form_submitted')
