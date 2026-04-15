@@ -26,6 +26,7 @@ export default function AgendarPage() {
       phone: sp.get('phone') || '',
       clinica: sp.get('clinica') || '',
       contactId: sp.get('contactId') || '',
+      tipo: sp.get('tipo') || 'diagnostico',  // 'diagnostico' | 'asesoria'
     };
   }, []);
 
@@ -35,18 +36,19 @@ export default function AgendarPage() {
 
   const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
 
-  // A/B test bono pricing — 50/50 split, persisted in sessionStorage
+  // A/B test bono pricing — 50/50 split, deterministic per contactId
   const STRIPE_LINKS = {
     195: 'https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04',
     125: 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06',
   };
-  const [bonoPrice] = useState(() => {
-    const stored = sessionStorage.getItem('hc_bono_price');
-    if (stored === '125' || stored === '195') return Number(stored);
-    const price = Math.random() < 0.5 ? 125 : 195;
-    sessionStorage.setItem('hc_bono_price', String(price));
-    return price;
-  });
+  const bonoPrice = useMemo(() => {
+    const id = params.contactId;
+    if (!id) return 125;
+    // Simple hash: sum char codes, even → 125, odd → 195
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash += id.charCodeAt(i);
+    return hash % 2 === 0 ? 125 : 195;
+  }, [params.contactId]);
 
   // Check if contact already has an appointment + bono status
   useEffect(() => {
@@ -62,11 +64,13 @@ export default function AgendarPage() {
     })
       .then(res => res.json())
       .then(data => {
-        // Check bono gate: woman ECP who hasn't paid
-        const ecp = (data.contactEcp || '').toLowerCase();
-        const isWomanEcp = WOMEN_ECPS.some(e => ecp.includes(e));
-        if (isWomanEcp && !data.bonoPaid) {
-          setBonoRequired(true);
+        // Check bono gate: woman ECP who hasn't paid (skip for asesoria flow)
+        if (params.tipo !== 'asesoria') {
+          const ecp = (data.contactEcp || '').toLowerCase();
+          const isWomanEcp = WOMEN_ECPS.some(e => ecp.includes(e));
+          if (isWomanEcp && !data.bonoPaid) {
+            setBonoRequired(true);
+          }
         }
 
         if (data.hasAppointment) {
