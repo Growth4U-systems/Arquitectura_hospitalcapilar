@@ -1,70 +1,14 @@
-const { sendAlert } = require('./lib/alert');
-
-// Lazy-load Firebase to avoid crash if FIREBASE_SERVICE_ACCOUNT is missing
-let getLeadSourceByEmail;
-try {
-  getLeadSourceByEmail = require('./lib/firebase-admin').getLeadSourceByEmail;
-} catch (e) {
-  console.log('[GHL Sync] Firebase admin not available, continuing without attribution');
-  getLeadSourceByEmail = async () => ({});
+// Alert: inline minimal version to avoid dependency chain crashes
+async function sendAlert(source, message, details = {}) {
+  console.error(`[ALERT][${source}] ${message}`, JSON.stringify(details));
 }
 
 const GHL_KEY = process.env.VITE_GHL_API_KEY;
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 const POSTHOG_KEY = process.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
-const POSTHOG_PERSONAL_KEY = process.env.POSTHOG_PERSONAL_API_KEY;
-const POSTHOG_PROJECT_ID = '137870';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
-
-// Lookup lead attribution from PostHog by email using HogQL
-async function getLeadSourceFromPostHog(email) {
-  if (!POSTHOG_PERSONAL_KEY || !email) return {};
-
-  try {
-    const safeEmail = email.replace(/'/g, "''");
-    const query = `
-      SELECT properties.traffic_source, properties.funnel_type, properties.nicho
-      FROM events
-      WHERE event IN ('quiz_completed', 'short_quiz_completed')
-        AND person.properties.email = '${safeEmail}'
-      ORDER BY timestamp DESC
-      LIMIT 1
-    `;
-
-    const res = await fetch(`${POSTHOG_HOST}/api/projects/${POSTHOG_PROJECT_ID}/query/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${POSTHOG_PERSONAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
-    });
-
-    if (!res.ok) {
-      console.log(`[PostHog] Attribution query failed (${res.status}) for ${email}`);
-      return {};
-    }
-
-    const data = await res.json();
-    const row = data.results?.[0];
-    if (!row) {
-      console.log(`[PostHog] No quiz event found for ${email}`);
-      return {};
-    }
-
-    console.log(`[PostHog] Attribution for ${email}: ${row[0]}, ${row[1]}, ${row[2]}`);
-    return {
-      traffic_source: row[0] || null,
-      funnel_type: row[1] || null,
-      nicho: row[2] || null,
-    };
-  } catch (e) {
-    console.log(`[PostHog] Attribution lookup error for ${email}:`, e.message);
-    return {};
-  }
-}
 
 const STAGES = {
   'fbed92b1-5e91-4b86-820f-44b9f66f8b73': 'new_lead',
