@@ -135,17 +135,21 @@ exports.handler = async (event) => {
         GROUP BY properties.traffic_source
       `),
 
-      // By funnel type — visits (started), leads (completed/submitted), bookings
+      // By funnel type — visits (pageviews by path), leads, bookings
       hogqlQuery(apiKey, `
         SELECT
-          properties.funnel_type as funnel,
-          countIf(event IN ('quiz_started', 'short_quiz_started', 'direct_form_submitted')) as visits,
+          multiIf(
+            properties.$pathname LIKE '%/rapido/%', 'quiz_corto',
+            properties.$pathname LIKE '%/form/%', 'formulario_directo',
+            'quiz_largo'
+          ) as funnel,
+          countIf(event = '$pageview') as visits,
           countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads,
-          countIf(event IN ('appointment_booked') AND toString(properties.$insert_id) LIKE '%_v4') as booked
+          countIf(event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4') as booked
         FROM events
-        WHERE event IN ('quiz_started', 'short_quiz_started', 'form_submitted', 'direct_form_submitted', 'appointment_booked')
+        WHERE (event = '$pageview' OR event IN ('form_submitted', 'direct_form_submitted', 'appointment_booked'))
           ${dateFilter}
-        GROUP BY properties.funnel_type
+        GROUP BY funnel
         ORDER BY visits DESC
       `),
 
