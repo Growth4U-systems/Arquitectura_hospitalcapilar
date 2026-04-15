@@ -3,7 +3,7 @@
 
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
 const PROJECT_ID = '137870';
-const LAUNCH_DATE = '2026-03-30';
+const LAUNCH_DATE = '2026-04-09';
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
