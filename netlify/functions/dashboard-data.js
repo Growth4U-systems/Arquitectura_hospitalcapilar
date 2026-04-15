@@ -103,7 +103,7 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = '$pageview' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'form_submitted' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
       // Bookings: filter _v3 to avoid duplicates from old sync versions
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
@@ -115,7 +115,7 @@ exports.handler = async (event) => {
           properties.traffic_source as source,
           count() as leads
         FROM events
-        WHERE event = 'form_submitted'
+        WHERE event IN ('form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY properties.traffic_source
         ORDER BY leads DESC
@@ -173,7 +173,7 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `
         SELECT toDate(timestamp) as day, count() as cnt
         FROM events
-        WHERE event = 'form_submitted'
+        WHERE event IN ('form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY day
         ORDER BY day ASC
@@ -183,7 +183,7 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `
         SELECT toDate(timestamp) as day, properties.traffic_source as source, count() as cnt
         FROM events
-        WHERE event = 'form_submitted'
+        WHERE event IN ('form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY day, source
         ORDER BY day ASC
