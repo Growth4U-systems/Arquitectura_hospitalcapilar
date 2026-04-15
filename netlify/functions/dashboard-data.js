@@ -97,16 +97,17 @@ exports.handler = async (event) => {
       noShowBySource,
       adSpendBySource,
       adSpendDaily,
+      quizDropoff,
     ] = await Promise.all([
-      // KPIs — each uses the right dedup strategy
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
-      // Leads = form_submitted (fires when contact info is submitted)
+      // KPIs — all use count() for funnel consistency
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = '$pageview' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'form_submitted' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
+      // Bookings: filter _v3 to avoid duplicates from old sync versions
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
 
       // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
@@ -120,15 +121,16 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // Bookings by traffic source (separate query, GHL events only)
+      // Bookings by traffic source (only v3 events)
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
-          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked,
-          count(DISTINCT if(event = 'appointment_attended', properties.$insert_id, NULL)) as attended,
-          count(DISTINCT if(event = 'appointment_no_show', properties.$insert_id, NULL)) as no_show
+          countIf(event = 'appointment_booked') as booked,
+          countIf(event = 'appointment_attended') as attended,
+          countIf(event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
+          AND toString(properties.$insert_id) LIKE '%_v3'
           ${dateFilter}
         GROUP BY properties.traffic_source
       `),
@@ -227,6 +229,19 @@ exports.handler = async (event) => {
         GROUP BY properties.date, properties.source
         ORDER BY spend_date ASC
       `),
+
+      // Quiz drop-off by question (how many unique persons answered each question)
+      hogqlQuery(apiKey, `
+        SELECT
+          toIntOrZero(toString(properties.question_index)) as q_index,
+          toString(properties.question_id) as q_id,
+          count(DISTINCT person_id) as users
+        FROM events
+        WHERE event = 'question_answered'
+          ${dateFilter}
+        GROUP BY q_index, q_id
+        ORDER BY q_index ASC
+      `),
     ]);
 
     // Helper to extract single value
@@ -303,6 +318,11 @@ exports.handler = async (event) => {
         date: row[0],
         source: row[1],
         spend: row[2],
+      })),
+      quiz_dropoff: quizDropoff.map(row => ({
+        question_index: row[0],
+        question_id: row[1],
+        users: row[2],
       })),
     };
 

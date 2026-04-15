@@ -194,6 +194,15 @@
   </div>
 </div>
 
+<!-- QUIZ DROP-OFF -->
+<div class="section-header">Drop-off por pregunta (Quiz Largo)</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>Usuarios por pantalla del quiz</h3><span class="type">Funnel</span></div>
+    <div class="card-body" id="quizDropoffChart"></div>
+  </div>
+</div>
+
 <!-- BY TRAFFIC SOURCE -->
 <div class="section-header">Por fuente de tr&aacute;fico</div>
 <div class="grid">
@@ -475,6 +484,9 @@ function renderDashboard(data) {
 
   // Funnel type
   renderFunnelType(data);
+
+  // Quiz drop-off
+  renderQuizDropoff(data);
 
   // Nicho
   renderNicho(data);
@@ -954,6 +966,40 @@ function renderAdSpendDaily(adDaily) {
     }
     document.getElementById('adSpendDailyDates').innerHTML = labels.map(l => `<span>${l}</span>`).join('');
   }
+}
+
+// ---- QUIZ DROP-OFF ----
+function renderQuizDropoff(data) {
+  const dropoff = data.quiz_dropoff || [];
+  if (dropoff.length === 0) {
+    document.getElementById('quizDropoffChart').innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Sin datos de drop-off</div>';
+    return;
+  }
+
+  // Sort by question_index and take unique indexes
+  const sorted = [...dropoff].sort((a, b) => a.question_index - b.question_index);
+  const max = sorted.length > 0 ? sorted[0].users : 1;
+
+  let html = '<div class="funnel">';
+  for (let i = 0; i < sorted.length; i++) {
+    const s = sorted[i];
+    const widthPct = Math.max((s.users / max) * 100, 3);
+    const label = s.question_id || `Pregunta ${s.question_index}`;
+    const pctOfFirst = (s.users / max * 100).toFixed(1) + '%';
+
+    html += `<div class="funnel-step">
+      <div class="funnel-label" style="width:200px;font-size:12px;" title="${s.question_id}">P${s.question_index}: ${label.substring(0, 25)}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${widthPct}%;background:${i === 0 ? '#2C3E50' : i < sorted.length - 1 ? '#3d8e7e' : '#4CA994'};">${fmt(s.users)}</div></div>
+      <div class="funnel-stats">${pctOfFirst}</div>
+    </div>`;
+    if (i < sorted.length - 1) {
+      const next = sorted[i + 1];
+      const dropPct = s.users > 0 ? (next.users / s.users * 100).toFixed(1) : '0.0';
+      html += `<div class="funnel-arrow" style="margin-left:212px;">&#x25BC; ${dropPct}%</div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('quizDropoffChart').innerHTML = html;
 }
 
 // ---- INIT ----
