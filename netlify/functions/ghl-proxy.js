@@ -133,9 +133,14 @@ exports.handler = async (event) => {
     }
     console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', isDuplicate);
 
+    // Determine tipo_consulta based on ECP: women ECPs → diagnostico (with bono), rest → asesoria
+    const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
+    const isWomanEcp = ecpValue && WOMEN_ECPS.some(e => ecpValue.toLowerCase().includes(e));
+    const tipoConsulta = isWomanEcp ? 'diagnostico' : 'asesoria';
+
     // Build bookingUrl (reused for contact + opportunity)
     const bookingUrl = contactId
-      ? `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}`
+      ? `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}&tipo=${tipoConsulta}`
       : '';
 
     // 1b. Add "new_lead" tag + populate link_agendar on contact

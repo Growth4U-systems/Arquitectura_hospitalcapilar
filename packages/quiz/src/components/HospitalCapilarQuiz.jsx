@@ -1954,6 +1954,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               </div>
               <button
                 onClick={() => {
+                  analytics.trackQuizCompleted(answers);
                   analytics.trackEvent('form_submitted', {
                     has_name: !!answers.nombre,
                     has_email: !!answers.email,

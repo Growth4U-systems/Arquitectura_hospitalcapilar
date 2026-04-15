@@ -8,6 +8,7 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com';
 const SERVICES = {
   primera_consulta_diagnostico: 103385,  // Primera Consulta Médica Diagnóstico (€0)
   lead_fresquito:               103413,  // LEAD FRESQUITO (€0)
+  consulta_asesoria:            103373,  // Consulta de asesoría (ref interna 1063)
 };
 
 // Province IDs (Koibox uses numeric IDs)
@@ -17,29 +18,52 @@ const PROVINCIAS = {
   pontevedra: 718,
 };
 
-// Default employee IDs per clinic
+// ── Flow A: Trichometabolic (diagnóstico médico, con bono para mujeres) ──
 // 30257 = hueco de agenda abierto para campaña quiz online (confirmado por María / Óscar, 2026-03-18)
-const EMPLOYEES = {
-  madrid: 30257,
-  pontevedra: 30257,
-  murcia: 30257,
+const DIAGNOSTICO = {
+  employees: { madrid: [30257], pontevedra: [30257], murcia: [30257] },
+  service: SERVICES.primera_consulta_diagnostico,
+  hours: { madrid: { open: '09:00', close: '16:00' }, pontevedra: { open: '09:00', close: '16:00' }, murcia: { open: '09:00', close: '16:00' } },
+  maxDaily: { madrid: 6, pontevedra: 6, murcia: 6 },
+  titulo: 'Diagnóstico Capilar',
 };
 
-// Working hours per clinic (24h format)
-const WORKING_HOURS = {
-  madrid:     { open: '09:00', close: '16:00' },
-  pontevedra: { open: '09:00', close: '16:00' },
-  murcia:     { open: '09:00', close: '16:00' },
+// ── Flow B: Asesores (consulta de asesoría, sin bono) ──
+// Asesores presenciales Madrid (confirmado por Bryan / HC, 2026-04-15)
+// Sábados: 1 asesor de 10:00 a 14:00 (confirmado por María, 2026-04-15)
+const ASESORIA = {
+  employees: {
+    madrid: [30592, 26954, 4577, 4583], // Alejandra Muñoz, Stefanía Peralta, Sandra Baeza, Alfonso López
+  },
+  service: SERVICES.consulta_asesoria,
+  hours: { madrid: { open: '10:00', close: '20:00' } },         // L-V: bloques 1h, última asesoría 19:00
+  hoursSaturday: { madrid: { open: '10:00', close: '14:00' } },  // Sáb: 1 asesor, 10:00-13:00 (última)
+  maxDaily: { madrid: 40 },  // 4 asesores × 10 slots = generous limit
+  titulo: 'Consulta de Asesoría Capilar',
+  allowSaturday: true,
 };
+
+// Resolve config by tipo_consulta
+function getFlowConfig(tipo) {
+  return tipo === 'asesoria' ? ASESORIA : DIAGNOSTICO;
+}
 
 const SLOT_DURATION = 60; // minutes
 
-// Max confirmed appointments per clinic per day
-const MAX_DAILY_APPOINTMENTS = {
-  madrid: 6,
-  pontevedra: 6,
-  murcia: 6,
-};
+// Koibox API paginates at 50 results max — fetch all pages for a date
+async function fetchAllAppointments(fecha, koiboxHeaders) {
+  const allResults = [];
+  let url = `${KOIBOX_BASE}/agenda/?fecha__gte=${fecha}&fecha__lte=${fecha}&limit=50`;
+  while (url) {
+    const res = await fetch(url, { headers: koiboxHeaders });
+    if (!res.ok) break;
+    const data = await res.json();
+    allResults.push(...(data.results || []));
+    url = data.next || null;
+    if (allResults.length >= 500) break; // safety cap
+  }
+  return allResults;
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -240,42 +264,44 @@ async function syncLead(body, koiboxHeaders, corsHeaders) {
  * Queries existing appointments and calculates free slots.
  */
 async function getAvailability(body, koiboxHeaders, corsHeaders) {
-  const { fecha, clinica } = body;
+  const { fecha, clinica, tipo_consulta } = body;
 
   if (!fecha || !clinica) {
     return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'fecha and clinica required' }) };
   }
 
-  const hours = WORKING_HOURS[clinica] || WORKING_HOURS.madrid;
+  const flow = getFlowConfig(tipo_consulta);
+  const employeeIds = flow.employees[clinica] || flow.employees.madrid;
+  const maxDaily = (flow.maxDaily[clinica] || 6);
 
-  // Get all appointments for the given date
-  const res = await fetch(
-    `${KOIBOX_BASE}/agenda/?fecha__gte=${fecha}&fecha__lte=${fecha}&limit=50`,
-    { headers: koiboxHeaders }
-  );
+  // Determine hours based on day of week (Saturday has different hours for asesoria)
+  const dayOfWeek = new Date(fecha + 'T00:00:00').getDay(); // 0=Sun, 6=Sat
+  const isSaturday = dayOfWeek === 6;
+  const hours = isSaturday && flow.hoursSaturday
+    ? (flow.hoursSaturday[clinica] || flow.hoursSaturday.madrid || flow.hours[clinica] || flow.hours.madrid)
+    : (flow.hours[clinica] || flow.hours.madrid);
 
-  if (!res.ok) {
-    console.log('[Koibox] Availability fetch failed:', res.status);
-    return { statusCode: res.status, headers: corsHeaders, body: JSON.stringify({ error: 'Failed to fetch appointments' }) };
-  }
+  // Get all appointments for the given date (paginated — Koibox caps at 50/page)
+  const allAppointments = await fetchAllAppointments(fecha, koiboxHeaders);
 
-  const data = await res.json();
-  const allAppointments = data.results || [];
-
-  // Filter to only this clinic's employee appointments, excluding cancelled (estado=5)
-  const employeeId = EMPLOYEES[clinica] || EMPLOYEES.madrid;
-  const appointments = allAppointments.filter(a => a.user === employeeId && a.estado !== 5);
+  // Filter to only this flow's employee appointments, excluding cancelled (estado=5)
+  // Koibox returns user as object {value: id} or plain number
+  const getUserId = (a) => typeof a.user === 'object' ? a.user.value : a.user;
+  const getEstado = (a) => typeof a.estado === 'object' ? a.estado.value : a.estado;
+  const appointments = allAppointments.filter(a => employeeIds.includes(getUserId(a)) && getEstado(a) !== 5);
 
   // Check daily appointment limit
-  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 6;
   const confirmedCount = appointments.length;
   const dailyLimitReached = confirmedCount >= maxDaily;
 
-  // Build set of occupied time ranges
-  const occupied = appointments.map(a => ({
-    start: a.hora_inicio,
-    end: a.hora_fin,
-  }));
+  // For multiple employees (asesoria): a slot is available if ANY employee is free
+  // For single employee (diagnostico): same logic, just one employee
+  const occupiedByEmployee = {};
+  for (const empId of employeeIds) {
+    occupiedByEmployee[empId] = appointments
+      .filter(a => getUserId(a) === empId)
+      .map(a => ({ start: a.hora_inicio, end: a.hora_fin }));
+  }
 
   // Generate all possible slots
   const slots = [];
@@ -290,15 +316,16 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
     const endMm = endM % 60;
     const endStr = `${String(endH).padStart(2, '0')}:${String(endMm).padStart(2, '0')}`;
 
-    // Check if this slot overlaps with any existing appointment
-    const isOccupied = occupied.some(occ => {
-      return startStr < occ.end && endStr > occ.start;
+    // A slot is available if at least one employee has no overlap at this time
+    const hasAvailableEmployee = employeeIds.some(empId => {
+      const occ = occupiedByEmployee[empId] || [];
+      return !occ.some(o => startStr < o.end && endStr > o.start);
     });
 
     slots.push({
       hora_inicio: startStr,
       hora_fin: endStr,
-      disponible: !isOccupied && !dailyLimitReached,
+      disponible: hasAvailableEmployee && !dailyLimitReached,
     });
 
     // Advance to next slot
@@ -307,7 +334,7 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
   }
 
   if (dailyLimitReached) {
-    console.log(`[Koibox] Daily limit reached for ${clinica} on ${fecha}: ${confirmedCount}/${maxDaily}`);
+    console.log(`[Koibox] Daily limit reached for ${clinica}/${tipo_consulta || 'diagnostico'} on ${fecha}: ${confirmedCount}/${maxDaily}`);
   }
 
   return {
@@ -316,6 +343,7 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
     body: JSON.stringify({
       fecha,
       clinica,
+      tipo_consulta: tipo_consulta || 'diagnostico',
       horario: hours,
       total_slots: slots.length,
       disponibles: slots.filter(s => s.disponible).length,
@@ -331,13 +359,14 @@ async function getAvailability(body, koiboxHeaders, corsHeaders) {
  * Create an appointment in Koibox.
  */
 async function createAppointment(body, koiboxHeaders, corsHeaders) {
-  const { nombre, email, movil, fecha, hora_inicio, hora_fin, clinica, notas, ghl_contact_id } = body;
+  const { nombre, email, movil, fecha, hora_inicio, hora_fin, clinica, notas, ghl_contact_id, tipo_consulta } = body;
 
   if (!fecha || !hora_inicio || !hora_fin) {
     return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'fecha, hora_inicio, hora_fin required' }) };
   }
 
-  const employeeId = EMPLOYEES[clinica] || EMPLOYEES.madrid;
+  const flow = getFlowConfig(tipo_consulta);
+  const employeeIds = flow.employees[clinica] || flow.employees.madrid;
 
   // 0. Check GHL for payment status + ECP (to set notes and tags)
   let bonoPaid = false;
@@ -385,10 +414,11 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     }
   }
 
-  // 0b. Block women ECPs who haven't paid the bono
+  // 0b. Block women ECPs who haven't paid the bono (only for diagnostico flow)
+  const isAsesoria = tipo_consulta === 'asesoria';
   const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
   const isWomanEcp = contactEcp && WOMEN_ECPS.some(e => contactEcp.toLowerCase().includes(e));
-  if (isWomanEcp && !bonoPaid) {
+  if (!isAsesoria && isWomanEcp && !bonoPaid) {
     console.log('[Koibox] BLOCKED — Woman ECP without bono payment:', contactEcp);
     return {
       statusCode: 403,
@@ -401,7 +431,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   let clientId = body.koibox_client_id;
   if (!clientId && (email || movil)) {
     const syncResult = await syncLead(
-      { nombre, email, movil, ciudad: clinica, notas: notas || 'Bono Diagnóstico 195€', sexo: body.sexo },
+      { nombre, email, movil, ciudad: clinica, notas: notas || (isAsesoria ? 'Consulta Asesoría' : 'Bono Diagnóstico 195€'), sexo: body.sexo },
       koiboxHeaders,
       corsHeaders,
     );
@@ -411,40 +441,54 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     }
   }
 
-  // 2. Check daily appointment limit before creating
-  const maxDaily = MAX_DAILY_APPOINTMENTS[clinica] || 6;
+  // 2. Check daily appointment limit + find available employee
+  const maxDaily = (flow.maxDaily[clinica] || 6);
+  let assignedEmployeeId = employeeIds[0]; // default to first
+  const getUserId = (a) => typeof a.user === 'object' ? a.user.value : a.user;
+  const getEstado = (a) => typeof a.estado === 'object' ? a.estado.value : a.estado;
   try {
-    const checkRes = await fetch(
-      `${KOIBOX_BASE}/agenda/?fecha__gte=${fecha}&fecha__lte=${fecha}&limit=50`,
-      { headers: koiboxHeaders }
-    );
-    if (checkRes.ok) {
-      const checkData = await checkRes.json();
-      const confirmedCount = (checkData.results || []).filter(a => a.user === employeeId && a.estado !== 5).length;
-      if (confirmedCount >= maxDaily) {
-        console.log(`[Koibox] Daily limit blocked creation for ${clinica} on ${fecha}: ${confirmedCount}/${maxDaily}`);
-        return {
-          statusCode: 409,
-          headers: corsHeaders,
-          body: JSON.stringify({ error: 'daily_limit_reached', message: `Límite diario alcanzado (${maxDaily} citas). Por favor selecciona otro día.`, confirmed: confirmedCount, max: maxDaily }),
-        };
+    const allAppointments = await fetchAllAppointments(fecha, koiboxHeaders);
+    const flowAppointments = allAppointments.filter(a => employeeIds.includes(getUserId(a)) && getEstado(a) !== 5);
+    const confirmedCount = flowAppointments.length;
+    if (confirmedCount >= maxDaily) {
+      console.log(`[Koibox] Daily limit blocked creation for ${clinica}/${tipo_consulta || 'diagnostico'} on ${fecha}: ${confirmedCount}/${maxDaily}`);
+      return {
+        statusCode: 409,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'daily_limit_reached', message: `Límite diario alcanzado (${maxDaily} citas). Por favor selecciona otro día.`, confirmed: confirmedCount, max: maxDaily }),
+      };
+    }
+
+    // For multiple employees: assign to first one free at this time slot
+    if (employeeIds.length > 1) {
+      for (const empId of employeeIds) {
+        const empAppts = flowAppointments.filter(a => getUserId(a) === empId);
+        const hasOverlap = empAppts.some(a => hora_inicio < a.hora_fin && hora_fin > a.hora_inicio);
+        if (!hasOverlap) {
+          assignedEmployeeId = empId;
+          break;
+        }
       }
+      console.log(`[Koibox] Assigned employee ${assignedEmployeeId} for ${hora_inicio} on ${fecha}`);
     }
   } catch (err) {
     console.log('[Koibox] Daily limit check failed, proceeding:', err.message);
   }
 
   // 3. Create the appointment
+  const appointmentTitle = `${flow.titulo} - ${nombre || 'Paciente'}`;
   const appointmentPayload = {
-    titulo: `Diagnóstico Capilar - ${nombre || 'Paciente'}`,
+    titulo: appointmentTitle,
     fecha,
     hora_inicio,
     hora_fin,
-    user: employeeId,
-    servicios: [SERVICES.primera_consulta_diagnostico],
-    notas: notas || (bonoPaid
-      ? 'Reserva desde quiz online — ✅ BONO DIAGNÓSTICO PAGADO'
-      : 'Reserva desde quiz online — Diagnóstico Capilar'),
+    user: assignedEmployeeId,
+    servicios: [flow.service],
+    notas: notas || (isAsesoria
+      ? 'Reserva desde quiz online — Consulta de Asesoría'
+      : bonoPaid
+        ? 'Reserva desde quiz online — ✅ BONO DIAGNÓSTICO PAGADO'
+        : 'Reserva desde quiz online — Diagnóstico Capilar'),
   };
   if (clientId) {
     appointmentPayload.cliente = clientId;

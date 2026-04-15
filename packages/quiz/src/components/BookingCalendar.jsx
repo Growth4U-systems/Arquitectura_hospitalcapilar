@@ -12,7 +12,7 @@ const CLINICS = {
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBooked, onBack, rescheduleFrom }) => {
+const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBooked, onBack, rescheduleFrom, tipoConsulta }) => {
   const clinicKeys = Object.keys(CLINICS);
   const [selectedClinic, setSelectedClinic] = useState(ubicacion || (clinicKeys.length === 1 ? clinicKeys[0] : null));
   const [selectedDate, setSelectedDate] = useState(null);
@@ -47,6 +47,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
             action: 'get_availability',
             fecha: selectedDate,
             clinica: selectedClinic,
+            tipo_consulta: tipoConsulta || 'diagnostico',
           }),
           signal: controller.signal,
         }, { timeoutMs: 12000, retries: 1, label: 'Koibox-Slots' });
@@ -68,7 +69,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
 
     fetchSlots();
     return () => controller.abort();
-  }, [selectedDate, selectedClinic]);
+  }, [selectedDate, selectedClinic, tipoConsulta]);
 
   const handleBook = async () => {
     if (!selectedSlot || !selectedDate || !selectedClinic) return;
@@ -85,6 +86,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
         hora_inicio: selectedSlot.hora_inicio,
         hora_fin: selectedSlot.hora_fin,
         clinica: selectedClinic,
+        tipo_consulta: tipoConsulta || 'diagnostico',
         ...(contactId && { ghl_contact_id: contactId }),
         ...(rescheduleFrom && { koibox_id: rescheduleFrom }),
       };
@@ -138,7 +140,8 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     d.setHours(0, 0, 0, 0);
     if (d < today) return false;
     if (d > maxDate) return false;
-    if (d.getDay() === 0 || d.getDay() === 6) return false; // Sunday & Saturday
+    if (d.getDay() === 0) return false; // Sunday always blocked
+    if (d.getDay() === 6 && tipoConsulta !== 'asesoria') return false; // Saturday only for asesoria
     return true;
   };
 
@@ -184,7 +187,9 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
         </div>
 
         <p className="text-xs text-gray-400 mt-6">
-          Diagnóstico Capilar Completo · Tricoscopía + Analítica + Valoración 30 min
+          {tipoConsulta === 'asesoria'
+            ? 'Asesoría Capilar · Consulta personalizada 60 min'
+            : 'Diagnóstico Capilar Completo · Tricoscopía + Analítica + Valoración 30 min'}
         </p>
       </div>
     );
@@ -195,7 +200,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     return (
       <div>
         <h3 className="font-bold text-gray-900 mb-1">Elige tu clínica</h3>
-        <p className="text-sm text-gray-500 mb-4">Selecciona dónde quieres tu diagnóstico presencial.</p>
+        <p className="text-sm text-gray-500 mb-4">Selecciona dónde quieres tu {tipoConsulta === 'asesoria' ? 'asesoría' : 'diagnóstico'} presencial.</p>
         <div className="space-y-2">
           {Object.entries(CLINICS).map(([key, clinic]) => (
             <button

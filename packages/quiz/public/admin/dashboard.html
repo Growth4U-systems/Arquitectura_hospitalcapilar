@@ -976,28 +976,37 @@ function renderQuizDropoff(data) {
     return;
   }
 
-  // Sort by question_index and take unique indexes
-  const sorted = [...dropoff].sort((a, b) => a.question_index - b.question_index);
-  const max = sorted.length > 0 ? sorted[0].users : 1;
+  // Merge by question_id (same question may appear at different indexes in largo vs corto)
+  const byId = {};
+  dropoff.forEach(r => {
+    const id = r.question_id;
+    if (!byId[id]) byId[id] = { id, users: 0, minIndex: r.question_index };
+    byId[id].users += r.users;
+    if (r.question_index < byId[id].minIndex) byId[id].minIndex = r.question_index;
+  });
 
-  let html = '<div class="funnel">';
-  for (let i = 0; i < sorted.length; i++) {
-    const s = sorted[i];
-    const widthPct = Math.max((s.users / max) * 100, 3);
-    const label = s.question_id || `Pregunta ${s.question_index}`;
-    const pctOfFirst = (s.users / max * 100).toFixed(1) + '%';
+  // Sort by the earliest index this question appears at
+  const steps = Object.values(byId).sort((a, b) => a.minIndex - b.minIndex);
+  const first = steps[0]?.users || 1;
 
-    html += `<div class="funnel-step">
-      <div class="funnel-label" style="width:200px;font-size:12px;" title="${s.question_id}">P${s.question_index}: ${label.substring(0, 25)}</div>
-      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${widthPct}%;background:${i === 0 ? '#2C3E50' : i < sorted.length - 1 ? '#3d8e7e' : '#4CA994'};">${fmt(s.users)}</div></div>
-      <div class="funnel-stats">${pctOfFirst}</div>
+  // Compact horizontal bar funnel
+  let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
+  steps.forEach((s, i) => {
+    const retention = (s.users / first * 100);
+    const widthPct = Math.max(retention, 4);
+    const prevUsers = i > 0 ? steps[i - 1].users : first;
+    const dropPct = prevUsers > 0 ? ((prevUsers - s.users) / prevUsers * 100).toFixed(0) : '0';
+    const barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
+    html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+      <div style="width:120px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.id}">${s.id}</div>
+      <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;position:relative;">
+        <div style="width:${widthPct}%;height:100%;background:${barColor};border-radius:3px;display:flex;align-items:center;padding-left:6px;">
+          <span style="font-size:10px;color:#fff;font-weight:600;">${s.users}</span>
+        </div>
+      </div>
+      <div style="width:60px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${i > 0 && dropPct > 0 ? ' <span style=\"color:#f87171;\">-' + dropPct + '%</span>' : ''}</div>
     </div>`;
-    if (i < sorted.length - 1) {
-      const next = sorted[i + 1];
-      const dropPct = s.users > 0 ? (next.users / s.users * 100).toFixed(1) : '0.0';
-      html += `<div class="funnel-arrow" style="margin-left:212px;">&#x25BC; ${dropPct}%</div>`;
-    }
-  }
+  });
   html += '</div>';
   document.getElementById('quizDropoffChart').innerHTML = html;
 }
