@@ -230,7 +230,7 @@ exports.handler = async (event) => {
         ORDER BY spend_date ASC
       `),
 
-      // Quiz drop-off by question (how many unique persons answered each question)
+      // Quiz drop-off by question (quiz largo only)
       hogqlQuery(apiKey, `
         SELECT
           toIntOrZero(toString(properties.question_index)) as q_index,
@@ -238,6 +238,7 @@ exports.handler = async (event) => {
           count(DISTINCT person_id) as users
         FROM events
         WHERE event = 'question_answered'
+          AND properties.funnel_type = 'quiz_largo'
           ${dateFilter}
         GROUP BY q_index, q_id
         ORDER BY q_index ASC
