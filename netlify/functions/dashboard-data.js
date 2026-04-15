@@ -48,69 +48,106 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Missing POSTHOG_PERSONAL_API_KEY' }) };
   }
 
+  // Support custom date range: ?start=2026-04-01&end=2026-04-14
+  // Or preset: ?days=30
   const days = parseInt(params.days) || 30;
+  const customStart = params.start; // YYYY-MM-DD
+  const customEnd = params.end;     // YYYY-MM-DD
 
   try {
-    // Use the later of LAUNCH_DATE or (now - days) as the start boundary
-    const dateFilter = `AND timestamp >= greatest(toDateTime('${LAUNCH_DATE}'), now() - interval ${days} day)`;
+    let dateFilter;
+    let effectiveStart, effectiveEnd;
+
+    if (customStart && customEnd) {
+      // Custom date range
+      effectiveStart = customStart;
+      effectiveEnd = customEnd;
+      dateFilter = `AND timestamp >= toDateTime('${customStart}') AND timestamp < toDateTime('${customEnd}') + interval 1 day`;
+    } else {
+      // Preset days, bounded by launch date
+      effectiveEnd = new Date().toISOString().split('T')[0];
+      const daysAgo = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
+      effectiveStart = daysAgo > LAUNCH_DATE ? daysAgo : LAUNCH_DATE;
+      dateFilter = `AND timestamp >= greatest(toDateTime('${LAUNCH_DATE}'), now() - interval ${days} day)`;
+    }
+
+    // Ad spend uses properties.date (the actual spend date) instead of event timestamp
+    let adDateFilter;
+    if (customStart && customEnd) {
+      adDateFilter = `AND properties.date >= '${customStart}' AND properties.date <= '${customEnd}'`;
+    } else {
+      adDateFilter = `AND properties.date >= '${effectiveStart}'`;
+    }
 
     const [
       kpiPageviews,
       kpiStarted,
       kpiCompleted,
+      kpiLeads,
       kpiBooked,
       kpiAttended,
       kpiNoShow,
-      byTrafficSource,
+      leadsBySource,
+      bookingsBySource,
       byFunnelType,
       byNicho,
       byEcp,
       dailyLeads,
       dailyLeadsBySource,
-      attendedBySource,
       noShowBySource,
       adSpendBySource,
       adSpendDaily,
     ] = await Promise.all([
-      // KPIs
+      // KPIs — each uses the right dedup strategy
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT toIntOrZero(toString(max(properties.total_contacts))) FROM events WHERE event = 'ghl_pipeline_summary' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
+      // Leads = form_submitted (fires when contact info is submitted)
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'form_submitted' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_booked' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_attended' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT properties.$insert_id) FROM events WHERE event = 'appointment_no_show' ${dateFilter}`),
 
-      // By traffic source: leads (unique persons), booked/attended/no-show (unique $insert_id from GHL)
+      // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
-          count(DISTINCT properties.session_id) as leads,
-          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked,
-          count(DISTINCT if(event = 'appointment_attended', properties.$insert_id, NULL)) as attended,
-          count(DISTINCT if(event = 'appointment_no_show', properties.$insert_id, NULL)) as no_show
+          count() as leads
         FROM events
-        WHERE event IN ('quiz_completed', 'short_quiz_completed', 'appointment_booked', 'appointment_attended', 'appointment_no_show')
+        WHERE event = 'form_submitted'
           ${dateFilter}
         GROUP BY properties.traffic_source
         ORDER BY leads DESC
       `),
 
-      // By funnel type (unique persons for leads, $insert_id for bookings)
+      // Bookings by traffic source (separate query, GHL events only)
+      hogqlQuery(apiKey, `
+        SELECT
+          properties.traffic_source as source,
+          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked,
+          count(DISTINCT if(event = 'appointment_attended', properties.$insert_id, NULL)) as attended,
+          count(DISTINCT if(event = 'appointment_no_show', properties.$insert_id, NULL)) as no_show
+        FROM events
+        WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
+          ${dateFilter}
+        GROUP BY properties.traffic_source
+      `),
+
+      // By funnel type
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
-          count(DISTINCT properties.session_id) as leads,
-          count(DISTINCT if(event = 'appointment_booked', properties.$insert_id, NULL)) as booked
+          count() as leads
         FROM events
-        WHERE event IN ('quiz_completed', 'short_quiz_completed', 'appointment_booked')
+        WHERE event = 'form_submitted'
           ${dateFilter}
         GROUP BY properties.funnel_type
         ORDER BY leads DESC
       `),
 
-      // By nicho (unique persons)
+      // By nicho
       hogqlQuery(apiKey, `
-        SELECT properties.nicho as nicho, count(DISTINCT person_id) as cnt
+        SELECT properties.nicho as nicho, count() as cnt
         FROM events
         WHERE event IN ('quiz_completed', 'short_quiz_completed')
           ${dateFilter}
@@ -118,9 +155,9 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // ECP classification (unique persons)
+      // ECP classification
       hogqlQuery(apiKey, `
-        SELECT properties.ecp as ecp, count(DISTINCT person_id) as cnt
+        SELECT properties.ecp as ecp, count() as cnt
         FROM events
         WHERE event = 'lead_classified'
           ${dateFilter}
@@ -128,39 +165,30 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // Daily leads (unique persons)
+      // Daily leads
       hogqlQuery(apiKey, `
-        SELECT toDate(timestamp) as day, count(DISTINCT person_id) as cnt
+        SELECT toDate(timestamp) as day, count() as cnt
         FROM events
-        WHERE event IN ('quiz_completed', 'short_quiz_completed')
+        WHERE event = 'form_submitted'
           ${dateFilter}
         GROUP BY day
         ORDER BY day ASC
       `),
 
-      // Daily leads by source (unique persons)
+      // Daily leads by source
       hogqlQuery(apiKey, `
-        SELECT toDate(timestamp) as day, properties.traffic_source as source, count(DISTINCT person_id) as cnt
+        SELECT toDate(timestamp) as day, properties.traffic_source as source, count() as cnt
         FROM events
-        WHERE event IN ('quiz_completed', 'short_quiz_completed')
+        WHERE event = 'form_submitted'
           ${dateFilter}
         GROUP BY day, source
         ORDER BY day ASC
       `),
 
-      // Attended by source
-      hogqlQuery(apiKey, `
-        SELECT properties.traffic_source as source, count(DISTINCT person_id) as cnt
-        FROM events
-        WHERE event = 'appointment_attended'
-          ${dateFilter}
-        GROUP BY source
-        ORDER BY cnt DESC
-      `),
-
       // No-show by source
       hogqlQuery(apiKey, `
-        SELECT properties.traffic_source as source, count(DISTINCT person_id) as cnt
+        SELECT properties.traffic_source as source,
+          count(DISTINCT properties.$insert_id) as cnt
         FROM events
         WHERE event = 'appointment_no_show'
           ${dateFilter}
@@ -168,7 +196,7 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // Ad spend by source (from ad_spend_daily events, deduplicated by $insert_id)
+      // Ad spend by source — filter on properties.date, not event timestamp
       hogqlQuery(apiKey, `
         SELECT
           properties.source as ad_source,
@@ -180,12 +208,12 @@ exports.handler = async (event) => {
         WHERE event = 'ad_spend_daily'
           AND properties.$insert_id IS NOT NULL
           AND properties.source IN ('google_ads', 'meta_ads')
-          ${dateFilter}
+          ${adDateFilter}
         GROUP BY properties.source
         ORDER BY total_spend DESC
       `),
 
-      // Ad spend daily trend (deduplicated)
+      // Ad spend daily trend — filter on properties.date
       hogqlQuery(apiKey, `
         SELECT
           properties.date as spend_date,
@@ -195,7 +223,7 @@ exports.handler = async (event) => {
         WHERE event = 'ad_spend_daily'
           AND properties.$insert_id IS NOT NULL
           AND properties.source IN ('google_ads', 'meta_ads')
-          ${dateFilter}
+          ${adDateFilter}
         GROUP BY properties.date, properties.source
         ORDER BY spend_date ASC
       `),
@@ -204,30 +232,43 @@ exports.handler = async (event) => {
     // Helper to extract single value
     const val = (result) => (result && result[0] && result[0][0]) || 0;
 
+    // Merge leads and bookings by traffic source
+    const sourceMap = {};
+    for (const row of leadsBySource) {
+      const src = row[0];
+      if (!sourceMap[src]) sourceMap[src] = { leads: 0, booked: 0, attended: 0, no_show: 0 };
+      sourceMap[src].leads = row[1];
+    }
+    for (const row of bookingsBySource) {
+      const src = row[0];
+      if (!sourceMap[src]) sourceMap[src] = { leads: 0, booked: 0, attended: 0, no_show: 0 };
+      sourceMap[src].booked = row[1];
+      sourceMap[src].attended = row[2];
+      sourceMap[src].no_show = row[3];
+    }
+    const byTrafficSource = Object.entries(sourceMap)
+      .map(([source, data]) => ({ source, ...data }))
+      .sort((a, b) => b.leads - a.leads);
+
     const result = {
       days,
+      start: effectiveStart,
+      end: effectiveEnd,
       launch_date: LAUNCH_DATE,
       generated_at: new Date().toISOString(),
       kpis: {
         pageviews: val(kpiPageviews),
         quiz_started: val(kpiStarted),
         quiz_completed: val(kpiCompleted),
-        form_submitted: val(kpiCompleted),
+        form_submitted: val(kpiLeads),
         appointment_booked: val(kpiBooked),
         appointment_attended: val(kpiAttended),
         appointment_no_show: val(kpiNoShow),
       },
-      by_traffic_source: byTrafficSource.map(row => ({
-        source: row[0],
-        leads: row[1],
-        booked: row[2],
-        attended: row[3],
-        no_show: row[4],
-      })),
+      by_traffic_source: byTrafficSource,
       by_funnel_type: byFunnelType.map(row => ({
         funnel: row[0],
         leads: row[1],
-        booked: row[2],
       })),
       by_nicho: byNicho.map(row => ({
         nicho: row[0],
@@ -246,10 +287,7 @@ exports.handler = async (event) => {
         source: row[1],
         count: row[2],
       })),
-      attended_by_source: attendedBySource.map(row => ({
-        source: row[0],
-        count: row[1],
-      })),
+      attended_by_source: [],
       no_show_by_source: noShowBySource.map(row => ({
         source: row[0],
         count: row[1],

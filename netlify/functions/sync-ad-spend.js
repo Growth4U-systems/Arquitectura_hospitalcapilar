@@ -247,7 +247,7 @@ async function trackAdSpend(campaign) {
     api_key: posthogKey,
     event: 'ad_spend_daily',
     distinct_id: `ads-${campaign.source}`,
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(campaign.date + 'T12:00:00Z').toISOString(),
     properties: {
       ...campaign,
       $lib: 'server-netlify',

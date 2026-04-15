@@ -31,6 +31,24 @@ const STAGE_EVENTS = {
   lost:          ['patient_lost'],
 };
 
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithRetry(url, options, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, options);
+    if (res.ok) return res;
+    if (res.status === 429) {
+      const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+      console.log(`[GHL] Rate limited, retrying in ${delay}ms...`);
+      await sleep(delay);
+      continue;
+    }
+    const errText = await res.text();
+    throw new Error(`GHL API ${res.status}: ${errText.substring(0, 200)}`);
+  }
+  throw new Error('GHL API: max retries exceeded (429)');
+}
+
 async function fetchAllOpportunities() {
   const headers = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' };
   let all = [];
@@ -39,16 +57,15 @@ async function fetchAllOpportunities() {
 
   while (hasMore) {
     const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=20${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`GHL API ${res.status}: ${errText.substring(0, 200)}`);
-    }
+    const res = await fetchWithRetry(url, { headers });
     const data = await res.json();
     const opps = data.opportunities || [];
     all = all.concat(opps);
     hasMore = opps.length >= 20;
-    if (hasMore) startAfterId = opps[opps.length - 1].id;
+    if (hasMore) {
+      startAfterId = opps[opps.length - 1].id;
+      await sleep(200); // Small delay between pages
+    }
   }
 
   return all;
@@ -175,7 +192,7 @@ exports.handler = async (event) => {
     properties: {
       total_contacts: opps.length,
       ...stageCounts,
-      $insert_id: `pipeline_summary_${new Date().toISOString().split('T')[0]}`,
+      $insert_id: `pipeline_summary_${new Date().toISOString().split(':')[0]}`,
     },
   }]);
 

@@ -163,6 +163,10 @@
     <button class="date-btn" data-days="14" onclick="changeDays(14)">14d</button>
     <button class="date-btn active" data-days="30" onclick="changeDays(30)">30d</button>
     <button class="date-btn" data-days="90" onclick="changeDays(90)">90d</button>
+    <span style="color:var(--hc-text-dim);font-size:12px;margin:0 4px;">|</span>
+    <input type="date" id="dateStart" class="date-btn" style="width:130px;color:#fff;background:var(--hc-surface);" onchange="applyCustomRange()">
+    <span style="color:var(--hc-text-dim);font-size:12px;">—</span>
+    <input type="date" id="dateEnd" class="date-btn" style="width:130px;color:#fff;background:var(--hc-surface);" onchange="applyCustomRange()">
     <div class="date-range" id="dateRange"></div>
     <button class="refresh-btn" onclick="fetchData()">&#x21bb; Refresh</button>
   </div>
@@ -308,6 +312,8 @@ const NICHO_COLORS = ['#2c6df6','#ec4899','#f59e0b','#10b981','#a855f7','#f87171
 const ECP_COLORS = ['#2c6df6','#ec4899','#f59e0b','#10b981','#a855f7','#f87171','#6b7280'];
 
 let currentDays = 30;
+let customStart = null;
+let customEnd = null;
 let dashboardKey = localStorage.getItem('hc_dashboard_key') || '';
 let autoRefreshTimer = null;
 
@@ -375,17 +381,31 @@ function sourceCss(s) { return SOURCE_CSS[s] || 'c-other'; }
 // ---- DATE RANGE ----
 function changeDays(d) {
   currentDays = d;
-  document.querySelectorAll('.date-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days) === d));
+  customStart = null;
+  customEnd = null;
+  document.getElementById('dateStart').value = '';
+  document.getElementById('dateEnd').value = '';
+  document.querySelectorAll('.date-btn[data-days]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days) === d));
   fetchData();
 }
-function updateDateRange(days, launchDate) {
-  const end = new Date();
-  const daysAgo = new Date(end - days * 86400000);
-  const launch = launchDate ? new Date(launchDate) : daysAgo;
-  const start = launch > daysAgo ? launch : daysAgo;
+function applyCustomRange() {
+  const start = document.getElementById('dateStart').value;
+  const end = document.getElementById('dateEnd').value;
+  if (!start || !end) return;
+  if (start > end) return;
+  customStart = start;
+  customEnd = end;
+  currentDays = null;
+  document.querySelectorAll('.date-btn[data-days]').forEach(b => b.classList.remove('active'));
+  fetchData();
+}
+function updateDateRange(data) {
   const opts = { day: 'numeric', month: 'short' };
+  const start = new Date(data.start || data.launch_date);
+  const end = new Date(data.end || new Date());
+  const diffDays = Math.round((end - start) / 86400000);
   document.getElementById('dateRange').textContent =
-    start.toLocaleDateString('es-ES', opts) + ' — ' + end.toLocaleDateString('es-ES', opts) + ' (' + days + ' dias)';
+    start.toLocaleDateString('es-ES', opts) + ' — ' + end.toLocaleDateString('es-ES', opts) + ' (' + diffDays + ' dias)';
 }
 
 // ---- AUTO REFRESH ----
@@ -398,10 +418,15 @@ function startAutoRefresh() {
 async function fetchData() {
   document.getElementById('loadingOverlay').style.display = 'flex';
   document.getElementById('errorBanner').style.display = 'none';
-  updateDateRange(currentDays);
 
   try {
-    const res = await fetch(`/.netlify/functions/dashboard-data?key=${encodeURIComponent(dashboardKey)}&days=${currentDays}`);
+    let url = `/.netlify/functions/dashboard-data?key=${encodeURIComponent(dashboardKey)}`;
+    if (customStart && customEnd) {
+      url += `&start=${customStart}&end=${customEnd}`;
+    } else {
+      url += `&days=${currentDays}`;
+    }
+    const res = await fetch(url);
     if (res.status === 401) {
       localStorage.removeItem('hc_dashboard_key');
       dashboardKey = '';
@@ -414,7 +439,7 @@ async function fetchData() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderDashboard(data);
-    updateDateRange(currentDays, data.launch_date);
+    updateDateRange(data);
     if (data.launch_date) {
       const ld = new Date(data.launch_date);
       document.getElementById('launchBadge').textContent = 'Desde ' + ld.toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'numeric'});
