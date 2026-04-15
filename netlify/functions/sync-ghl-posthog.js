@@ -104,12 +104,29 @@ exports.handler = async (event) => {
     const email = contact.email || '';
     const distinctId = email || opp.id;
 
-    // Get attribution: try PostHog first (person properties from quiz), then Firebase fallback
+    // Get attribution from GHL contact custom fields
     let leadSource = {};
-    // TODO: Re-enable PostHog/Firebase attribution once sync is stable
-    // For now, all leads are from Meta (only active ad source)
-    if (email) {
-      leadSource = { traffic_source: 'meta' };
+    const contactId = opp.contactId;
+    if (contactId) {
+      try {
+        const cfRes = await fetchWithRetry(
+          `${GHL_BASE}/contacts/${contactId}`,
+          { headers: { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' } }
+        );
+        const cfData = await cfRes.json();
+        const cfs = cfData.contact?.customFields || [];
+        const cfMap = {};
+        cfs.forEach(f => { cfMap[f.id] = f.value; });
+
+        leadSource = {
+          traffic_source: cfMap['miu6E3oxZowYahYGjX1A'] || null,
+          funnel_type: cfMap['liIshAFJMngl2BV9MtVw'] || null,
+          nicho: cfMap['cFIcdJlT9sfnC3KMSwDD'] || null,
+        };
+        await sleep(200); // Respect GHL rate limits
+      } catch (e) {
+        console.log(`[GHL] Contact fetch failed for ${contactId}: ${e.message}`);
+      }
     }
 
     // Use the most recent timestamp available (stage change > updated > created)
@@ -150,7 +167,7 @@ exports.handler = async (event) => {
         event: eventName,
         distinct_id: distinctId,
         timestamp: eventTimestamp,
-        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v2` },
+        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v4` },
       });
     }
   }

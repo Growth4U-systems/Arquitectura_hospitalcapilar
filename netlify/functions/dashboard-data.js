@@ -105,9 +105,9 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'form_submitted' ${dateFilter}`),
       // Bookings: filter _v3 to avoid duplicates from old sync versions
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v3' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
 
       // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
@@ -130,7 +130,7 @@ exports.handler = async (event) => {
           countIf(event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
-          AND toString(properties.$insert_id) LIKE '%_v3'
+          AND toString(properties.$insert_id) LIKE '%_v4'
           ${dateFilter}
         GROUP BY properties.traffic_source
       `),
