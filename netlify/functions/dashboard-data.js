@@ -101,7 +101,7 @@ exports.handler = async (event) => {
       quizDropoff,
     ] = await Promise.all([
       // KPIs — all use count() for funnel consistency
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = '$pageview' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
