@@ -89,7 +89,8 @@ exports.handler = async (event) => {
       kpiNoShow,
       leadsBySource,
       bookingsBySource,
-      byFunnelType,
+      funnelVisitsLeads,
+      funnelBookings,
       byNicho,
       byEcp,
       dailyLeads,
@@ -135,7 +136,7 @@ exports.handler = async (event) => {
         GROUP BY properties.traffic_source
       `),
 
-      // By funnel type — visits (pageviews by path), leads, bookings
+      // Visits + leads by URL path
       hogqlQuery(apiKey, `
         SELECT
           multiIf(
@@ -144,13 +145,24 @@ exports.handler = async (event) => {
             'quiz_largo'
           ) as funnel,
           countIf(event = '$pageview') as visits,
-          countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads,
-          countIf(event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4') as booked
+          countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads
         FROM events
-        WHERE (event = '$pageview' OR event IN ('form_submitted', 'direct_form_submitted', 'appointment_booked'))
+        WHERE event IN ('$pageview', 'form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY funnel
         ORDER BY visits DESC
+      `),
+
+      // Bookings by funnel_type (from GHL custom fields)
+      hogqlQuery(apiKey, `
+        SELECT
+          properties.funnel_type as funnel,
+          count() as booked
+        FROM events
+        WHERE event = 'appointment_booked'
+          AND toString(properties.$insert_id) LIKE '%_v4'
+          ${dateFilter}
+        GROUP BY funnel
       `),
 
       // By nicho
@@ -286,12 +298,25 @@ exports.handler = async (event) => {
         appointment_no_show: val(kpiNoShow),
       },
       by_traffic_source: byTrafficSource,
-      by_funnel_type: byFunnelType.map(row => ({
-        funnel: row[0],
-        visits: row[1],
-        leads: row[2],
-        booked: row[3],
-      })),
+      by_funnel_type: (() => {
+        // Merge visits/leads (by URL path) with bookings (by GHL funnel_type)
+        const fMap = {};
+        for (const row of funnelVisitsLeads) {
+          const f = row[0];
+          if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+          fMap[f].visits = row[1];
+          fMap[f].leads = row[2];
+        }
+        for (const row of funnelBookings) {
+          const f = row[0];
+          if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+          fMap[f].booked = row[1];
+        }
+        return Object.entries(fMap)
+          .filter(([f]) => f && f !== 'null')
+          .map(([funnel, data]) => ({ funnel, ...data }))
+          .sort((a, b) => b.visits - a.visits);
+      })(),
       by_nicho: byNicho.map(row => ({
         nicho: row[0],
         count: row[1],
