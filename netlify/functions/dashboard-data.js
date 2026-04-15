@@ -135,16 +135,18 @@ exports.handler = async (event) => {
         GROUP BY properties.traffic_source
       `),
 
-      // By funnel type
+      // By funnel type — visits (started), leads (completed/submitted), bookings
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
-          count() as leads
+          countIf(event IN ('quiz_started', 'short_quiz_started', 'direct_form_submitted')) as visits,
+          countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads,
+          countIf(event IN ('appointment_booked') AND toString(properties.$insert_id) LIKE '%_v4') as booked
         FROM events
-        WHERE event = 'form_submitted'
+        WHERE event IN ('quiz_started', 'short_quiz_started', 'form_submitted', 'direct_form_submitted', 'appointment_booked')
           ${dateFilter}
         GROUP BY properties.funnel_type
-        ORDER BY leads DESC
+        ORDER BY visits DESC
       `),
 
       // By nicho
@@ -282,7 +284,9 @@ exports.handler = async (event) => {
       by_traffic_source: byTrafficSource,
       by_funnel_type: byFunnelType.map(row => ({
         funnel: row[0],
-        leads: row[1],
+        visits: row[1],
+        leads: row[2],
+        booked: row[3],
       })),
       by_nicho: byNicho.map(row => ({
         nicho: row[0],

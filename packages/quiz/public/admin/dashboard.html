@@ -315,8 +315,8 @@ const SOURCE_CSS = {
   'Directo': 'c-direct', 'direct': 'c-direct', 'directo': 'c-direct',
   'Sin dato': 'c-other', 'Otro': 'c-other',
 };
-const FUNNEL_COLORS = { 'quiz_largo': '#2c6df6', 'quiz_corto': '#f59e0b', 'form_directo': '#10b981' };
-const FUNNEL_LABELS = { 'quiz_largo': 'Quiz Largo', 'quiz_corto': 'Quiz Corto', 'form_directo': 'Formulario Directo' };
+const FUNNEL_COLORS = { 'quiz_largo': '#2c6df6', 'quiz_corto': '#f59e0b', 'form_directo': '#10b981', 'formulario_directo': '#10b981', 'form': '#10b981' };
+const FUNNEL_LABELS = { 'quiz_largo': 'Quiz Largo', 'quiz_corto': 'Quiz Corto', 'form_directo': 'Form Directo', 'formulario_directo': 'Form Directo', 'form': 'Form Directo' };
 const NICHO_COLORS = ['#2c6df6','#ec4899','#f59e0b','#10b981','#a855f7','#f87171','#6b7280','#78716c','#06b6d4','#84cc16'];
 const ECP_COLORS = ['#2c6df6','#ec4899','#f59e0b','#10b981','#a855f7','#f87171','#6b7280'];
 
@@ -681,25 +681,29 @@ function renderFunnelType(data) {
   const fMap = {};
   funnels.forEach(r => {
     const f = r.funnel;
-    if (!fMap[f]) fMap[f] = { leads: 0, booked: 0 };
+    if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+    fMap[f].visits += r.visits || 0;
     fMap[f].leads += r.leads || 0;
     fMap[f].booked += r.booked || 0;
   });
-  const entries = Object.entries(fMap).sort((a, b) => b[1].leads - a[1].leads);
+  const entries = Object.entries(fMap).sort((a, b) => b[1].visits - a[1].visits);
+  const totalVisits = entries.reduce((s, [, v]) => s + v.visits, 0);
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
 
-  let html = `<thead><tr><th>Funnel</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
+  let html = `<thead><tr><th>Funnel</th><th class="num">Visitas</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = FUNNEL_LABELS[name] || name;
     const color = FUNNEL_COLORS[name] || '#78716c';
     const convR = pctNum(v.booked, v.leads);
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
+      <td class="num">${fmt(v.visits)}</td>
       <td class="num">${fmt(v.leads)}</td>
       <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td></tr>`;
   });
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
+    <td class="num">${fmt(totalVisits)}</td>
     <td class="num">${fmt(totalLeads)}</td>
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td></tr></tbody>`;
