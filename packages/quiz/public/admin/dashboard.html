@@ -676,29 +676,33 @@ function renderFunnelType(data) {
   const fMap = {};
   funnels.forEach(r => {
     const f = r.funnel;
-    if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+    if (!fMap[f]) fMap[f] = { visits: 0, started: 0, leads: 0, booked: 0 };
     fMap[f].visits += r.visits || 0;
+    fMap[f].started += r.started || 0;
     fMap[f].leads += r.leads || 0;
     fMap[f].booked += r.booked || 0;
   });
   const entries = Object.entries(fMap).sort((a, b) => b[1].visits - a[1].visits);
   const totalVisits = entries.reduce((s, [, v]) => s + v.visits, 0);
+  const totalStarted = entries.reduce((s, [, v]) => s + v.started, 0);
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
 
-  let html = `<thead><tr><th>Funnel</th><th class="num">Visitas</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
+  let html = `<thead><tr><th>Funnel</th><th class="num">Visitantes</th><th class="num">Iniciados</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = FUNNEL_LABELS[name] || name;
     const color = FUNNEL_COLORS[name] || '#78716c';
     const convR = pctNum(v.booked, v.leads);
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
       <td class="num">${fmt(v.visits)}</td>
+      <td class="num">${fmt(v.started)}</td>
       <td class="num">${fmt(v.leads)}</td>
       <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td></tr>`;
   });
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
     <td class="num">${fmt(totalVisits)}</td>
+    <td class="num">${fmt(totalStarted)}</td>
     <td class="num">${fmt(totalLeads)}</td>
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td></tr></tbody>`;

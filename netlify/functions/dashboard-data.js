@@ -145,9 +145,10 @@ exports.handler = async (event) => {
             'quiz_largo'
           ) as funnel,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
+          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
           countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads
         FROM events
-        WHERE event IN ('$pageview', 'form_submitted', 'direct_form_submitted')
+        WHERE event IN ('$pageview', 'quiz_started', 'short_quiz_started', 'form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY funnel
         ORDER BY visits DESC
@@ -303,18 +304,19 @@ exports.handler = async (event) => {
         const fMap = {};
         for (const row of funnelVisitsLeads) {
           const f = row[0];
-          if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+          if (!fMap[f]) fMap[f] = { visits: 0, started: 0, leads: 0, booked: 0 };
           fMap[f].visits = row[1];
-          fMap[f].leads = row[2];
+          fMap[f].started = row[2];
+          fMap[f].leads = row[3];
         }
         for (const row of funnelBookings) {
           const f = row[0];
-          if (!fMap[f]) fMap[f] = { visits: 0, leads: 0, booked: 0 };
+          if (!fMap[f]) fMap[f] = { visits: 0, started: 0, leads: 0, booked: 0 };
           fMap[f].booked = row[1];
         }
         return Object.entries(fMap)
-          .filter(([f]) => f && f !== 'null')
-          .map(([funnel, data]) => ({ funnel, ...data }))
+          .filter(([f]) => f && f !== 'null' && f !== 'None')
+          .map(([funnel, d]) => ({ funnel, visits: d.visits, started: d.started, leads: d.leads, booked: d.booked }))
           .sort((a, b) => b.visits - a.visits);
       })(),
       by_nicho: byNicho.map(row => ({
