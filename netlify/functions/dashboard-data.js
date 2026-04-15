@@ -230,19 +230,16 @@ exports.handler = async (event) => {
         ORDER BY spend_date ASC
       `),
 
-      // Quiz drop-off by question (quiz largo only — exclude /rapido/ and /form/ paths)
+      // Quiz drop-off by question — group by question_id, take max index per question
       hogqlQuery(apiKey, `
         SELECT
-          toIntOrZero(toString(properties.question_index)) as q_index,
           toString(properties.question_id) as q_id,
           count(DISTINCT person_id) as users
         FROM events
         WHERE event = 'question_answered'
-          AND properties.$current_url NOT LIKE '%/rapido/%'
-          AND properties.$current_url NOT LIKE '%/form/%'
           ${dateFilter}
-        GROUP BY q_index, q_id
-        ORDER BY q_index ASC
+        GROUP BY q_id
+        ORDER BY users DESC
       `),
     ]);
 
@@ -322,9 +319,8 @@ exports.handler = async (event) => {
         spend: row[2],
       })),
       quiz_dropoff: quizDropoff.map(row => ({
-        question_index: row[0],
-        question_id: row[1],
-        users: row[2],
+        question_id: row[0],
+        users: row[1],
       })),
     };
 

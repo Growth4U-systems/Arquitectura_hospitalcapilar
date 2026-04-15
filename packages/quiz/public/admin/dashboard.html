@@ -976,17 +976,10 @@ function renderQuizDropoff(data) {
     return;
   }
 
-  // Merge by question_id (same question may appear at different indexes in largo vs corto)
-  const byId = {};
-  dropoff.forEach(r => {
-    const id = r.question_id;
-    if (!byId[id]) byId[id] = { id, users: 0, minIndex: r.question_index };
-    byId[id].users += r.users;
-    if (r.question_index < byId[id].minIndex) byId[id].minIndex = r.question_index;
-  });
-
-  // Sort by the earliest index this question appears at
-  const steps = Object.values(byId).sort((a, b) => a.minIndex - b.minIndex);
+  // Sort by users descending (highest = first question, lowest = last)
+  const steps = dropoff
+    .filter(r => r.question_id && r.question_id !== 'null')
+    .sort((a, b) => b.users - a.users);
   const first = steps[0]?.users || 1;
 
   // Compact horizontal bar funnel
@@ -998,7 +991,7 @@ function renderQuizDropoff(data) {
     const dropPct = prevUsers > 0 ? ((prevUsers - s.users) / prevUsers * 100).toFixed(0) : '0';
     const barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
     html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
-      <div style="width:120px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.id}">${s.id}</div>
+      <div style="width:120px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.question_id}">${s.question_id}</div>
       <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;position:relative;">
         <div style="width:${widthPct}%;height:100%;background:${barColor};border-radius:3px;display:flex;align-items:center;padding-left:6px;">
           <span style="font-size:10px;color:#fff;font-weight:600;">${s.users}</span>
