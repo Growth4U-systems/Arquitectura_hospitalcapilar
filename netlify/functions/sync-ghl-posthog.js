@@ -145,19 +145,10 @@ exports.handler = async (event) => {
 
     // Get attribution: try PostHog first (person properties from quiz), then Firebase fallback
     let leadSource = {};
+    // TODO: Re-enable PostHog/Firebase attribution once sync is stable
+    // For now, all leads are from Meta (only active ad source)
     if (email) {
-      try {
-        leadSource = await getLeadSourceFromPostHog(email);
-      } catch (e) {
-        // PostHog lookup failed, try Firebase
-      }
-      if (!leadSource.traffic_source) {
-        try {
-          leadSource = await getLeadSourceByEmail(email);
-        } catch (e) {
-          // Firebase also failed, continue without attribution
-        }
-      }
+      leadSource = { traffic_source: 'meta' };
     }
 
     // Use the most recent timestamp available (stage change > updated > created)
