@@ -136,6 +136,20 @@ export default function AgendarPage() {
             </ul>
           </div>
 
+          {/* Video testimonial */}
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
+            <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[320px] mx-auto" style={{ maxWidth: '180px' }}>
+              <iframe
+                src="https://www.youtube.com/embed/pbJOQYupwFE"
+                title="Hospital Capilar"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
           <a
             href={stripeUrl}
             className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center text-lg shadow-lg flex items-center justify-center gap-2"

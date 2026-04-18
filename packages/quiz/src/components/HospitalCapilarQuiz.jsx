@@ -1604,6 +1604,22 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             </div>
           )}
 
+          {/* Video testimonial (only for payment CTA) */}
+          {ctaType === 'pagar_bono' && (
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
+              <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[320px] mx-auto" style={{ maxWidth: '180px' }}>
+                <iframe
+                  src="https://www.youtube.com/embed/pbJOQYupwFE"
+                  title="Hospital Capilar"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Price card (only for payment CTA) */}
           {ctaType === 'pagar_bono' && (
             <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
