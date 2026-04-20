@@ -32,9 +32,7 @@ export default function AgendarPage() {
 
   const [existingAppt, setExistingAppt] = useState(null); // null = loading, false = no appt, object = has appt
   const [checking, setChecking] = useState(!!params.contactId);
-  const [bonoRequired, setBonoRequired] = useState(false); // true = woman ECP without payment
-
-  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
+  const [bonoRequired, setBonoRequired] = useState(false); // true = woman without payment
 
   // A/B test bono pricing — 50/50 split, deterministic per contactId
   const STRIPE_LINKS = {
@@ -64,11 +62,12 @@ export default function AgendarPage() {
     })
       .then(res => res.json())
       .then(data => {
-        // Check bono gate: woman ECP who hasn't paid (skip for asesoria flow)
+        // Check bono gate: woman who hasn't paid (skip for asesoria flow).
+        // Gate on sexo — ECP may be 'Ciudad sin clinica' when city is outside pilot,
+        // which would bypass an ECP-based check.
         if (params.tipo !== 'asesoria') {
-          const ecp = (data.contactEcp || '').toLowerCase();
-          const isWomanEcp = WOMEN_ECPS.some(e => ecp.includes(e));
-          if (isWomanEcp && !data.bonoPaid) {
+          const sexo = (data.contactSexo || '').toLowerCase();
+          if (sexo === 'mujer' && !data.bonoPaid) {
             setBonoRequired(true);
           }
         }

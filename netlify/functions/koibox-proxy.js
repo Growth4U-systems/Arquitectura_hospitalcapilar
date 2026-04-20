@@ -368,9 +368,10 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   const flow = getFlowConfig(tipo_consulta);
   const employeeIds = flow.employees[clinica] || flow.employees.madrid;
 
-  // 0. Check GHL for payment status + ECP (to set notes and tags)
+  // 0. Check GHL for payment status + ECP + sexo (to set notes, tags, and bono gate)
   let bonoPaid = false;
   let contactEcp = '';
+  let contactSexo = '';
   if (ghl_contact_id) {
     try {
       const ghlKey = process.env.VITE_GHL_API_KEY;
@@ -381,13 +382,15 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
           'Content-Type': 'application/json',
           'Version': '2021-07-28',
         };
-        // Get contact to read ECP
+        // Get contact to read ECP + sexo
         const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
         if (contactRes.ok) {
           const contactData = await contactRes.json();
           const cfs = contactData?.contact?.customFields || [];
           const ecpField = cfs.find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD');
           contactEcp = ecpField?.value || '';
+          const sexoField = cfs.find(f => f.id === 'P7D2edjnOHwXLpglw9tB');
+          contactSexo = (sexoField?.value || '').toLowerCase();
         }
         // Search opportunity for payment status
         const oppSearchRes = await fetch(
@@ -407,19 +410,20 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
             }
           }
         }
-        console.log('[Koibox] GHL check — ECP:', contactEcp, 'bonoPaid:', bonoPaid);
+        console.log('[Koibox] GHL check — ECP:', contactEcp, 'sexo:', contactSexo, 'bonoPaid:', bonoPaid);
       }
     } catch (err) {
       console.log('[Koibox] GHL payment check failed:', err.message);
     }
   }
 
-  // 0b. Block women ECPs who haven't paid the bono (only for diagnostico flow)
+  // 0b. Block women who haven't paid the bono (only for diagnostico flow).
+  // Gate on sexo, not ECP: city outside pilot overrides ECP to 'Ciudad sin clinica',
+  // which used to bypass the ECP-based check.
   const isAsesoria = tipo_consulta === 'asesoria';
-  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
-  const isWomanEcp = contactEcp && WOMEN_ECPS.some(e => contactEcp.toLowerCase().includes(e));
-  if (!isAsesoria && isWomanEcp && !bonoPaid) {
-    console.log('[Koibox] BLOCKED — Woman ECP without bono payment:', contactEcp);
+  const isWoman = contactSexo === 'mujer';
+  if (!isAsesoria && isWoman && !bonoPaid) {
+    console.log('[Koibox] BLOCKED — Woman without bono payment. sexo:', contactSexo, 'ECP:', contactEcp);
     return {
       statusCode: 403,
       headers: corsHeaders,
@@ -519,7 +523,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   // If any of these fail, the Koibox appointment is already created, so we return success
   let ghlSync = { status: 'skipped' };
   try {
-    ghlSync = await syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId: String(appointmentData.id || ''), ghl_contact_id, bonoPaid, contactEcp });
+    ghlSync = await syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId: String(appointmentData.id || ''), ghl_contact_id, bonoPaid, contactEcp, contactSexo });
   } catch (err) {
     ghlSync = { status: 'error', error: err.message };
     console.log('[Koibox→GHL] Sync failed:', err.message);
@@ -931,8 +935,9 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     };
   }
 
-  // 1b. Read ECP from contact custom fields
+  // 1b. Read ECP + sexo from contact custom fields
   let contactEcp = '';
+  let contactSexo = '';
   let bonoPaid = false;
   if (resolvedContactId) {
     try {
@@ -942,6 +947,8 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         const ecpCfs = ecpData?.contact?.customFields || [];
         const ecpField = ecpCfs.find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD');
         contactEcp = ecpField?.value || '';
+        const sexoField = ecpCfs.find(f => f.id === 'P7D2edjnOHwXLpglw9tB');
+        contactSexo = (sexoField?.value || '').toLowerCase();
       }
     } catch (err) {
       console.log('[GetContactAppt] ECP fetch failed:', err.message);
@@ -1036,6 +1043,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
               contactEmail,
               contactPhone,
               contactEcp,
+              contactSexo,
               bonoPaid,
               clinica: clinicaCita,
               appointment: {
@@ -1054,7 +1062,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid, _debug }),
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid, _debug }),
     };
   }
 
@@ -1065,7 +1073,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid }),
       };
     }
     const data = await res.json();
@@ -1075,7 +1083,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, bonoPaid, previouslyCancelled: true }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid, previouslyCancelled: true }),
       };
     }
 
@@ -1090,6 +1098,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         contactPhone,
         koibox_id: koiboxId,
         contactEcp,
+        contactSexo,
         bonoPaid,
         clinica: clinica || '',
         appointment: {
@@ -1247,7 +1256,7 @@ async function cancelGHLAppointments(contactId, ghlHeaders) {
  * - Add note with appointment details
  * - Update opportunity: stage → Booked, tratamiento_status → booked, koibox_id, fecha, hora
  */
-async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId, ghl_contact_id, bonoPaid, contactEcp }) {
+async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId, ghl_contact_id, bonoPaid, contactEcp, contactSexo }) {
   const ghlKey = process.env.VITE_GHL_API_KEY;
   if (!ghlKey) {
     console.log('[Koibox→GHL] No GHL API key, skipping sync');
@@ -1462,46 +1471,41 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
         status: 'open',
         customFields,
       };
-      // Link calendar appointment to opportunity
-      if (ghlAppointmentId) {
-        oppUpdate.appointmentId = ghlAppointmentId;
-      }
 
       await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
         method: 'PUT',
         headers: ghlHeaders,
         body: JSON.stringify(oppUpdate),
       });
-      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'appointmentId:', ghlAppointmentId, 'koiboxId:', koiboxId);
+      console.log('[Koibox→GHL] Opportunity moved to Booked stage:', opp.id, 'calendarEvent:', ghlAppointmentId, 'koiboxId:', koiboxId);
     }
   } catch (err) {
     console.log('[Koibox→GHL] Opportunity update failed:', err.message);
   }
 
-  // 6. Tag bono_pendiente for women ECPs who haven't paid yet
-  // ECP values from quiz: 'Es Normal', 'Lo Que Vino Con el Bebé'
-  const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
-  const isWomanEcp = contactEcp && WOMEN_ECPS.some(e => contactEcp.toLowerCase().includes(e));
+  // 6. Tag bono_pendiente/pagado for women who haven't/have paid yet.
+  // Gate on sexo (ECP may be 'Ciudad sin clinica' when the city is outside the pilot).
+  const isWoman = (contactSexo || '').toLowerCase() === 'mujer';
 
-  if (isWomanEcp && !bonoPaid) {
+  if (isWoman && !bonoPaid) {
     try {
       await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
         method: 'POST',
         headers: ghlHeaders,
         body: JSON.stringify({ tags: ['bono_pendiente'] }),
       });
-      console.log('[Koibox→GHL] Tag bono_pendiente added (ECP mujer, no payment yet)');
+      console.log('[Koibox→GHL] Tag bono_pendiente added (sexo mujer, no payment yet)');
     } catch (err) {
       console.log('[Koibox→GHL] Tag bono_pendiente failed:', err.message);
     }
-  } else if (isWomanEcp && bonoPaid) {
+  } else if (isWoman && bonoPaid) {
     try {
       await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
         method: 'POST',
         headers: ghlHeaders,
         body: JSON.stringify({ tags: ['bono_pagado'] }),
       });
-      console.log('[Koibox→GHL] Tag bono_pagado added (ECP mujer, already paid)');
+      console.log('[Koibox→GHL] Tag bono_pagado added (sexo mujer, already paid)');
     } catch (err) {
       console.log('[Koibox→GHL] Tag bono_pagado failed:', err.message);
     }

@@ -97,8 +97,9 @@ exports.handler = async (event) => {
     delete body._contactScore;
     delete body._salesforceData;
 
-    // Extract ECP from contact customFields for opportunity reuse
+    // Extract ECP + sexo from contact customFields for opportunity reuse + bono gate
     const ecpValue = (body.customFields || []).find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD')?.field_value || '';
+    const sexoValue = ((body.customFields || []).find(f => f.id === 'P7D2edjnOHwXLpglw9tB')?.field_value || '').toLowerCase();
 
     // 1. Create or update contact
     const contactRes = await fetch(`${GHL_BASE}/contacts/`, {
@@ -133,10 +134,11 @@ exports.handler = async (event) => {
     }
     console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', isDuplicate);
 
-    // Determine tipo_consulta based on ECP: women ECPs → diagnostico (with bono), rest → asesoria
-    const WOMEN_ECPS = ['es normal', 'lo que vino con el bebé'];
-    const isWomanEcp = ecpValue && WOMEN_ECPS.some(e => ecpValue.toLowerCase().includes(e));
-    const tipoConsulta = isWomanEcp ? 'diagnostico' : 'asesoria';
+    // Determine tipo_consulta: women → diagnostico (with bono), rest → asesoria.
+    // Gate on sexo — ECP may be 'Ciudad sin clinica' when the city is outside the pilot,
+    // which would bypass an ECP-based check.
+    const isWoman = sexoValue === 'mujer';
+    const tipoConsulta = isWoman ? 'diagnostico' : 'asesoria';
 
     // Build bookingUrl (reused for contact + opportunity)
     const bookingUrl = contactId
