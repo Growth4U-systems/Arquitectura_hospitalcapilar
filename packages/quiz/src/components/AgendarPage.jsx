@@ -63,11 +63,13 @@ export default function AgendarPage() {
       .then(res => res.json())
       .then(data => {
         // Check bono gate: woman who hasn't paid (skip for asesoria flow).
-        // Gate on sexo — ECP may be 'Ciudad sin clinica' when city is outside pilot,
-        // which would bypass an ECP-based check.
+        // Gate on sexo CF OR standard GHL gender — ECP is unreliable (overridden to
+        // 'Ciudad sin clinica' outside pilot) and sexo CF is empty for partial-quiz leads.
         if (params.tipo !== 'asesoria') {
           const sexo = (data.contactSexo || '').toLowerCase();
-          if (sexo === 'mujer' && !data.bonoPaid) {
+          const gender = (data.contactGender || '').toLowerCase();
+          const isWoman = sexo === 'mujer' || gender === 'female';
+          if (isWoman && !data.bonoPaid) {
             setBonoRequired(true);
           }
         }

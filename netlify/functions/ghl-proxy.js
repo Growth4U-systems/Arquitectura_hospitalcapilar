@@ -135,9 +135,10 @@ exports.handler = async (event) => {
     console.log('[GHL] Contact response status:', contactRes.status, 'contactId:', contactId, 'duplicate:', isDuplicate);
 
     // Determine tipo_consulta: women → diagnostico (with bono), rest → asesoria.
-    // Gate on sexo — ECP may be 'Ciudad sin clinica' when the city is outside the pilot,
-    // which would bypass an ECP-based check.
-    const isWoman = sexoValue === 'mujer';
+    // Gate on sexo CF OR standard GHL gender — ECP is unreliable (city outside pilot
+    // overrides it to 'Ciudad sin clinica'), and sexo CF is empty for leads that
+    // didn't complete the full quiz.
+    const isWoman = sexoValue === 'mujer' || (body.gender || '').toLowerCase() === 'female';
     const tipoConsulta = isWoman ? 'diagnostico' : 'asesoria';
 
     // Build bookingUrl (reused for contact + opportunity)

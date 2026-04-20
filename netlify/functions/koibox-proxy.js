@@ -368,10 +368,11 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   const flow = getFlowConfig(tipo_consulta);
   const employeeIds = flow.employees[clinica] || flow.employees.madrid;
 
-  // 0. Check GHL for payment status + ECP + sexo (to set notes, tags, and bono gate)
+  // 0. Check GHL for payment status + ECP + sexo + gender (to set notes, tags, and bono gate)
   let bonoPaid = false;
   let contactEcp = '';
   let contactSexo = '';
+  let contactGender = '';
   if (ghl_contact_id) {
     try {
       const ghlKey = process.env.VITE_GHL_API_KEY;
@@ -382,15 +383,17 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
           'Content-Type': 'application/json',
           'Version': '2021-07-28',
         };
-        // Get contact to read ECP + sexo
+        // Get contact to read ECP + sexo CF + standard gender
         const contactRes = await fetch(`${GHL_BASE}/contacts/${ghl_contact_id}`, { headers: ghlHeaders });
         if (contactRes.ok) {
           const contactData = await contactRes.json();
-          const cfs = contactData?.contact?.customFields || [];
+          const contact = contactData?.contact || {};
+          const cfs = contact.customFields || [];
           const ecpField = cfs.find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD');
           contactEcp = ecpField?.value || '';
           const sexoField = cfs.find(f => f.id === 'P7D2edjnOHwXLpglw9tB');
           contactSexo = (sexoField?.value || '').toLowerCase();
+          contactGender = (contact.gender || '').toLowerCase();
         }
         // Search opportunity for payment status
         const oppSearchRes = await fetch(
@@ -410,7 +413,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
             }
           }
         }
-        console.log('[Koibox] GHL check — ECP:', contactEcp, 'sexo:', contactSexo, 'bonoPaid:', bonoPaid);
+        console.log('[Koibox] GHL check — ECP:', contactEcp, 'sexo:', contactSexo, 'gender:', contactGender, 'bonoPaid:', bonoPaid);
       }
     } catch (err) {
       console.log('[Koibox] GHL payment check failed:', err.message);
@@ -418,12 +421,13 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   }
 
   // 0b. Block women who haven't paid the bono (only for diagnostico flow).
-  // Gate on sexo, not ECP: city outside pilot overrides ECP to 'Ciudad sin clinica',
-  // which used to bypass the ECP-based check.
+  // Gate on sexo CF OR standard GHL gender — ECP is unreliable (city outside
+  // pilot overrides it to 'Ciudad sin clinica'), and the sexo CF is empty for
+  // leads that didn't complete the full quiz.
   const isAsesoria = tipo_consulta === 'asesoria';
-  const isWoman = contactSexo === 'mujer';
+  const isWoman = contactSexo === 'mujer' || contactGender === 'female';
   if (!isAsesoria && isWoman && !bonoPaid) {
-    console.log('[Koibox] BLOCKED — Woman without bono payment. sexo:', contactSexo, 'ECP:', contactEcp);
+    console.log('[Koibox] BLOCKED — Woman without bono payment. sexo:', contactSexo, 'gender:', contactGender, 'ECP:', contactEcp);
     return {
       statusCode: 403,
       headers: corsHeaders,
@@ -523,7 +527,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   // If any of these fail, the Koibox appointment is already created, so we return success
   let ghlSync = { status: 'skipped' };
   try {
-    ghlSync = await syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId: String(appointmentData.id || ''), ghl_contact_id, bonoPaid, contactEcp, contactSexo });
+    ghlSync = await syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId: String(appointmentData.id || ''), ghl_contact_id, bonoPaid, contactEcp, contactSexo, contactGender });
   } catch (err) {
     ghlSync = { status: 'error', error: err.message };
     console.log('[Koibox→GHL] Sync failed:', err.message);
@@ -935,20 +939,23 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     };
   }
 
-  // 1b. Read ECP + sexo from contact custom fields
+  // 1b. Read ECP + sexo CF + standard gender from contact
   let contactEcp = '';
   let contactSexo = '';
+  let contactGender = '';
   let bonoPaid = false;
   if (resolvedContactId) {
     try {
       const contactEcpRes = await fetch(`${GHL_BASE}/contacts/${resolvedContactId}`, { headers: ghlHeaders });
       if (contactEcpRes.ok) {
         const ecpData = await contactEcpRes.json();
-        const ecpCfs = ecpData?.contact?.customFields || [];
+        const ecpContact = ecpData?.contact || {};
+        const ecpCfs = ecpContact.customFields || [];
         const ecpField = ecpCfs.find(f => f.id === 'cFIcdJlT9sfnC3KMSwDD');
         contactEcp = ecpField?.value || '';
         const sexoField = ecpCfs.find(f => f.id === 'P7D2edjnOHwXLpglw9tB');
         contactSexo = (sexoField?.value || '').toLowerCase();
+        contactGender = (ecpContact.gender || '').toLowerCase();
       }
     } catch (err) {
       console.log('[GetContactAppt] ECP fetch failed:', err.message);
@@ -1044,6 +1051,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
               contactPhone,
               contactEcp,
               contactSexo,
+              contactGender,
               bonoPaid,
               clinica: clinicaCita,
               appointment: {
@@ -1062,7 +1070,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid, _debug }),
+      body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, contactGender, bonoPaid, _debug }),
     };
   }
 
@@ -1073,7 +1081,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, contactGender, bonoPaid }),
       };
     }
     const data = await res.json();
@@ -1083,7 +1091,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
       return {
         statusCode: 200,
         headers: corsHeaders,
-        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, bonoPaid, previouslyCancelled: true }),
+        body: JSON.stringify({ hasAppointment: false, contactName, contactEmail, contactPhone, contactEcp, contactSexo, contactGender, bonoPaid, previouslyCancelled: true }),
       };
     }
 
@@ -1099,6 +1107,7 @@ async function getContactAppointment(body, koiboxHeaders, corsHeaders) {
         koibox_id: koiboxId,
         contactEcp,
         contactSexo,
+        contactGender,
         bonoPaid,
         clinica: clinica || '',
         appointment: {
@@ -1256,7 +1265,7 @@ async function cancelGHLAppointments(contactId, ghlHeaders) {
  * - Add note with appointment details
  * - Update opportunity: stage → Booked, tratamiento_status → booked, koibox_id, fecha, hora
  */
-async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId, ghl_contact_id, bonoPaid, contactEcp, contactSexo }) {
+async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, clinica, koiboxId, ghl_contact_id, bonoPaid, contactEcp, contactSexo, contactGender }) {
   const ghlKey = process.env.VITE_GHL_API_KEY;
   if (!ghlKey) {
     console.log('[Koibox→GHL] No GHL API key, skipping sync');
@@ -1484,8 +1493,9 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
   }
 
   // 6. Tag bono_pendiente/pagado for women who haven't/have paid yet.
-  // Gate on sexo (ECP may be 'Ciudad sin clinica' when the city is outside the pilot).
-  const isWoman = (contactSexo || '').toLowerCase() === 'mujer';
+  // Gate on sexo CF OR standard GHL gender (ECP may be 'Ciudad sin clinica' out of pilot).
+  const isWoman = (contactSexo || '').toLowerCase() === 'mujer'
+    || (contactGender || '').toLowerCase() === 'female';
 
   if (isWoman && !bonoPaid) {
     try {
