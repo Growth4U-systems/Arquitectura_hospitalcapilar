@@ -967,6 +967,23 @@ function renderAdSpendDaily(adDaily) {
 }
 
 // ---- QUIZ DROP-OFF ----
+// Quiz flow structure — mirrors packages/quiz/src/components/HospitalCapilarQuiz.jsx
+// Linear: questions everyone sees, in quiz order. Use these to find UX friction.
+// Conditional: branch-specific questions. Denominator is the subset that qualified,
+// not the whole funnel — shown separately to avoid fake "drop-offs".
+const QUIZ_LINEAR_ORDER = [
+  'sexo', 'edad', 'problema', 'tiempo', 'antecedentes', 'probado',
+  'impacto', 'diagnostico_previo', 'motivacion', 'expectativa',
+  'inversion', 'formato'
+];
+const QUIZ_CONDITIONALS = {
+  patron_perdida:     'Si problema ≠ post-cirugía / mala-experiencia',
+  inicio_caida:       'Si problema ≠ post-cirugía / mala-experiencia',
+  factores_recientes: 'Si problema ∈ caída / densidad / postparto',
+  cirugia_lugar:      'Si problema = post-cirugía',
+  clinica_previa:     'Si problema = mala-experiencia',
+};
+
 function renderQuizDropoff(data) {
   const dropoff = data.quiz_dropoff || [];
   if (dropoff.length === 0) {
@@ -974,31 +991,77 @@ function renderQuizDropoff(data) {
     return;
   }
 
-  // Sort by users descending (highest = first question, lowest = last)
-  const steps = dropoff
-    .filter(r => r.question_id && r.question_id !== 'null')
-    .sort((a, b) => b.users - a.users);
-  const first = steps[0]?.users || 1;
+  const byId = {};
+  for (const r of dropoff) {
+    if (r.question_id && r.question_id !== 'null') byId[r.question_id] = r.users;
+  }
 
-  // Compact horizontal bar funnel
-  let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
-  steps.forEach((s, i) => {
+  const linear = QUIZ_LINEAR_ORDER
+    .filter(id => byId[id] !== undefined)
+    .map(id => ({ question_id: id, users: byId[id] }));
+  const first = linear[0]?.users || 1;
+
+  const renderRow = (s, i, prevUsers, showDrop) => {
     const retention = (s.users / first * 100);
     const widthPct = Math.max(retention, 4);
-    const prevUsers = i > 0 ? steps[i - 1].users : first;
-    const dropPct = prevUsers > 0 ? ((prevUsers - s.users) / prevUsers * 100).toFixed(0) : '0';
+    const dropPct = prevUsers > 0 ? ((prevUsers - s.users) / prevUsers * 100) : 0;
     const barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
-    html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
-      <div style="width:120px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.question_id}">${s.question_id}</div>
+    const dropBadge = showDrop && dropPct > 0
+      ? ` <span style="color:#f87171;">-${dropPct.toFixed(0)}%</span>`
+      : '';
+    return `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+      <div style="width:140px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.question_id}">${s.question_id}</div>
       <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;position:relative;">
         <div style="width:${widthPct}%;height:100%;background:${barColor};border-radius:3px;display:flex;align-items:center;padding-left:6px;">
           <span style="font-size:10px;color:#fff;font-weight:600;">${s.users}</span>
         </div>
       </div>
-      <div style="width:60px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${i > 0 && dropPct > 0 ? ' <span style=\"color:#f87171;\">-' + dropPct + '%</span>' : ''}</div>
+      <div style="width:70px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${dropBadge}</div>
     </div>`;
+  };
+
+  let html = '';
+
+  // Linear funnel — actual quiz order, drop% vs previous question
+  html += '<div style="font-size:11px;color:#8fa3b0;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Funnel lineal · orden real del quiz</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px;">';
+  linear.forEach((s, i) => {
+    const prev = i > 0 ? linear[i - 1].users : s.users;
+    html += renderRow(s, i, prev, i > 0);
   });
   html += '</div>';
+
+  // Conditional questions — shown separately with gating rule, raw counts
+  const conditionals = Object.keys(QUIZ_CONDITIONALS)
+    .filter(id => byId[id] !== undefined)
+    .map(id => ({ question_id: id, users: byId[id], gate: QUIZ_CONDITIONALS[id] }));
+
+  if (conditionals.length > 0) {
+    html += '<div style="font-size:11px;color:#8fa3b0;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Preguntas condicionales · solo segmentos específicos</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+    conditionals.forEach(c => {
+      const retention = (c.users / first * 100);
+      const widthPct = Math.max(retention, 4);
+      html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+        <div style="width:140px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.question_id} — ${c.gate}">${c.question_id}</div>
+        <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;position:relative;">
+          <div style="width:${widthPct}%;height:100%;background:#64748b;border-radius:3px;display:flex;align-items:center;padding-left:6px;">
+            <span style="font-size:10px;color:#fff;font-weight:600;">${c.users}</span>
+          </div>
+        </div>
+        <div style="width:70px;font-size:10px;color:#8fa3b0;flex-shrink:0;" title="${c.gate}">${c.gate}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // Any question_ids we don't recognize (new questions not yet added to the lists)
+  const known = new Set([...QUIZ_LINEAR_ORDER, ...Object.keys(QUIZ_CONDITIONALS)]);
+  const unknown = Object.keys(byId).filter(id => !known.has(id));
+  if (unknown.length > 0) {
+    html += '<div style="font-size:10px;color:#555;margin-top:10px;">Sin clasificar: ' + unknown.join(', ') + '</div>';
+  }
+
   document.getElementById('quizDropoffChart').innerHTML = html;
 }
 
