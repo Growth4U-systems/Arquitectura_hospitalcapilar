@@ -105,10 +105,11 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
-      // Bookings: filter _v3 to avoid duplicates from old sync versions
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      // Bookings: count DISTINCT $insert_id — PostHog's native dedup has a short window
+      // and duplicate sync runs can create repeated rows with the same insert_id.
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
 
       // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
@@ -122,13 +123,13 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // Bookings by traffic source (only v3 events)
+      // Bookings by traffic source — dedupe by $insert_id per event type
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
-          countIf(event = 'appointment_booked') as booked,
-          countIf(event = 'appointment_attended') as attended,
-          countIf(event = 'appointment_no_show') as no_show
+          uniqIf(toString(properties.$insert_id), event = 'appointment_booked') as booked,
+          uniqIf(toString(properties.$insert_id), event = 'appointment_attended') as attended,
+          uniqIf(toString(properties.$insert_id), event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
           AND toString(properties.$insert_id) LIKE '%_v4'
@@ -154,11 +155,11 @@ exports.handler = async (event) => {
         ORDER BY visits DESC
       `),
 
-      // Bookings by funnel_type (from GHL custom fields)
+      // Bookings by funnel_type — dedupe by $insert_id
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
-          count() as booked
+          count(DISTINCT toString(properties.$insert_id)) as booked
         FROM events
         WHERE event = 'appointment_booked'
           AND toString(properties.$insert_id) LIKE '%_v4'
