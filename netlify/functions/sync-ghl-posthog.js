@@ -81,6 +81,40 @@ async function sendBatch(events) {
   return res.ok;
 }
 
+async function fetchContactLeadSource(contactId) {
+  try {
+    const cfRes = await fetchWithRetry(
+      `${GHL_BASE}/contacts/${contactId}`,
+      { headers: { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' } }
+    );
+    const cfData = await cfRes.json();
+    const cfs = cfData.contact?.customFields || [];
+    const cfMap = {};
+    cfs.forEach(f => { cfMap[f.id] = f.value; });
+    return {
+      traffic_source: cfMap['miu6E3oxZowYahYGjX1A'] || null,
+      funnel_type: cfMap['liIshAFJMngl2BV9MtVw'] || null,
+      nicho: cfMap['cFIcdJlT9sfnC3KMSwDD'] || null,
+    };
+  } catch (e) {
+    console.log(`[GHL] Contact fetch failed for ${contactId}: ${e.message}`);
+    return {};
+  }
+}
+
+async function parallelMap(items, fn, concurrency = 5) {
+  const results = new Array(items.length);
+  let idx = 0;
+  async function worker() {
+    while (idx < items.length) {
+      const i = idx++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 // Scheduled function: runs every hour
 exports.handler = async (event) => {
   if (!GHL_KEY || !POSTHOG_KEY) {
@@ -93,41 +127,28 @@ exports.handler = async (event) => {
   const opps = await fetchAllOpportunities();
   console.log(`[GHL→PostHog Sync] Found ${opps.length} opportunities`);
 
+  // Filter to opps in stages that emit events — avoids wasted contact fetches
+  const relevantOpps = opps.filter(o => STAGE_EVENTS[STAGES[o.pipelineStageId] || 'unknown']);
+  console.log(`[GHL→PostHog Sync] ${relevantOpps.length} opps in event-emitting stages`);
+
+  // Fetch all contact custom fields in parallel (5 concurrent) — prevents Netlify timeout
+  const leadSourceByOppId = new Map();
+  await parallelMap(relevantOpps, async (opp) => {
+    if (!opp.contactId) return;
+    const ls = await fetchContactLeadSource(opp.contactId);
+    leadSourceByOppId.set(opp.id, ls);
+  }, 5);
+
   const events = [];
 
-  for (const opp of opps) {
+  for (const opp of relevantOpps) {
     const stageName = STAGES[opp.pipelineStageId] || 'unknown';
     const eventsToSend = STAGE_EVENTS[stageName];
-    if (!eventsToSend) continue;
 
     const contact = opp.contact || {};
     const email = contact.email || '';
     const distinctId = email || opp.id;
-
-    // Get attribution from GHL contact custom fields
-    let leadSource = {};
-    const contactId = opp.contactId;
-    if (contactId) {
-      try {
-        const cfRes = await fetchWithRetry(
-          `${GHL_BASE}/contacts/${contactId}`,
-          { headers: { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' } }
-        );
-        const cfData = await cfRes.json();
-        const cfs = cfData.contact?.customFields || [];
-        const cfMap = {};
-        cfs.forEach(f => { cfMap[f.id] = f.value; });
-
-        leadSource = {
-          traffic_source: cfMap['miu6E3oxZowYahYGjX1A'] || null,
-          funnel_type: cfMap['liIshAFJMngl2BV9MtVw'] || null,
-          nicho: cfMap['cFIcdJlT9sfnC3KMSwDD'] || null,
-        };
-        await sleep(200); // Respect GHL rate limits
-      } catch (e) {
-        console.log(`[GHL] Contact fetch failed for ${contactId}: ${e.message}`);
-      }
-    }
+    const leadSource = leadSourceByOppId.get(opp.id) || {};
 
     // Use the most recent timestamp available (stage change > updated > created)
     const eventTimestamp = opp.lastStageChangeAt || opp.updatedAt || opp.createdAt || new Date().toISOString();
