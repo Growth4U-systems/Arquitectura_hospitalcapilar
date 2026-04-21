@@ -92,6 +92,12 @@ async function getLeadSourceByEmail(email) {
       funnel_type: source.funnel_type || null,
       traffic_source: source.traffic_source || null,
       nicho: source.nicho || null,
+      fbclid: source.fbclid || null,
+      gclid: source.gclid || null,
+      landing_url: source.landing_url || null,
+      utm_source: source.utm_source || null,
+      utm_medium: source.utm_medium || null,
+      utm_campaign: source.utm_campaign || null,
     };
   } catch (err) {
     console.log('[Firestore] getLeadSource error:', err.message);

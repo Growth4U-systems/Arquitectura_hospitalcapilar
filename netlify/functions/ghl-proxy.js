@@ -1,4 +1,5 @@
 const { sendAlert } = require('./lib/alert');
+const { sendMetaEvent, extractClientContext } = require('./lib/meta-capi');
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const SALESFORCE_URL = 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00D090000047Cb3';
@@ -297,6 +298,23 @@ exports.handler = async (event) => {
       agentMessage,
       contactScore,
       ...salesforceData,
+    });
+
+    // 6. Send Lead event to Meta CAPI (fire-and-forget, server-side)
+    const clientCtx = extractClientContext(event);
+    sendMetaEvent('Lead', {
+      email: body.email,
+      phone: body.phone,
+      fbclid: salesforceData.fbclid,
+      eventSourceUrl: salesforceData.landing_url,
+      eventId: contactId ? `lead_${contactId}` : undefined,
+      ipAddress: clientCtx.ipAddress,
+      userAgent: clientCtx.userAgent,
+      customData: {
+        content_name: tipoConsulta,
+        content_category: salesforceData.nicho || 'general',
+        lead_event_source: 'diagnostico_quiz',
+      },
     });
 
     return {

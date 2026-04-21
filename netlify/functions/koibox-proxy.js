@@ -1,4 +1,5 @@
 const { updateLeadByEmail, getLeadSourceByEmail, getLeadByEmail } = require('./lib/firebase-admin');
+const { sendMetaEvent } = require('./lib/meta-capi');
 
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
@@ -547,9 +548,10 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     console.log('[Koibox] Firestore update failed:', err.message);
   }
 
-  // 5. Track in PostHog server-side (enrich with lead attribution)
+  // 5. Track in PostHog server-side + Meta CAPI (enrich with lead attribution)
+  let leadSource = {};
   try {
-    const leadSource = await getLeadSourceByEmail(email);
+    leadSource = await getLeadSourceByEmail(email);
     await trackServerEvent('appointment_booked', {
       clinica,
       fecha,
@@ -564,6 +566,21 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   } catch (err) {
     console.log('[Koibox] PostHog tracking failed:', err.message);
   }
+
+  // 5b. Send Schedule event to Meta CAPI (fire-and-forget, server-side)
+  sendMetaEvent('Schedule', {
+    email,
+    phone: movil,
+    fbclid: leadSource.fbclid,
+    eventSourceUrl: leadSource.landing_url,
+    eventId: `schedule_${appointmentData.id}`,
+    customData: {
+      content_name: isAsesoria ? 'asesoria' : 'diagnostico',
+      content_category: leadSource.nicho || 'general',
+      appointment_date: fecha,
+      clinica: clinica || '',
+    },
+  });
 
   // 6. Send to Salesforce with full G4U mapping (fire-and-forget)
   sendBookingToSalesforce({

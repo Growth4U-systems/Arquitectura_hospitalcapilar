@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { updateLeadByEmail, getLeadSourceByEmail } = require('./lib/firebase-admin');
 const { sendAlert } = require('./lib/alert');
+const { sendMetaEvent } = require('./lib/meta-capi');
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const KOIBOX_BASE = 'https://api.koibox.cloud/api';
@@ -66,8 +67,9 @@ exports.handler = async (event) => {
 
       // Track in PostHog server-side (enrich with lead attribution)
       const leadSource = await getLeadSourceByEmail(session.customer_email);
+      const amountEur = session.amount_total / 100;
       await trackServerEvent('payment_completed', {
-        amount: session.amount_total / 100,
+        amount: amountEur,
         currency: session.currency,
         stripe_session_id: session.id,
         ecp: session.metadata?.ecp || '',
@@ -75,6 +77,22 @@ exports.handler = async (event) => {
         ghl_contact_id: contactId || '',
         ...leadSource,
       }, session.customer_email);
+
+      // Send Purchase event to Meta CAPI (fire-and-forget, server-side)
+      sendMetaEvent('Purchase', {
+        email: session.customer_email,
+        phone: session.customer_details?.phone,
+        fbclid: leadSource.fbclid,
+        eventSourceUrl: leadSource.landing_url,
+        eventId: `purchase_${session.id}`,
+        customData: {
+          value: amountEur,
+          currency: (session.currency || 'eur').toUpperCase(),
+          content_name: 'bono_diagnostico',
+          content_category: leadSource.nicho || 'general',
+          content_ids: [session.id],
+        },
+      });
     }
 
     return { statusCode: 200, body: JSON.stringify({ received: true }) };
