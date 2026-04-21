@@ -14,10 +14,11 @@ const crypto = require('crypto');
 const GRAPH_VERSION = 'v21.0';
 
 // HARDCODED: Netlify env vars are saturated in this project (build breaks if we add more).
-// Pixel ID is public-ish — fine to commit. Get the value by hitting:
-//   /.netlify/functions/debug-meta-pixels?key=hc-dashboard-2026
-// then paste the `id` of the diagnostico-related pixel below.
-const META_PIXEL_ID = 'PASTE_PIXEL_ID_HERE';
+// Pixel ID is public-ish — fine to commit. To list all pixels on the ad account:
+//   GET /.netlify/functions/debug-meta-pixels?key=hc-dashboard-2026
+// Pixel "HC_Hospital Capilar" — same pixel as web principal, until we create a
+// dedicated subdomain pixel for diagnostico.hospitalcapilar.com.
+const META_PIXEL_ID = '545725123252532';
 
 function sha256(value) {
   if (!value) return undefined;
