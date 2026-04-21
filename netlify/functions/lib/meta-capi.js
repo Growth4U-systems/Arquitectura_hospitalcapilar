@@ -5,14 +5,19 @@
  * bypassing browser pixel restrictions (EU data sharing, ad blockers, iOS).
  *
  * Required env vars:
- *   META_ACCESS_TOKEN  — System User token with ads_management permission
- *   META_PIXEL_ID      — Pixel/Dataset ID associated with diagnostico.hospitalcapilar.com
+ *   META_ACCESS_TOKEN  — System User token with ads_management permission (already deployed for sync-ad-spend)
  *
  * Docs: https://developers.facebook.com/docs/marketing-api/conversions-api
  */
 const crypto = require('crypto');
 
 const GRAPH_VERSION = 'v21.0';
+
+// HARDCODED: Netlify env vars are saturated in this project (build breaks if we add more).
+// Pixel ID is public-ish — fine to commit. Get the value by hitting:
+//   /.netlify/functions/debug-meta-pixels?key=hc-dashboard-2026
+// then paste the `id` of the diagnostico-related pixel below.
+const META_PIXEL_ID = 'PASTE_PIXEL_ID_HERE';
 
 function sha256(value) {
   if (!value) return undefined;
@@ -57,10 +62,10 @@ function buildFbc(fbclid, eventTimeMs = Date.now()) {
  */
 async function sendMetaEvent(eventName, options = {}) {
   const accessToken = process.env.META_ACCESS_TOKEN;
-  const pixelId = process.env.META_PIXEL_ID;
+  const pixelId = META_PIXEL_ID;
 
-  if (!accessToken || !pixelId) {
-    console.log(`[Meta CAPI] Skipped ${eventName}: missing META_ACCESS_TOKEN or META_PIXEL_ID`);
+  if (!accessToken || !pixelId || pixelId === 'PASTE_PIXEL_ID_HERE') {
+    console.log(`[Meta CAPI] Skipped ${eventName}: missing META_ACCESS_TOKEN or META_PIXEL_ID not set`);
     return { ok: false, error: 'missing_config' };
   }
 
