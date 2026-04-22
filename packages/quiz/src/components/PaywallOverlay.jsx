@@ -44,7 +44,7 @@ const OBJECTIONS = {
 };
 
 const getfaqs = (price) => [
-  { q: '¿Qué incluye exactamente el test capilar?', a: 'Analítica hormonal completa, tricoscopia digital (microscopio capilar de alta resolución), valoración con médico especialista (30 min) e informe personalizado con plan de tratamiento.' },
+  { q: '¿Qué incluye exactamente la analítica?', a: 'Analítica completa personalizada (perfil hormonal + serología + hemograma completo), tricoscopia digital (microscopio capilar de alta resolución), valoración con médico especialista (30 min) e informe personalizado con plan de tratamiento.' },
   { q: `¿Por qué se paga por adelantado?`, a: `Reservamos 30 minutos de tiempo médico exclusivo y una analítica de laboratorio a tu nombre. El pago por adelantado garantiza tu plaza y nos permite preparar tu caso antes de la cita.` },
   { q: `¿Los ${price}€ se descuentan si hago tratamiento?`, a: `Sí. Si decides iniciar tratamiento en Hospital Capilar, los ${price}€ del test se descuentan íntegros del coste.` },
   { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te dan un informe objetivo (microscopio + analítica) y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
@@ -102,13 +102,15 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
             {firstName}, descubre qué le pasa a tu pelo
           </h2>
           <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
-            {ecp === 'Lo Que Vino Con el Bebé'
-              ? 'Tu caso necesita un test capilar que cruce tu perfil hormonal postparto con un estudio capilar completo.'
-              : ecp === '¿Qué Me Pasa?'
-              ? 'Google no puede diagnosticarte. Solo una tricoscopia + analítica hormonal te dice exactamente qué ocurre.'
-              : ecp === 'La Farmacia'
-              ? 'Sin saber la causa, cualquier producto es una apuesta. Descubre qué necesitas realmente.'
-              : 'Tu caída puede tener causa hormonal. Solo un test capilar especializado puede confirmarlo.'}
+            {ecp === 'Lo Que Vino Con el Bebé' ? (
+              <>Tu caso necesita un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
+            ) : ecp === '¿Qué Me Pasa?' ? (
+              <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
+            ) : ecp === 'La Farmacia' ? (
+              <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
+            ) : (
+              <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
+            )}
           </p>
         </div>
 
@@ -132,13 +134,27 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           </div>
         </div>
 
+        {/* Video testimonial — right after objections */}
+        <div className="mb-6">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
+          <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[360px] mx-auto" style={{ maxWidth: '200px' }}>
+            <iframe
+              src="https://www.youtube.com/embed/pbJOQYupwFE"
+              title="Hospital Capilar"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+
         {/* What's included */}
         <div className="mb-6">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu test capilar</h3>
           <div className="space-y-2">
             {[
-              'Analítica hormonal completa',
               'Tricoscopia digital con microscopio de alta resolución',
+              'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
               'Valoración con médico especialista (30 min)',
               'Informe personalizado con plan de tratamiento',
             ].map((text, i) => (
@@ -157,14 +173,22 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1.5 rounded-full whitespace-nowrap shadow-md">
             Oferta limitada
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
-              <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}%</span>
-              <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
+          <div className="grid grid-cols-2 gap-3">
+            {/* En clínica */}
+            <div className="text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Reservando en clínica</p>
+              <div className="text-2xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
             </div>
-            <div className="text-5xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
-            <p className="text-sm text-gray-500 mt-2">Pago único · Se descuenta si inicias tratamiento</p>
+            {/* Online */}
+            <div className="text-center border-l border-gray-200 pl-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4CA994] mb-1">Reservando online</p>
+              <div className="text-3xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
+            </div>
           </div>
+          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
+            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}% reservando online</span>
+          </div>
+          <p className="text-xs text-gray-500 text-center mt-2">Pago único · Se descuenta si inicias tratamiento</p>
         </div>
 
         {/* Countdown */}
@@ -229,11 +253,22 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
       {/* Sticky CTA — fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="max-w-lg mx-auto">
+          {/* Offer line — tachado + descuento + countdown */}
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-2 text-xs">
+            <span className="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}%</span>
+            <span className="text-gray-400 line-through">{ORIGINAL_PRICE}€</span>
+            <span className="text-gray-300">·</span>
+            <span className="flex items-center gap-1 text-[#2C3E50] font-semibold">
+              <Clock size={11} />
+              <span>Oferta limitada:</span>
+              <span className="font-extrabold tabular-nums">{countdownDisplay}</span>
+            </span>
+          </div>
           <button
             onClick={onPay}
             className="w-full bg-[#4CA994] hover:bg-[#3d9480] text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors"
           >
-            Reservar mi test — {bonoPrice}€
+            Reservar mi analítica · {bonoPrice}€
           </button>
           <button
             onClick={onCallRequest}

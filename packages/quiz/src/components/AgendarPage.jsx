@@ -116,15 +116,15 @@ export default function AgendarPage() {
       <div className="min-h-screen bg-[#F7F8FA]">
         <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
           <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
-          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar Test Capilar'}</span>
+          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar mi analítica'}</span>
         </div>
         <div className="max-w-lg mx-auto px-4 py-8">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
-              Tu test capilar
+              Tu analítica de perfil hormonal
             </h2>
-            <p className="text-gray-500 text-sm max-w-sm mx-auto">
-              La única prueba médica que identifica la causa real de tu caída. Reserva ahora al precio de lanzamiento.
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
+              La única prueba médica que identifica la causa real de tu caída. Reserva online para ahorrar frente al precio en clínica.
             </p>
           </div>
 
@@ -135,27 +135,31 @@ export default function AgendarPage() {
               <span>Oferta limitada</span>
             </div>
             <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-gray-900 text-lg leading-tight">Test capilar completo</p>
-                  <div className="inline-flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}%</span>
-                    <span className="text-gray-400 text-sm line-through">{ORIGINAL_PRICE}€</span>
-                  </div>
+              <p className="font-extrabold text-gray-900 text-lg leading-tight text-center mb-3">Analítica de perfil hormonal</p>
+              <div className="grid grid-cols-2 gap-3">
+                {/* En clínica */}
+                <div className="text-center">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Reservando en clínica</p>
+                  <div className="text-2xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className="text-4xl font-extrabold text-gray-900">{OFFER_PRICE}€</span>
+                {/* Online */}
+                <div className="text-center border-l border-gray-200 pl-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4CA994] mb-1">Reservando online</p>
+                  <div className="text-3xl font-extrabold text-gray-900 leading-none">{OFFER_PRICE}€</div>
                 </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center">
+                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}% reservando online</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Analítica hormonal completa
+                    Tricoscopia digital con microscopio de alta resolución
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Tricoscopia digital
+                    Analítica completa personalizada: perfil hormonal + serología + hemograma completo
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
@@ -183,7 +187,7 @@ export default function AgendarPage() {
             className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center text-lg shadow-lg flex items-center justify-center gap-2"
           >
             <CreditCard size={20} />
-            Reservar mi test — {OFFER_PRICE}€
+            Reservar mi analítica · {OFFER_PRICE}€
           </a>
 
           <p className="text-center text-xs text-gray-400 mt-3">
@@ -220,7 +224,7 @@ export default function AgendarPage() {
       <div className="min-h-screen bg-[#F7F8FA]">
         <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
           <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
-          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar Test Capilar'}</span>
+          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar mi analítica'}</span>
         </div>
         <div className="max-w-lg mx-auto px-4 py-6">
           <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 shadow-sm">
@@ -262,7 +266,7 @@ export default function AgendarPage() {
       <div className="bg-[#2C3E50] text-white py-3 px-4">
         <div className="max-w-lg mx-auto flex items-center justify-center gap-2 text-sm font-semibold">
           <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-5" />
-          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar Test Capilar'}</span>
+          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar mi analítica'}</span>
         </div>
       </div>
 

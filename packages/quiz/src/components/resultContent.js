@@ -86,10 +86,10 @@ export const TESTIMONIALS_BY_ECP = {
 // ─── WHAT'S INCLUDED — by CTA type ─────────────────────────
 export const INCLUDED_BY_CTA = {
   pagar_bono: [
-    'Tricoscopía digital con microscopio de alta resolución',
-    'Analítica hormonal completa',
-    'Valoración médica personalizada (30 min)',
-    'Plan de tratamiento detallado',
+    'Tricoscopia digital con microscopio de alta resolución',
+    'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
+    'Valoración con médico especialista (30 min)',
+    'Informe personalizado con plan de tratamiento',
   ],
   agendar_consulta: [
     'Valoración médica presencial con especialista',

@@ -987,7 +987,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       }
       // Perfil A o B → cobrar bono (oferta 195€ → 125€)
       return {
-        primary: { type: 'pagar_bono', label: `Reservar mi test — ${bonoPrice}€`, icon: 'Calendar', style: 'primary', badge: 'OFERTA LIMITADA' },
+        primary: { type: 'pagar_bono', label: `Reservar mi analítica · ${bonoPrice}€`, icon: 'Calendar', style: 'primary', badge: 'OFERTA LIMITADA' },
         secondary: null,
         heading: 'Tu caso necesita un test capilar especializado',
         description: 'El test incluye analítica hormonal completa + tricoscopia digital + valoración con médico especialista + informe personalizado. En 30 minutos tendrás respuestas.',
@@ -1532,16 +1532,16 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     const includedItems = INCLUDED_BY_CTA[ctaType] || INCLUDED_BY_CTA['solicitar_llamada'];
     const faqs = FAQS_BY_CTA[ctaType] || FAQS_BY_CTA['solicitar_llamada'];
 
-    // ECP-specific subtitle for the header
+    // ECP-specific subtitle for the header (JSX so we can bold the product name)
+    const highlight = (txt) => <strong className="font-bold text-gray-900">{txt}</strong>;
     const ecpSubtitles = {
-      '¿Qué Me Pasa?': 'Tu caída necesita un test capilar real — no más productos a ciegas.',
-      'Es Normal': 'Tu caída puede tener causa hormonal. Solo un test capilar especializado puede confirmarlo.',
-      'El Espejo': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
-      'Ya Me Engañaron': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
-      'La Inversión': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
-      'Lo Que Vino Con el Bebé': 'Tu caso necesita un test capilar que cruce tu perfil hormonal con un estudio capilar completo.',
-      '¿Qué Me Pasa?': 'Google no puede diagnosticarte. Un test capilar profesional te dice exactamente qué ocurre.',
-      'La Farmacia': 'Sin un test capilar, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
+      '¿Qué Me Pasa?': <>Google no puede diagnosticarte. Solo un {highlight('analítica de perfil hormonal')} te dice exactamente qué ocurre.</>,
+      'Es Normal': <>Tu caída puede tener causa hormonal. Solo un {highlight('analítica de perfil hormonal')} especializado puede confirmarlo.</>,
+      'El Espejo': <>Actuar temprano es la mejor decisión. Un {highlight('analítica de perfil hormonal')} te dice exactamente qué tienes.</>,
+      'Ya Me Engañaron': <>Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.</>,
+      'La Inversión': <>Tu trasplante necesita un plan de mantenimiento para proteger los resultados.</>,
+      'Lo Que Vino Con el Bebé': <>Tu caso necesita un {highlight('analítica de perfil hormonal')}: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>,
+      'La Farmacia': <>Sin saber la causa, cualquier producto es una apuesta. Un {highlight('analítica de perfil hormonal')} te dice exactamente qué necesitas.</>,
     };
 
     return (
@@ -1596,11 +1596,27 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             </div>
           )}
 
+          {/* Video testimonial — right after objections (only for payment CTA) */}
+          {ctaType === 'pagar_bono' && (
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
+              <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[360px] mx-auto" style={{ maxWidth: '200px' }}>
+                <iframe
+                  src="https://www.youtube.com/embed/pbJOQYupwFE"
+                  title="Hospital Capilar"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          )}
+
           {/* What's included */}
           {!isDerivacion && (
             <div className="mb-6">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                {ctaType === 'pagar_bono' ? 'Lo que incluye tu test capilar' : 'Lo que haremos por ti'}
+                {ctaType === 'pagar_bono' ? 'Lo que incluye tu analítica' : 'Lo que haremos por ti'}
               </h3>
               <div className="space-y-2">
                 {includedItems.map((text, i) => (
@@ -1615,22 +1631,6 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             </div>
           )}
 
-          {/* Video testimonial (only for payment CTA) */}
-          {ctaType === 'pagar_bono' && (
-            <div className="mb-6">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
-              <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[320px] mx-auto" style={{ maxWidth: '180px' }}>
-                <iframe
-                  src="https://www.youtube.com/embed/pbJOQYupwFE"
-                  title="Hospital Capilar"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Price card (only for payment CTA) */}
           {ctaType === 'pagar_bono' && (
             <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 mb-4 shadow-sm relative">
@@ -1638,14 +1638,22 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
                 <Sparkles size={12} fill="currentColor" />
                 <span>Oferta limitada</span>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
-                  <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}%</span>
-                  <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
+              <div className="grid grid-cols-2 gap-3">
+                {/* En clínica */}
+                <div className="text-center">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Reservando en clínica</p>
+                  <div className="text-2xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
                 </div>
-                <div className="text-5xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
-                <p className="text-sm text-gray-500 mt-2">Pago único · Se descuenta si inicias tratamiento</p>
+                {/* Online */}
+                <div className="text-center border-l border-gray-200 pl-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4CA994] mb-1">Reservando online</p>
+                  <div className="text-3xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
+                </div>
               </div>
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
+                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}% reservando online</span>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">Pago único · Se descuenta si inicias tratamiento</p>
             </div>
           )}
 
