@@ -42,9 +42,52 @@ async function hogqlQuery(apiKey, query) {
   return data.results || [];
 }
 
+// Small Spanish first-name → gender lookup used as a fallback when
+// contact.gender isn't set in GHL (happens for leads that came via
+// forms without a sexo question, e.g. formulario directo).
+// Only covers the top ~80 most common Spanish names; anything else
+// falls through to 'sin-dato'.
+const MALE_NAMES = new Set([
+  'diego','izan','andres','juan','jose','carlos','miguel','antonio','pedro',
+  'pablo','manuel','luis','fernando','javier','francisco','daniel','alejandro',
+  'rafael','alberto','ricardo','raul','enrique','jorge','ignacio','ivan',
+  'alvaro','ismael','adrian','ruben','gabriel','david','victor','marcos',
+  'mario','hector','samuel','joaquin','sergio','eduardo','roberto','santiago',
+  'gonzalo','ramon','alex','hugo','oscar','lucas','martin','emilio','nicolas',
+  'cristian','felipe','marc','albert','xavier','dario','julian','cesar',
+]);
+const FEMALE_NAMES = new Set([
+  'maria','ana','carmen','laura','isabel','sara','rosa','catalina','pilar',
+  'lucia','elena','cristina','marta','paula','sofia','andrea','alba','marina',
+  'eva','ines','patricia','beatriz','rocio','silvia','sandra','raquel','monica',
+  'teresa','julia','claudia','natalia','lorena','gloria','susana','angela',
+  'yolanda','alicia','elisa','dolores','adriana','concepcion','esther',
+  'mercedes','manuela','josefa','antonia','encarnacion','amparo','nieves',
+  'montserrat','montse','noelia','nuria','virginia','olga','irene','celia',
+  'veronica','carla','diana','rebeca','nerea','aitana','martina','valentina',
+  'vanesa','vanessa','miriam','ester','nadia','leire','ainhoa',
+]);
+
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Try each token in the full name in order — handles "IBM Andrés noreña"
+// (first token is not a name) or "María del Carmen" (second/third tokens).
+function inferSexoFromName(fullName) {
+  if (!fullName) return null;
+  const tokens = fullName.trim().toLowerCase().split(/\s+/).map(stripAccents);
+  for (const t of tokens) {
+    if (MALE_NAMES.has(t)) return 'hombre';
+    if (FEMALE_NAMES.has(t)) return 'mujer';
+  }
+  return null;
+}
+
 // ─── Direct GHL → by_sexo aggregation ─────────────────────────────
-// GHL is the source of truth for gender (native contact.gender field,
-// populated; the custom field `sexo` is not reliably round-tripped).
+// GHL is the source of truth for gender (native contact.gender field).
+// When gender is missing (contacts from form-direct flows that don't ask
+// sexo), fall back to a first-name heuristic against a Spanish name list.
 // Pulling directly avoids PostHog's person-property propagation lag.
 async function fetchGhlBySexo(startDate, endDate) {
   const GHL_KEY = process.env.VITE_GHL_API_KEY;
@@ -97,13 +140,20 @@ async function fetchGhlBySexo(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Aggregate by normalized sexo
+  // Aggregate by normalized sexo. Priority: GHL native gender → name heuristic
+  // → sin-dato. Native gender is missing for contacts from flows that don't
+  // ask sexo (formulario directo, some asesores paths).
   const buckets = {};
   const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0 }; return buckets[k]; };
   for (const opp of inRange) {
     const contact = contactById[opp.contactId] || {};
     const g = (contact.gender || '').toLowerCase();
-    const sexo = g === 'female' ? 'mujer' : g === 'male' ? 'hombre' : 'sin-dato';
+    let sexo = g === 'female' ? 'mujer' : g === 'male' ? 'hombre' : null;
+    if (!sexo) {
+      const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.name || '';
+      sexo = inferSexoFromName(fullName);
+    }
+    sexo = sexo || 'sin-dato';
     const b = ensure(sexo);
     b.leads++;
     if (GHL_BOOKED_STAGES.has(opp.pipelineStageId)) b.booked++;
