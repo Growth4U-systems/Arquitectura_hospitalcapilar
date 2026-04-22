@@ -127,89 +127,6 @@
 
   /* Footer */
   .dashboard-footer { padding: 24px; text-align: center; color: var(--hc-text-dim); font-size: 12px; font-weight: 500; }
-
-  /* ─── F4: Executive header ──────────────────── */
-  .exec-grid { display: grid; grid-template-columns: 1.5fr 2fr 1fr; gap: 14px; padding: 18px 24px 6px; }
-  @media (max-width: 1100px) { .exec-grid { grid-template-columns: 1fr; } }
-  .exec-card { background: var(--hc-card); border: 1px solid var(--hc-card-border); border-radius: 14px; padding: 14px 16px; }
-  .exec-card h4 { font-size: 10px; font-weight: 700; color: var(--hc-teal); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 8px; }
-  .bottleneck-big { font-size: 34px; font-weight: 800; color: #f87171; line-height: 1; margin: 2px 0 4px; }
-  .bottleneck-label { font-size: 13px; color: var(--hc-text-muted); font-weight: 600; }
-  .bottleneck-sub { font-size: 11px; color: var(--hc-text-dim); margin-top: 4px; }
-  .tb-list { display: flex; flex-direction: column; gap: 6px; }
-  .tb-row { display: flex; align-items: center; gap: 8px; font-size: 11px; padding: 6px 8px; background: var(--hc-surface); border-radius: 6px; }
-  .tb-row .tb-meta { flex: 1; color: var(--hc-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-  .tb-row .tb-conv { font-weight: 700; font-variant-numeric: tabular-nums; width: 50px; text-align: right; flex-shrink: 0; }
-  .tb-row.top .tb-conv { color: #4ade80; }
-  .tb-row.bot .tb-conv { color: #f87171; }
-  .budget-bar { background: var(--hc-surface); border-radius: 6px; height: 20px; overflow: hidden; position: relative; margin: 6px 0 8px; }
-  .budget-fill { height: 100%; background: linear-gradient(90deg, #4ade80 0%, #facc15 60%, #f87171 95%); border-radius: 6px; transition: width 0.4s; }
-  .budget-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--hc-text-muted); }
-  .exec-kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .exec-kpi { background: var(--hc-surface); border-radius: 8px; padding: 8px 10px; text-align: center; }
-  .exec-kpi .v { font-size: 20px; font-weight: 800; color: #fff; }
-  .exec-kpi .l { font-size: 10px; color: var(--hc-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
-
-  /* ─── F4: Master funnel table ───────────────── */
-  .master-wrap { overflow-x: auto; }
-  table.master { font-size: 12px; }
-  table.master th { position: sticky; top: 0; background: var(--hc-card); z-index: 1; padding: 8px 10px; white-space: nowrap; }
-  table.master td { padding: 8px 10px; white-space: nowrap; }
-  table.master td.dim { color: var(--hc-text-muted); font-weight: 500; }
-  table.master td.dim-ad { font-weight: 600; color: #fff; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
-  table.master td.dim-ad a { color: #fff; text-decoration: none; border-bottom: 1px dashed rgba(76,169,148,0.4); }
-  table.master td.dim-ad a:hover { color: var(--hc-teal-light); border-bottom-color: var(--hc-teal); }
-  table.master tr.sexo-M { background: rgba(219,39,119,0.04); }
-  table.master tr.sexo-H { background: rgba(37,99,235,0.04); }
-  .pay-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.3px; }
-  .pay-195 { background: rgba(248,113,113,0.15); color: #fca5a5; }
-  .pay-125 { background: rgba(250,204,21,0.15); color: #facc15; }
-  .pay-0 { background: rgba(100,116,139,0.2); color: #94a3b8; }
-  .pay-clinica { background: rgba(76,169,148,0.15); color: #5fbfa8; }
-  .pay-unknown { background: rgba(120,113,108,0.2); color: #78716c; }
-  .landing-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.3px; }
-  .landing-quiz_largo { background: rgba(44,109,246,0.15); color: #60a5fa; }
-  .landing-quiz_corto { background: rgba(245,158,11,0.15); color: #fbbf24; }
-  .landing-formulario_directo { background: rgba(16,185,129,0.15); color: #6ee7b7; }
-
-  /* Filters */
-  .filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--hc-card-border); align-items: center; }
-  .filter-group { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--hc-text-muted); }
-  .filter-group select, .filter-group input { background: var(--hc-surface); border: 1px solid var(--hc-card-border); color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-family: inherit; }
-  .filter-group select:focus, .filter-group input:focus { outline: none; border-color: var(--hc-teal); }
-  .row-count { margin-left: auto; font-size: 11px; color: var(--hc-text-dim); }
-
-  /* ─── F4: Experiments ──────────────────────── */
-  .exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; padding: 0 24px; }
-  .exp-card { background: var(--hc-card); border: 1px solid var(--hc-card-border); border-radius: 12px; overflow: hidden; }
-  .exp-head { padding: 12px 14px; border-bottom: 1px solid var(--hc-card-border); display: flex; align-items: center; gap: 8px; }
-  .exp-title { font-size: 13px; font-weight: 700; color: #fff; }
-  .exp-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.3px; text-transform: uppercase; margin-left: auto; }
-  .exp-running { background: rgba(76,169,148,0.2); color: var(--hc-teal-light); }
-  .exp-pending { background: rgba(120,113,108,0.2); color: #94a3b8; }
-  .exp-concluded { background: rgba(250,204,21,0.2); color: #facc15; }
-  .exp-body { padding: 12px 14px; }
-  .exp-hypo { font-size: 11px; color: var(--hc-text-muted); line-height: 1.4; margin-bottom: 10px; font-style: italic; }
-  .exp-variants { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .exp-var { background: var(--hc-surface); border-radius: 8px; padding: 8px 10px; }
-  .exp-var-title { font-size: 10px; color: var(--hc-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
-  .exp-var-label { font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 6px; }
-  .exp-metrics { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
-  .exp-metric-row { display: flex; justify-content: space-between; color: var(--hc-text-muted); }
-  .exp-metric-row .val { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .exp-winner { position: relative; }
-  .exp-winner::before { content: '★'; position: absolute; top: 4px; right: 6px; color: #facc15; font-size: 12px; }
-  .exp-footer { padding: 10px 14px; border-top: 1px solid var(--hc-card-border); font-size: 10px; color: var(--hc-text-dim); display: flex; justify-content: space-between; }
-  .exp-delta-good { color: #4ade80; }
-  .exp-delta-bad { color: #f87171; }
-
-  /* Collapsible detail section */
-  details.detail-block { background: transparent; margin: 0 24px 16px; }
-  details.detail-block > summary { cursor: pointer; padding: 10px 16px; font-size: 12px; font-weight: 700; color: var(--hc-text-muted); text-transform: uppercase; letter-spacing: 0.5px; background: var(--hc-card); border: 1px solid var(--hc-card-border); border-radius: 10px; list-style: none; }
-  details.detail-block > summary::-webkit-details-marker { display: none; }
-  details.detail-block > summary::before { content: '▸ '; display: inline-block; margin-right: 6px; transition: transform 0.2s; }
-  details.detail-block[open] > summary::before { transform: rotate(90deg); }
-  details.detail-block > .content { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -250,162 +167,121 @@
   </div>
 </div>
 
-<!-- F4: EXECUTIVE HEADER -->
-<div class="exec-grid">
-  <div class="exec-card">
-    <h4>Cuello de botella</h4>
-    <div class="bottleneck-big" id="exec-bottleneck-drop">-</div>
-    <div class="bottleneck-label" id="exec-bottleneck-stage">-</div>
-    <div class="bottleneck-sub" id="exec-bottleneck-sub">-</div>
-    <div class="exec-kpi-row">
-      <div class="exec-kpi"><div class="v" id="exec-cpl">-</div><div class="l">CPL global</div></div>
-      <div class="exec-kpi"><div class="v" id="exec-cpa">-</div><div class="l">CPA global</div></div>
-    </div>
-  </div>
-  <div class="exec-card">
-    <h4>Top / Bottom funnels (conv visitante &rarr; cita)</h4>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <div style="font-size:10px;color:#4ade80;font-weight:700;margin-bottom:4px;">TOP 3</div>
-        <div class="tb-list" id="exec-top"></div>
-      </div>
-      <div>
-        <div style="font-size:10px;color:#f87171;font-weight:700;margin-bottom:4px;">BOTTOM 3</div>
-        <div class="tb-list" id="exec-bot"></div>
-      </div>
-    </div>
-  </div>
-  <div class="exec-card">
-    <h4>Budget</h4>
-    <div class="budget-bar"><div class="budget-fill" id="exec-budget-fill" style="width:0%;"></div></div>
-    <div class="budget-row"><span id="exec-budget-spent">&euro;0</span><span id="exec-budget-total">&euro;2.000</span></div>
-    <div style="font-size:11px;color:var(--hc-text-dim);margin-top:8px;" id="exec-budget-remaining">-</div>
-    <div class="exec-kpi-row">
-      <div class="exec-kpi"><div class="v" id="exec-clicks">-</div><div class="l">Clics</div></div>
-      <div class="exec-kpi"><div class="v" id="exec-leads-total">-</div><div class="l">Leads</div></div>
+<!-- KPI ROW -->
+<div class="kpi-row" id="kpiRow">
+  <div class="kpi"><div class="value" id="kpi-pageviews">-</div><div class="label">Visitantes</div><div class="sublabel">unique persons</div></div>
+  <div class="kpi"><div class="value" id="kpi-started">-</div><div class="label">Quiz Iniciado</div></div>
+  <div class="kpi"><div class="value" id="kpi-completed">-</div><div class="label">Quiz Completado</div></div>
+  <div class="kpi"><div class="value" id="kpi-leads">-</div><div class="label">Leads</div></div>
+  <div class="kpi"><div class="value" id="kpi-booked">-</div><div class="label">Citas Agendadas</div></div>
+  <div class="kpi"><div class="value" id="kpi-attended">-</div><div class="label">Asistieron</div></div>
+</div>
+
+<!-- FUNNEL -->
+<div class="section-header">Embudo completo</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>Funnel: Visitante &rarr; Paciente</h3><span class="type">Funnel</span></div>
+    <div class="card-body">
+      <div class="funnel" id="funnelChart"></div>
+      <div id="funnelSummary" style="margin-top:16px;padding:12px;background:#1a1c24;border-radius:6px;display:flex;gap:32px;flex-wrap:wrap;"></div>
     </div>
   </div>
 </div>
 
-<!-- F4: MASTER FUNNEL TABLE -->
-<div class="section-header">Tabla maestra de funnels <span style="font-size:10px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;">&mdash; 1 fila = combinaci&oacute;n &uacute;nica (anuncio &times; landing &times; nicho &times; g&eacute;nero &times; pago)</span></div>
+<!-- BY TRAFFIC SOURCE -->
+<div class="section-header">Por fuente de tr&aacute;fico</div>
 <div class="grid">
+  <div class="card">
+    <div class="card-header"><h3>Leads y citas por fuente</h3><span class="type">Table</span></div>
+    <div class="card-body"><table id="trafficTable1"></table></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Conversi&oacute;n por fuente (lead &rarr; cita)</h3><span class="type">Table</span></div>
+    <div class="card-body"><table id="trafficTable2"></table></div>
+  </div>
   <div class="card full-width">
-    <div class="filters" id="masterFilters">
-      <div class="filter-group">Landing <select id="filterLanding"><option value="">Todos</option></select></div>
-      <div class="filter-group">G&eacute;nero <select id="filterSexo"><option value="">Todos</option></select></div>
-      <div class="filter-group">Pago <select id="filterPayment"><option value="">Todos</option></select></div>
-      <div class="filter-group">Nicho <select id="filterNicho"><option value="">Todos</option></select></div>
-      <div class="filter-group">Min visitas <input type="number" id="filterMinVisits" value="0" min="0" style="width:60px;"></div>
-      <div class="row-count" id="masterRowCount"></div>
-    </div>
-    <div class="card-body master-wrap">
-      <table id="masterTable" class="master"></table>
+    <div class="card-header"><h3>Leads diarios por fuente</h3><span class="type">Trend (stacked)</span></div>
+    <div class="card-body">
+      <div id="dailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
+      <div id="dailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
+        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
+        <div class="legend-item"><div class="legend-dot c-seo"></div>SEO</div>
+        <div class="legend-item"><div class="legend-dot c-tiktok"></div>TikTok</div>
+        <div class="legend-item"><div class="legend-dot c-direct"></div>Directo</div>
+        <div class="legend-item"><div class="legend-dot c-other"></div>Otro</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- F4: EXPERIMENTS -->
-<div class="section-header">Experimentos A/B <span style="font-size:10px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;">&mdash; una variable por vez</span></div>
-<div class="exp-grid" id="experimentsGrid"></div>
-
-<!-- F4: DROP-OFF DETAIL -->
-<div class="section-header">Drop-off por pregunta (Quiz Largo)</div>
+<!-- BY FUNNEL TYPE -->
+<div class="section-header">Por tipo de funnel</div>
 <div class="grid">
+  <div class="card">
+    <div class="card-header"><h3>Comparativa por funnel</h3><span class="type">Table</span></div>
+    <div class="card-body">
+      <table id="funnelTypeTable"></table>
+      <div id="funnelTypeBreakdown" style="margin-top:16px;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Leads por nicho</h3><span class="type">Breakdown</span></div>
+    <div class="card-body" id="nichoChart"></div>
+  </div>
   <div class="card full-width">
+    <div class="card-header"><h3>Drop-off por pregunta (Quiz Largo)</h3><span class="type">Funnel</span></div>
     <div class="card-body" id="quizDropoffChart"></div>
   </div>
 </div>
 
-<!-- DETAILS / Legacy breakdowns -->
-<details class="detail-block">
-  <summary>Detalles &middot; KPIs, fuentes, nichos, no-show, spend legacy</summary>
-  <div class="content">
-    <div class="kpi-row" id="kpiRow" style="padding:0;">
-      <div class="kpi"><div class="value" id="kpi-pageviews">-</div><div class="label">Visitantes</div><div class="sublabel">unique persons</div></div>
-      <div class="kpi"><div class="value" id="kpi-started">-</div><div class="label">Quiz Iniciado</div></div>
-      <div class="kpi"><div class="value" id="kpi-completed">-</div><div class="label">Quiz Completado</div></div>
-      <div class="kpi"><div class="value" id="kpi-leads">-</div><div class="label">Leads</div></div>
-      <div class="kpi"><div class="value" id="kpi-booked">-</div><div class="label">Citas Agendadas</div></div>
-      <div class="kpi"><div class="value" id="kpi-attended">-</div><div class="label">Asistieron</div></div>
+<!-- QUALITY -->
+<div class="section-header">Calidad de leads y asistencia</div>
+<div class="grid">
+  <div class="card">
+    <div class="card-header"><h3>No-show rate por fuente</h3><span class="type">Table</span></div>
+    <div class="card-body">
+      <table id="noShowTable"></table>
+      <div id="noShowWarning" style="margin-top:12px;padding:10px;background:#1a1c24;border-radius:6px;font-size:12px;color:#f59e0b;display:none;"></div>
     </div>
-    <div class="grid" style="padding:16px 0;">
-      <div class="card full-width">
-        <div class="card-header"><h3>Funnel global: Visitante &rarr; Paciente</h3><span class="type">Funnel</span></div>
-        <div class="card-body">
-          <div class="funnel" id="funnelChart"></div>
-          <div id="funnelSummary" style="margin-top:16px;padding:12px;background:#1a1c24;border-radius:6px;display:flex;gap:32px;flex-wrap:wrap;"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Leads y citas por fuente</h3><span class="type">Table</span></div>
-        <div class="card-body"><table id="trafficTable1"></table></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Conversi&oacute;n por fuente</h3><span class="type">Table</span></div>
-        <div class="card-body"><table id="trafficTable2"></table></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Comparativa por funnel type</h3><span class="type">Table</span></div>
-        <div class="card-body">
-          <table id="funnelTypeTable"></table>
-          <div id="funnelTypeBreakdown" style="margin-top:16px;"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Leads por nicho</h3><span class="type">Breakdown</span></div>
-        <div class="card-body" id="nichoChart"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>No-show por fuente</h3><span class="type">Table</span></div>
-        <div class="card-body">
-          <table id="noShowTable"></table>
-          <div id="noShowWarning" style="margin-top:12px;padding:10px;background:#1a1c24;border-radius:6px;font-size:12px;color:#f59e0b;display:none;"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Clasificaci&oacute;n ECP</h3><span class="type">Breakdown</span></div>
-        <div class="card-body" id="ecpChart"></div>
-      </div>
-      <div class="card full-width">
-        <div class="card-header"><h3>Leads diarios por fuente</h3><span class="type">Trend (stacked)</span></div>
-        <div class="card-body">
-          <div id="dailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
-          <div id="dailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
-          <div class="legend">
-            <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
-            <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
-            <div class="legend-item"><div class="legend-dot c-seo"></div>SEO</div>
-            <div class="legend-item"><div class="legend-dot c-tiktok"></div>TikTok</div>
-            <div class="legend-item"><div class="legend-dot c-direct"></div>Directo</div>
-            <div class="legend-item"><div class="legend-dot c-other"></div>Otro</div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-row" id="adSpendKpiRow" style="grid-template-columns: repeat(4, 1fr);padding:0;">
-        <div class="kpi"><div class="value" id="kpi-total-spend">-</div><div class="label">Gasto total</div></div>
-        <div class="kpi"><div class="value" id="kpi-avg-cpl">-</div><div class="label">CPL medio</div></div>
-        <div class="kpi"><div class="value" id="kpi-avg-cpa">-</div><div class="label">Coste / Agenda</div></div>
-        <div class="kpi"><div class="value" id="kpi-total-ad-clicks">-</div><div class="label">Clicks (ads)</div></div>
-      </div>
-      <div class="card full-width">
-        <div class="card-header"><h3>CPL / CPA por fuente</h3><span class="type">Table</span></div>
-        <div class="card-body"><table id="adSpendTable"></table></div>
-      </div>
-      <div class="card full-width">
-        <div class="card-header"><h3>Gasto diario por plataforma</h3><span class="type">Trend</span></div>
-        <div class="card-body">
-          <div id="adSpendDailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
-          <div id="adSpendDailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
-          <div class="legend" style="margin-top:8px;">
-            <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
-            <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
-          </div>
-        </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Clasificaci&oacute;n ECP</h3><span class="type">Breakdown</span></div>
+    <div class="card-body" id="ecpChart"></div>
+  </div>
+</div>
+
+<!-- COST / ROI -->
+<div class="section-header">
+  Coste y ROI <span style="font-size:10px;background:var(--hc-teal);padding:3px 10px;border-radius:12px;margin-left:8px;color:#fff;font-weight:700;letter-spacing:0.5px;">LIVE</span>
+</div>
+<div class="kpi-row" id="adSpendKpiRow" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="kpi"><div class="value" id="kpi-total-spend">-</div><div class="label">Gasto total</div></div>
+  <div class="kpi"><div class="value" id="kpi-avg-cpl">-</div><div class="label">CPL medio</div></div>
+  <div class="kpi"><div class="value" id="kpi-avg-cpa">-</div><div class="label">Coste / Agenda</div></div>
+  <div class="kpi"><div class="value" id="kpi-total-ad-clicks">-</div><div class="label">Clicks (ads)</div></div>
+</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>CPL / CPA por fuente</h3><span class="type">Table</span></div>
+    <div class="card-body">
+      <table id="adSpendTable"></table>
+    </div>
+  </div>
+  <div class="card full-width">
+    <div class="card-header"><h3>Gasto diario por plataforma</h3><span class="type">Trend</span></div>
+    <div class="card-body">
+      <div id="adSpendDailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
+      <div id="adSpendDailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
+      <div class="legend" style="margin-top:8px;">
+        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
+        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
       </div>
     </div>
   </div>
-</details>
+</div>
 
 <div class="dashboard-footer">
   Hospital Capilar &mdash; Analytics Dashboard &mdash; Datos en vivo de PostHog
@@ -576,19 +452,8 @@ async function fetchData() {
 }
 
 // ---- RENDER ----
-let _masterRows = [];
-
 function renderDashboard(data) {
   const k = data.kpis;
-
-  // F4: Executive header
-  renderExecutiveHeader(data);
-
-  // F4: Master funnel table (sets _masterRows used by filters + experiments)
-  renderMasterTable(data);
-
-  // F4: Experiments (depends on _masterRows)
-  renderExperiments(data);
 
   // KPIs
   document.getElementById('kpi-pageviews').textContent = fmt(k.pageviews);
@@ -624,315 +489,6 @@ function renderDashboard(data) {
 
   // Ad Spend / ROI
   renderAdSpend(data);
-}
-
-// ============================================================
-// F4: EXECUTIVE HEADER
-// ============================================================
-function renderExecutiveHeader(data) {
-  const exec = data.executive_header || {};
-  const b = exec.bottleneck;
-  if (b) {
-    document.getElementById('exec-bottleneck-drop').textContent = `-${b.drop_pct}%`;
-    document.getElementById('exec-bottleneck-stage').textContent = `${b.from} → ${b.to}`;
-    document.getElementById('exec-bottleneck-sub').textContent = `${fmt(b.abs_lost)} personas perdidas · retención ${b.retention_pct}%`;
-  } else {
-    document.getElementById('exec-bottleneck-drop').textContent = '-';
-    document.getElementById('exec-bottleneck-stage').textContent = 'Sin datos suficientes';
-    document.getElementById('exec-bottleneck-sub').textContent = '-';
-  }
-
-  document.getElementById('exec-cpl').textContent = exec.global_cpl ? fmtEurDec(exec.global_cpl) : '-';
-  document.getElementById('exec-cpa').textContent = exec.global_cpa ? fmtEurDec(exec.global_cpa) : '-';
-
-  const fmtLine = (r) => {
-    const ad = (r.utm_content || 'sin-atribucion').substring(0, 22);
-    const landing = (r.landing || '').replace('formulario_directo', 'form');
-    const meta = `<span class="tb-meta">${ad} · ${landing} · ${r.nicho || '-'}</span><span class="tb-conv">${r.conv_pct.toFixed(1)}%</span>`;
-    return meta;
-  };
-  document.getElementById('exec-top').innerHTML = (exec.top_funnels || [])
-    .map(r => `<div class="tb-row top">${fmtLine(r)}</div>`)
-    .join('') || '<div style="font-size:11px;color:var(--hc-text-dim);">Sin datos con >30 visits o >3 leads</div>';
-  document.getElementById('exec-bot').innerHTML = (exec.bottom_funnels || [])
-    .map(r => `<div class="tb-row bot">${fmtLine(r)}</div>`)
-    .join('') || '<div style="font-size:11px;color:var(--hc-text-dim);">-</div>';
-
-  const bud = exec.budget || { assigned: 2000, spent: 0, pct_used: 0, remaining: 2000 };
-  document.getElementById('exec-budget-fill').style.width = Math.min(bud.pct_used, 100) + '%';
-  document.getElementById('exec-budget-spent').textContent = fmtEur(bud.spent);
-  document.getElementById('exec-budget-total').textContent = fmtEur(bud.assigned);
-  document.getElementById('exec-budget-remaining').textContent = `${bud.pct_used}% usado · ${fmtEur(bud.remaining)} restante`;
-
-  // Total clicks + leads (from existing data)
-  const totalClicks = (data.ad_spend_by_source || []).reduce((s, r) => s + (Number(r.clicks) || 0), 0);
-  document.getElementById('exec-clicks').textContent = fmt(totalClicks);
-  document.getElementById('exec-leads-total').textContent = fmt(data.kpis?.form_submitted || 0);
-}
-
-// ============================================================
-// F4: MASTER FUNNEL TABLE
-// ============================================================
-const LANDING_LABELS = { quiz_largo: 'Quiz Largo', quiz_corto: 'Quiz Corto', formulario_directo: 'Form Directo' };
-const META_AD_ACCOUNT_FOR_LINKS = '898774584294194'; // used for "selected_ad_ids" link
-
-function adLink(utmContent) {
-  if (!utmContent || utmContent === 'sin-atribucion') return null;
-  // Numeric = Meta ad.id dynamic macro. Link directo a Ads Manager.
-  if (/^\d{10,}$/.test(utmContent)) {
-    return `https://business.facebook.com/adsmanager/manage/ads?act=${META_AD_ACCOUNT_FOR_LINKS}&selected_ad_ids=${utmContent}`;
-  }
-  return null;
-}
-
-function populateFilterOptions(rows) {
-  const fill = (selectId, values) => {
-    const sel = document.getElementById(selectId);
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Todos</option>' + [...new Set(values)].sort().map(v => `<option value="${v}">${v}</option>`).join('');
-    if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
-  };
-  fill('filterLanding', rows.map(r => r.landing).filter(Boolean));
-  fill('filterSexo', rows.map(r => r.sexo).filter(Boolean));
-  fill('filterPayment', rows.map(r => r.payment_variant).filter(Boolean));
-  fill('filterNicho', rows.map(r => r.nicho).filter(Boolean));
-}
-
-function currentFilters() {
-  return {
-    landing: document.getElementById('filterLanding').value,
-    sexo: document.getElementById('filterSexo').value,
-    payment: document.getElementById('filterPayment').value,
-    nicho: document.getElementById('filterNicho').value,
-    minVisits: parseInt(document.getElementById('filterMinVisits').value) || 0,
-  };
-}
-
-function applyMasterFilters() {
-  const f = currentFilters();
-  const filtered = _masterRows.filter(r =>
-    (!f.landing || r.landing === f.landing) &&
-    (!f.sexo || r.sexo === f.sexo) &&
-    (!f.payment || r.payment_variant === f.payment) &&
-    (!f.nicho || r.nicho === f.nicho) &&
-    r.visits >= f.minVisits
-  );
-  paintMasterTable(filtered);
-  document.getElementById('masterRowCount').textContent = `${filtered.length} / ${_masterRows.length} filas`;
-}
-
-function paintMasterTable(rows) {
-  const head = `<thead><tr>
-    <th>Ad</th><th>Landing</th><th>Nicho</th><th>Género</th><th>Pago</th>
-    <th class="num">Visitas</th><th class="num">Iniciados</th><th class="num">Finalizados</th><th class="num">Leads</th><th class="num">Citas</th>
-    <th class="num">Start%</th><th class="num">Lead%</th><th class="num">Conv V→C</th>
-  </tr></thead>`;
-  const body = rows.map(r => {
-    const link = adLink(r.utm_content);
-    const adCell = link
-      ? `<a href="${link}" target="_blank" rel="noopener" title="Abrir en Meta Ads Manager">${r.utm_content}</a>`
-      : (r.utm_content || '-');
-    const sexoClass = r.sexo === 'mujer' ? 'sexo-M' : (r.sexo === 'hombre' ? 'sexo-H' : '');
-    const pctStart = r.visits > 0 ? (r.started / r.visits * 100) : 0;
-    const pctLead = r.started > 0 ? (r.leads / r.started * 100) : 0;
-    const pctConv = r.visits > 0 ? (r.booked / r.visits * 100) : 0;
-    const classFor = (p) => p >= 20 ? 'good' : p >= 5 ? 'warn' : (p > 0 ? 'bad' : '');
-    return `<tr class="${sexoClass}">
-      <td class="dim-ad">${adCell}</td>
-      <td><span class="landing-badge landing-${r.landing}">${LANDING_LABELS[r.landing] || r.landing}</span></td>
-      <td class="dim">${r.nicho}</td>
-      <td class="dim">${r.sexo}</td>
-      <td><span class="pay-badge pay-${r.payment_variant || 'unknown'}">${r.payment_variant}</span></td>
-      <td class="num">${fmt(r.visits)}</td>
-      <td class="num">${fmt(r.started)}</td>
-      <td class="num">${fmt(r.completed)}</td>
-      <td class="num">${fmt(r.leads)}</td>
-      <td class="num">${fmt(r.booked)}</td>
-      <td class="num ${classFor(pctStart)}">${r.visits > 0 ? pctStart.toFixed(1) + '%' : '-'}</td>
-      <td class="num ${classFor(pctLead)}">${r.started > 0 ? pctLead.toFixed(1) + '%' : '-'}</td>
-      <td class="num ${classFor(pctConv)}">${r.visits > 0 ? pctConv.toFixed(2) + '%' : '-'}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('masterTable').innerHTML = head + '<tbody>' + (body || '<tr><td colspan="13" style="text-align:center;color:#666;padding:20px;">Sin filas con datos</td></tr>') + '</tbody>';
-}
-
-function renderMasterTable(data) {
-  _masterRows = (data.by_funnel_dimensions || []).slice();
-  populateFilterOptions(_masterRows);
-  ['filterLanding', 'filterSexo', 'filterPayment', 'filterNicho'].forEach(id => {
-    const el = document.getElementById(id);
-    el.onchange = applyMasterFilters;
-  });
-  document.getElementById('filterMinVisits').oninput = applyMasterFilters;
-  applyMasterFilters();
-}
-
-// ============================================================
-// F4: EXPERIMENTS A/B
-// ============================================================
-// Experiment definitions — hardcoded for now; eventual home is Firestore.
-// Each experiment picks rows from the master table via a matcher fn, aggregates
-// metrics across matching rows, and compares A vs B on a primary metric.
-const EXPERIMENTS = [
-  {
-    id: 'price-195-125',
-    name: 'Precio: 195€ vs 125€ (adelanto)',
-    hypothesis: 'Mostrar 125€ como adelanto limitado reduce la fricción del bono en mujeres vs. cobrar 195€ completo (patrón SWAN).',
-    status: 'running',
-    primary: 'conv_cita_pago',
-    secondary: 'cpa',
-    start: '2026-04-22',
-    end: null,
-    variants: [
-      { id: 'A', label: 'Control · 195€ completo',  match: r => r.payment_variant === '195' && r.sexo === 'mujer' },
-      { id: 'B', label: 'Test · 125€ adelanto',     match: r => r.payment_variant === '125' && r.sexo === 'mujer' },
-    ],
-  },
-  {
-    id: 'payment-timing',
-    name: 'Momento del pago',
-    hypothesis: 'Pagar en clínica tras la cita sube el lead→cita al eliminar la fricción de pago anticipado online.',
-    status: 'pending',
-    primary: 'conv_lead_cita',
-    secondary: 'no_show_rate',
-    start: null,
-    end: null,
-    variants: [
-      { id: 'A', label: 'Control · pago anticipado', match: r => r.payment_variant === '125' && r.sexo === 'mujer' },
-      { id: 'B', label: 'Test · pago en clínica',    match: r => r.payment_variant === 'clinica' },
-    ],
-  },
-  {
-    id: 'copy-test-capilar',
-    name: 'Copy: diagnóstico → test capilar',
-    hypothesis: 'Reposicionar "diagnóstico" como "test capilar con analítica hormonal" (ref. Megalab) sube el visitante→lead al reducir percepción de consulta médica.',
-    status: 'pending',
-    primary: 'conv_visit_lead',
-    secondary: 'cpl',
-    start: null,
-    end: null,
-    variants: [
-      { id: 'A', label: 'Control · diagnóstico',  match: r => /diagn|Trichometabolic/i.test(r.utm_content || '') },
-      { id: 'B', label: 'Test · test capilar',    match: r => /test.?capilar|megalab/i.test(r.utm_content || '') },
-    ],
-  },
-];
-
-function aggregateRows(rows) {
-  const sum = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
-  const agg = {
-    rows_count: rows.length,
-    visits: sum('visits'),
-    started: sum('started'),
-    completed: sum('completed'),
-    leads: sum('leads'),
-    booked: sum('booked'),
-    attended: sum('attended'),
-    no_show: sum('no_show'),
-  };
-  agg.conv_visit_lead = agg.visits > 0 ? (agg.leads / agg.visits * 100) : null;
-  agg.conv_lead_cita = agg.leads > 0 ? (agg.booked / agg.leads * 100) : null;
-  agg.conv_cita_pago = agg.booked > 0 ? (agg.attended / agg.booked * 100) : null;
-  agg.no_show_rate = agg.booked > 0 ? (agg.no_show / agg.booked * 100) : null;
-  // CPL/CPA need spend; leave for F5 when we join utm_content ↔ ad_spend.
-  agg.cpl = null;
-  agg.cpa = null;
-  return agg;
-}
-
-const METRIC_LABELS = {
-  conv_visit_lead: 'Visit → Lead',
-  conv_lead_cita:  'Lead → Cita',
-  conv_cita_pago:  'Cita → Asiste',
-  no_show_rate:    'No-show rate',
-  cpl:             'CPL',
-  cpa:             'CPA',
-};
-const METRIC_FMT = {
-  conv_visit_lead: v => v == null ? '-' : v.toFixed(2) + '%',
-  conv_lead_cita:  v => v == null ? '-' : v.toFixed(1) + '%',
-  conv_cita_pago:  v => v == null ? '-' : v.toFixed(1) + '%',
-  no_show_rate:    v => v == null ? '-' : v.toFixed(1) + '%',
-  cpl:             v => v == null ? '-' : fmtEurDec(v),
-  cpa:             v => v == null ? '-' : fmtEurDec(v),
-};
-// For no_show_rate and cpl/cpa, lower is better. For the rest, higher is better.
-const METRIC_LOWER_IS_BETTER = { no_show_rate: true, cpl: true, cpa: true };
-
-function computeDelta(metric, a, b) {
-  if (a == null || b == null || !isFinite(a) || !isFinite(b)) return { text: '-', cls: '' };
-  const diff = b - a;
-  const lower = METRIC_LOWER_IS_BETTER[metric];
-  const good = lower ? diff < 0 : diff > 0;
-  const cls = diff === 0 ? '' : (good ? 'exp-delta-good' : 'exp-delta-bad');
-  const sign = diff > 0 ? '+' : '';
-  const suffix = (metric === 'cpl' || metric === 'cpa') ? '€' : 'pp';
-  return { text: `${sign}${diff.toFixed(1)}${suffix}`, cls };
-}
-
-function renderExperiments() {
-  const host = document.getElementById('experimentsGrid');
-  host.innerHTML = EXPERIMENTS.map(exp => {
-    const vA = exp.variants[0];
-    const vB = exp.variants[1];
-    const rowsA = _masterRows.filter(vA.match);
-    const rowsB = _masterRows.filter(vB.match);
-    const aggA = aggregateRows(rowsA);
-    const aggB = aggregateRows(rowsB);
-
-    const primary = exp.primary;
-    const secondary = exp.secondary;
-    const delta = computeDelta(primary, aggA[primary], aggB[primary]);
-    const deltaSec = computeDelta(secondary, aggA[secondary], aggB[secondary]);
-
-    // Winner = variant with better primary (requires enough data; >= 10 leads per side)
-    let winnerId = null;
-    if (aggA.leads >= 10 && aggB.leads >= 10 && aggA[primary] != null && aggB[primary] != null) {
-      const lower = METRIC_LOWER_IS_BETTER[primary];
-      winnerId = (lower ? aggA[primary] < aggB[primary] : aggA[primary] > aggB[primary]) ? 'A' : 'B';
-    }
-
-    const statusBadge = { running: 'exp-running', pending: 'exp-pending', concluded: 'exp-concluded' }[exp.status] || 'exp-pending';
-    const statusText = { running: 'Corriendo', pending: 'Pendiente', concluded: 'Concluido' }[exp.status] || exp.status;
-
-    const variantPanel = (v, agg, isWinner) => `
-      <div class="exp-var ${isWinner ? 'exp-winner' : ''}">
-        <div class="exp-var-title">Variante ${v.id}</div>
-        <div class="exp-var-label">${v.label}</div>
-        <div class="exp-metrics">
-          <div class="exp-metric-row"><span>Leads</span><span class="val">${fmt(agg.leads)}</span></div>
-          <div class="exp-metric-row"><span>Citas</span><span class="val">${fmt(agg.booked)}</span></div>
-          <div class="exp-metric-row"><span>${METRIC_LABELS[primary]}</span><span class="val">${METRIC_FMT[primary](agg[primary])}</span></div>
-          <div class="exp-metric-row"><span>${METRIC_LABELS[secondary]}</span><span class="val">${METRIC_FMT[secondary](agg[secondary])}</span></div>
-          <div class="exp-metric-row" style="font-size:10px;"><span>Filas coincidentes</span><span class="val">${agg.rows_count}</span></div>
-        </div>
-      </div>
-    `;
-
-    return `
-      <div class="exp-card">
-        <div class="exp-head">
-          <span class="exp-title">${exp.name}</span>
-          <span class="exp-badge ${statusBadge}">${statusText}</span>
-        </div>
-        <div class="exp-body">
-          <div class="exp-hypo">${exp.hypothesis}</div>
-          <div class="exp-variants">
-            ${variantPanel(vA, aggA, winnerId === 'A')}
-            ${variantPanel(vB, aggB, winnerId === 'B')}
-          </div>
-          <div style="margin-top:10px;font-size:11px;color:var(--hc-text-muted);">
-            Δ ${METRIC_LABELS[primary]}: <span class="${delta.cls}" style="font-weight:700;">${delta.text}</span>
-            &nbsp;·&nbsp; Δ ${METRIC_LABELS[secondary]}: <span class="${deltaSec.cls}" style="font-weight:700;">${deltaSec.text}</span>
-          </div>
-        </div>
-        <div class="exp-footer">
-          <span>${exp.start ? 'Desde ' + exp.start : 'Sin fecha de inicio'}${exp.end ? ' · hasta ' + exp.end : ''}</span>
-          <span>Métrica primaria: ${METRIC_LABELS[primary]}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
 }
 
 function renderFunnel(k) {
@@ -1127,31 +683,22 @@ function renderFunnelType(data) {
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
 
-  let html = `<thead><tr><th>Funnel</th><th class="num">Visitantes</th><th class="num">Iniciados</th><th class="num">Leads</th><th class="num">Lead %</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
+  let html = `<thead><tr><th>Funnel</th><th class="num">Visitantes</th><th class="num">Iniciados</th><th class="num">Leads</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = FUNNEL_LABELS[name] || name;
     const color = FUNNEL_COLORS[name] || '#78716c';
     const convR = pctNum(v.booked, v.leads);
-    const leadR = pctNum(v.leads, v.started);
-    const leadCell = v.started > 0
-      ? `<td class="num ${convClass(leadR)}">${pct(v.leads, v.started)}</td>`
-      : `<td class="num" style="color:#666;">&mdash;</td>`;
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
       <td class="num">${fmt(v.visits)}</td>
       <td class="num">${fmt(v.started)}</td>
       <td class="num">${fmt(v.leads)}</td>
-      ${leadCell}
       <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td></tr>`;
   });
-  const totalLeadCell = totalStarted > 0
-    ? `<td class="num">${pct(totalLeads, totalStarted)}</td>`
-    : `<td class="num" style="color:#666;">&mdash;</td>`;
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
     <td class="num">${fmt(totalVisits)}</td>
     <td class="num">${fmt(totalStarted)}</td>
     <td class="num">${fmt(totalLeads)}</td>
-    ${totalLeadCell}
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td></tr></tbody>`;
   document.getElementById('funnelTypeTable').innerHTML = html;
@@ -1420,10 +967,15 @@ function renderAdSpendDaily(adDaily) {
 }
 
 // ---- QUIZ DROP-OFF ----
-// Full linear funnel for Quiz Largo:
-//   Iniciado → [preguntas en orden real por question_index] → Formulario enviado
-// Preguntas condicionales van interleaveadas en su posición real (no en bloque
-// aparte) pero marcadas visualmente. La retención se calcula vs Iniciado.
+// Quiz flow structure — mirrors packages/quiz/src/components/HospitalCapilarQuiz.jsx
+// Linear: questions everyone sees, in quiz order. Use these to find UX friction.
+// Conditional: branch-specific questions. Denominator is the subset that qualified,
+// not the whole funnel — shown separately to avoid fake "drop-offs".
+const QUIZ_LINEAR_ORDER = [
+  'sexo', 'edad', 'problema', 'tiempo', 'antecedentes', 'probado',
+  'impacto', 'diagnostico_previo', 'motivacion', 'expectativa',
+  'inversion', 'formato'
+];
 const QUIZ_CONDITIONALS = {
   patron_perdida:     'Si problema ≠ post-cirugía / mala-experiencia',
   inicio_caida:       'Si problema ≠ post-cirugía / mala-experiencia',
@@ -1443,13 +995,22 @@ function renderQuizDropoff(data) {
     return;
   }
 
-  // Order by question_index (backend already sorted); filter nulls.
+  // Order by question_index (backend-provided). Fallback to QUIZ_LINEAR_ORDER
+  // position for older data without question_index.
+  const orderHint = (qid) => {
+    const i = QUIZ_LINEAR_ORDER.indexOf(qid);
+    return i >= 0 ? i : 999;
+  };
   const questions = dropoff
     .filter(r => r.question_id && r.question_id !== 'null')
     .slice()
-    .sort((a, b) => (a.question_index ?? 999) - (b.question_index ?? 999));
+    .sort((a, b) => {
+      const ai = a.question_index ?? orderHint(a.question_id);
+      const bi = b.question_index ?? orderHint(b.question_id);
+      return ai - bi;
+    });
 
-  // Build full sequence: Iniciado → questions → Form enviado
+  // Full sequence: Quiz Iniciado → questions (lineales + condicionales interleaveadas) → Formulario enviado
   const steps = [
     { label: 'Quiz Iniciado', users: started, kind: 'anchor-start' },
     ...questions.map(q => ({
@@ -1457,7 +1018,6 @@ function renderQuizDropoff(data) {
       users: q.users,
       kind: QUIZ_CONDITIONALS[q.question_id] ? 'conditional' : 'linear',
       gate: QUIZ_CONDITIONALS[q.question_id] || null,
-      q_idx: q.question_index,
     })),
     { label: 'Formulario enviado', users: leads, kind: 'anchor-end' },
   ];
@@ -1498,8 +1058,7 @@ function renderQuizDropoff(data) {
     </div>`;
   };
 
-  // Compute "previous linear step" for drop% (skip conditionals as denominator source
-  // — a conditional can't "cause" a drop for the next linear step).
+  // Drop% uses the previous LINEAR step as denominator. Condicionales no rompen la cadena.
   let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
   let lastLinearUsers = null;
   steps.forEach((s, i) => {
@@ -1508,13 +1067,6 @@ function renderQuizDropoff(data) {
     if (s.kind !== 'conditional') lastLinearUsers = s.users;
   });
   html += '</div>';
-
-  // Any question_ids we don't recognize (linear vs conditional mapping missing)
-  const knownCond = new Set(Object.keys(QUIZ_CONDITIONALS));
-  const unknown = questions.filter(q => knownCond.has(q.question_id) === false && q.question_index == null);
-  if (unknown.length > 0) {
-    html += '<div style="font-size:10px;color:#555;margin-top:10px;">Sin question_index: ' + unknown.map(q => q.question_id).join(', ') + '</div>';
-  }
 
   document.getElementById('quizDropoffChart').innerHTML = html;
 }
