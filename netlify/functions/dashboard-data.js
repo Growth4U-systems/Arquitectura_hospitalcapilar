@@ -232,11 +232,28 @@ async function fetchGhlBySexo(startDate, endDate) {
   return Object.values(buckets).sort((a, b) => b.leads - a.leads);
 }
 
-// Master funnel aggregation — groups by all 6 dimensions. Each row
+// Master funnel aggregation — groups by all 9 dimensions. Each row
 // represents a unique (channel × campaign × adset × ad × nicho × landing
-// × sexo × pago × clinica) combination.
-function buildMasterFunnelFromGhl(rows) {
+// × sexo × pago × clinica) combination. Optionally enriches with upstream
+// counts (visits / started / completed) from the PostHog by_funnel_dimensions
+// slice when matched by utm_content + landing.
+function buildMasterFunnelFromGhl(rows, phDimensions = []) {
   if (!rows) return null;
+
+  // Index PostHog dimensions by (utm_content, landing) for upstream enrichment.
+  // We use only these two keys because sexo/payment_variant/nicho in PostHog
+  // are often 'sin-dato' (fragmentation) and would miss GHL rows that DO have
+  // the field from the contact record.
+  const phByAdLanding = new Map();
+  for (const d of (phDimensions || [])) {
+    const key = (d.utm_content || 'sin-atribucion') + '|' + (d.landing || '');
+    const agg = phByAdLanding.get(key) || { visits: 0, started: 0, completed: 0 };
+    agg.visits    += d.visits    || 0;
+    agg.started   += d.started   || 0;
+    agg.completed += d.completed || 0;
+    phByAdLanding.set(key, agg);
+  }
+
   const buckets = new Map();
   for (const r of rows) {
     const key = [r.channel, r.utm_campaign, r.utm_medium, r.utm_content, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('|');
@@ -252,6 +269,9 @@ function buildMasterFunnelFromGhl(rows) {
         sexo: r.sexo,
         pago: r.pago,
         clinica: r.clinica,
+        visits: 0,
+        started: 0,
+        completed: 0,
         leads: 0,
         booked: 0,
         paid: 0,
@@ -262,6 +282,26 @@ function buildMasterFunnelFromGhl(rows) {
     b.booked += r.booked;
     b.paid += r.paid;
   }
+
+  // Attach PostHog upstream to each bucket. Distribute proportionally to the
+  // bucket's share of leads within the (utm_content, landing) group so rows
+  // that split by sexo/pago don't all inherit the same raw count.
+  const leadsByAdLanding = new Map();
+  for (const b of buckets.values()) {
+    const key = b.utm_content + '|' + b.landing;
+    leadsByAdLanding.set(key, (leadsByAdLanding.get(key) || 0) + b.leads);
+  }
+  for (const b of buckets.values()) {
+    const key = b.utm_content + '|' + b.landing;
+    const upstream = phByAdLanding.get(key);
+    if (!upstream) continue;
+    const totalLeadsForGroup = leadsByAdLanding.get(key) || 0;
+    const weight = totalLeadsForGroup > 0 ? (b.leads / totalLeadsForGroup) : 1;
+    b.visits    = Math.round(upstream.visits * weight);
+    b.started   = Math.round(upstream.started * weight);
+    b.completed = Math.round(upstream.completed * weight);
+  }
+
   return [...buckets.values()].sort((a, b) => b.leads - a.leads);
 }
 
@@ -857,8 +897,9 @@ exports.handler = async (event) => {
         const bySexoArr = Object.values(bySexoMap).sort((a, b) => b.leads - a.leads);
         if (bySexoArr.length > 0) result.by_sexo = bySexoArr;
 
-        // Master funnel — one row per unique 9-dim combination
-        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows);
+        // Master funnel — one row per unique 9-dim combination, enriched
+        // with upstream counts from the PostHog slice we already computed.
+        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions);
       }
     } catch (e) {
       console.log('[Dashboard] GHL fetch failed, falling back to PostHog:', e.message);

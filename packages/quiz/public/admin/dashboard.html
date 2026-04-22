@@ -604,6 +604,12 @@ function paintMasterFunnel() {
 
   document.getElementById('mfRowCount').textContent = `${filtered.length} / ${_masterFunnelRows.length} filas · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
 
+  const totalVisits    = filtered.reduce((s, r) => s + (r.visits || 0), 0);
+  const totalStarted   = filtered.reduce((s, r) => s + (r.started || 0), 0);
+  const totalCompleted = filtered.reduce((s, r) => s + (r.completed || 0), 0);
+
+  // Columns grouped left→right as the funnel flows, with visual dividers
+  // between dimension / upstream / downstream / links groups.
   let html = `<thead><tr>
     <th>Canal</th>
     <th>Campa&ntilde;a</th>
@@ -614,22 +620,32 @@ function paintMasterFunnel() {
     <th>Sexo</th>
     <th>Pago</th>
     <th>Cl&iacute;nica</th>
+    <th class="num" style="border-left:2px solid var(--hc-card-border);">Visitas</th>
+    <th class="num">Iniciados</th>
+    <th class="num">Finaliz.</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);">Leads</th>
     <th class="num">L&rarr;C %</th>
     <th class="num">Citas</th>
     <th class="num">C&rarr;P %</th>
     <th class="num">Pagos</th>
+    <th class="num" style="border-left:2px solid var(--hc-card-border);font-weight:700;">V&rarr;C %</th>
+    <th style="border-left:2px solid var(--hc-card-border);">Links</th>
   </tr></thead><tbody>`;
 
   filtered.forEach(r => {
     const lcR = pctNum(r.booked, r.leads);
     const cpR = pctNum(r.paid, r.booked);
+    const vcR = pctNum(r.booked, r.visits);
     const lcCell = r.leads > 0
       ? `<td class="num ${convClass(lcR)}">${pct(r.booked, r.leads)}</td>`
       : `<td class="num" style="color:#666;">&mdash;</td>`;
     const cpCell = r.booked > 0
       ? `<td class="num ${convClass(cpR)}">${pct(r.paid, r.booked)}</td>`
       : `<td class="num" style="color:#666;">&mdash;</td>`;
+    const vcClass = vcR >= 2 ? 'good' : vcR >= 0.5 ? 'warn' : vcR > 0 ? 'bad' : '';
+    const vcCell = r.visits > 0
+      ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>`
+      : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
 
     const channelColor = CHANNEL_COLORS[r.channel] || '#78716c';
     const sexoColor = SEXO_COLORS[r.sexo] || '#78716c';
@@ -639,6 +655,28 @@ function paintMasterFunnel() {
     const adLabel = (r.utm_content || '').length > 22 ? r.utm_content.substring(0, 22) + '…' : (r.utm_content || '-');
     const adTitle = r.utm_content || '';
     const campLabel = (r.utm_campaign || '').length > 24 ? r.utm_campaign.substring(0, 24) + '…' : (r.utm_campaign || '-');
+
+    // Links: Meta Ads Manager when utm_content is numeric (ad.id),
+    // landing URL reconstructed from landing + nicho.
+    const metaAdLink = /^\d{10,}$/.test(r.utm_content || '')
+      ? `https://business.facebook.com/adsmanager/manage/ads?act=898774584294194&selected_ad_ids=${r.utm_content}`
+      : null;
+    const landingSlug = (r.nicho && r.nicho !== 'sin-dato') ? r.nicho : '';
+    let landingUrl = null;
+    if (r.landing === 'quiz_largo' && landingSlug)     landingUrl = `https://diagnostico.hospitalcapilar.com/${landingSlug}`;
+    else if (r.landing === 'quiz_corto' && landingSlug) landingUrl = `https://diagnostico.hospitalcapilar.com/rapido/${landingSlug}`;
+    else if ((r.landing === 'formulario_directo' || r.landing === 'form') && landingSlug) landingUrl = `https://diagnostico.hospitalcapilar.com/form/${landingSlug}`;
+    else if (r.landing === 'quiz_largo')                landingUrl = `https://diagnostico.hospitalcapilar.com/`;
+
+    const adLink = metaAdLink
+      ? `<a href="${metaAdLink}" target="_blank" rel="noopener" title="Abrir anuncio en Meta Ads Manager" style="color:var(--hc-teal-light);margin-right:6px;">Ad</a>`
+      : '';
+    const landLink = landingUrl
+      ? `<a href="${landingUrl}" target="_blank" rel="noopener" title="Abrir landing" style="color:var(--hc-teal-light);">Landing</a>`
+      : '';
+    const linksCell = adLink || landLink
+      ? `<td style="border-left:2px solid var(--hc-card-border);font-size:11px;">${adLink}${landLink}</td>`
+      : `<td style="border-left:2px solid var(--hc-card-border);color:#666;font-size:11px;">&mdash;</td>`;
 
     html += `<tr>
       <td><span style="color:${channelColor};">&#9679;</span> ${r.channel}</td>
@@ -650,24 +688,35 @@ function paintMasterFunnel() {
       <td><span style="color:${sexoColor};">&#9679;</span> ${SEXO_LABELS[r.sexo] || r.sexo}</td>
       <td><span style="color:${pagoColor};font-weight:600;">${r.pago}</span></td>
       <td style="color:var(--hc-text-muted);">${r.clinica}</td>
+      <td class="num" style="border-left:2px solid var(--hc-card-border);">${r.visits > 0 ? fmt(r.visits) : '<span style="color:#666;">&mdash;</span>'}</td>
+      <td class="num">${r.started > 0 ? fmt(r.started) : '<span style="color:#666;">&mdash;</span>'}</td>
+      <td class="num">${r.completed > 0 ? fmt(r.completed) : '<span style="color:#666;">&mdash;</span>'}</td>
       <td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:600;">${fmt(r.leads)}</td>
       ${lcCell}
       <td class="num">${fmt(r.booked)}</td>
       ${cpCell}
       <td class="num">${fmt(r.paid)}</td>
+      ${vcCell}
+      ${linksCell}
     </tr>`;
   });
 
   // Total row
   const tLc = totalLeads > 0 ? pct(totalBooked, totalLeads) : '-';
   const tCp = totalBooked > 0 ? pct(totalPaid, totalBooked) : '-';
+  const tVc = totalVisits > 0 ? (totalBooked / totalVisits * 100).toFixed(2) + '%' : '-';
   html += `<tr style="font-weight:700;border-top:2px solid #444;background:rgba(76,169,148,0.05);">
     <td colspan="9">Total (${filtered.length} filas)</td>
+    <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalVisits)}</td>
+    <td class="num">${fmt(totalStarted)}</td>
+    <td class="num">${fmt(totalCompleted)}</td>
     <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalLeads)}</td>
     <td class="num">${tLc}</td>
     <td class="num">${fmt(totalBooked)}</td>
     <td class="num">${tCp}</td>
     <td class="num">${fmt(totalPaid)}</td>
+    <td class="num" style="border-left:2px solid var(--hc-card-border);">${tVc}</td>
+    <td style="border-left:2px solid var(--hc-card-border);">&nbsp;</td>
   </tr></tbody>`;
 
   document.getElementById('masterFunnelTable').innerHTML = html;
