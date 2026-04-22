@@ -105,37 +105,48 @@ async function fetchMetaAdCatalog() {
     const data = await res.json();
     const ads = data.data || [];
     const byId = {};
-    // Multiple ads often share the same creative name across campaigns (e.g.,
-    // "Miniaturizacion soto" runs in both "¿Qué me pasa? G4U" and "Camp.
-    // Galicia"). Prefer G4U when disambiguating — those are our campaigns;
-    // HC-own campaigns share the same creative but don't belong to us.
-    const byNameLower = {};
+    // Meta frequently reuses the same creative name across multiple adsets
+    // (e.g., "Miniaturizacion soto" lives in both a Quiz Largo adset and a
+    // Quiz Rápido adset). To disambiguate we infer the landing flavor
+    // from the adset name and index by (name, landing).
+    const byNameAndLanding = {};   // "miniaturizacion soto|quiz_largo" → info
+    const byNameAny = {};          // "miniaturizacion soto" → array of all matches
     const isG4U = (camp) => /G4U|Postparto_G4U|Menopausia G4U|¿Qué me pasa/i.test(camp || '');
+    const detectLanding = (adsetName) => {
+      const s = (adsetName || '').toLowerCase();
+      if (/form\.?\s*directo|form_directo/.test(s))       return 'formulario_directo';
+      if (/quiz\s*r[áa]pido|quiz\s*corto/.test(s))        return 'quiz_corto';
+      if (/quiz\s*largo/.test(s))                         return 'quiz_largo';
+      return null;
+    };
     for (const a of ads) {
       const info = {
         ad_id: a.id,
         ad_name: a.name || '',
         adset_id: a.adset?.id || '',
         adset_name: a.adset?.name || '',
+        adset_landing: detectLanding(a.adset?.name),
         campaign_id: a.campaign?.id || '',
         campaign_name: a.campaign?.name || '',
         status: a.effective_status || a.status || '',
         is_g4u: isG4U(a.campaign?.name),
       };
       byId[a.id] = info;
-      const key = (a.name || '').trim().toLowerCase();
-      if (!key) continue;
-      const existing = byNameLower[key];
-      // Prefer: G4U over non-G4U, ACTIVE over paused, otherwise first wins
-      if (!existing) {
-        byNameLower[key] = info;
-      } else if (info.is_g4u && !existing.is_g4u) {
-        byNameLower[key] = info;
-      } else if (info.is_g4u === existing.is_g4u && info.status === 'ACTIVE' && existing.status !== 'ACTIVE') {
-        byNameLower[key] = info;
+      const nameKey = (a.name || '').trim().toLowerCase();
+      if (!nameKey) continue;
+      if (!byNameAny[nameKey]) byNameAny[nameKey] = [];
+      byNameAny[nameKey].push(info);
+      if (info.adset_landing) {
+        const key = nameKey + '|' + info.adset_landing;
+        const existing = byNameAndLanding[key];
+        if (!existing ||
+            (info.is_g4u && !existing.is_g4u) ||
+            (info.is_g4u === existing.is_g4u && info.status === 'ACTIVE' && existing.status !== 'ACTIVE')) {
+          byNameAndLanding[key] = info;
+        }
       }
     }
-    return { byId, byNameLower, count: ads.length };
+    return { byId, byNameAndLanding, byNameAny, count: ads.length };
   } catch (e) {
     console.log('[Meta catalog] fetch failed:', e.message);
     return null;
@@ -291,7 +302,7 @@ async function fetchGhlBySexo(startDate, endDate) {
 //   "{{ad.name}}"          → Meta macro written literally, never substituted
 //   "198626380310"         → Google Ads {adgroupid} on a Meta-attributed row
 //   ""                     → empty
-function classifyUtmContent(utm, channel, metaCatalog) {
+function classifyUtmContent(utm, channel, landing, metaCatalog) {
   if (!utm || utm === 'sin-atribucion' || utm === 'sin-dato') {
     return { kind: 'sin-atribucion', display: 'Sin atribuir' };
   }
@@ -300,10 +311,27 @@ function classifyUtmContent(utm, channel, metaCatalog) {
   if (/^\d{10,}$/.test(utm) && channel !== 'Meta') {
     return { kind: 'google-adgroupid', display: `Google adgroup ${utm}` };
   }
-  // Try to match against current Meta catalog
   if (metaCatalog) {
-    const hit = metaCatalog.byNameLower[utm.trim().toLowerCase()];
-    if (hit) return { kind: 'matched', display: hit.ad_name, meta: hit };
+    const nameKey = utm.trim().toLowerCase();
+    // First try: match by (name, landing) so leads that landed on quiz_largo
+    // attribute to the Quiz Largo adset copy of this creative, not the
+    // Quiz Rápido one.
+    if (landing) {
+      const hit = metaCatalog.byNameAndLanding[nameKey + '|' + landing];
+      if (hit) return { kind: 'matched', display: hit.ad_name, meta: hit };
+    }
+    // Fall back to any ad with this name (may be ambiguous across adsets)
+    const candidates = metaCatalog.byNameAny[nameKey] || [];
+    if (candidates.length === 1) {
+      return { kind: 'matched', display: candidates[0].ad_name, meta: candidates[0] };
+    }
+    if (candidates.length > 1) {
+      // Pick: prefer G4U + ACTIVE, else first
+      const pick = candidates.find(c => c.is_g4u && c.status === 'ACTIVE')
+                || candidates.find(c => c.is_g4u)
+                || candidates[0];
+      return { kind: 'matched-ambiguous', display: pick.ad_name, meta: pick };
+    }
   }
   return { kind: 'unmatched', display: utm };
 }
@@ -332,7 +360,7 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
 
   const buckets = new Map();
   for (const r of rows) {
-    const cls = classifyUtmContent(r.utm_content, r.channel, metaCatalog);
+    const cls = classifyUtmContent(r.utm_content, r.channel, r.landing, metaCatalog);
     // When Meta catalog matches the ad name, override the free-text
     // campaign/adset from GHL with Meta's authoritative values.
     const metaCampaign = cls.meta?.campaign_name || null;

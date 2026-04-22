@@ -625,6 +625,19 @@ function buildAdLink(r) {
   return null;
 }
 
+// Hierarchical expand/collapse state — persists across repaints.
+const _mfExpanded = new Set();
+
+function aggNode() { return { leads: 0, booked: 0, paid: 0, visits: 0, started: 0, completed: 0, rows: [] }; }
+function addTo(agg, r) {
+  agg.leads     += r.leads || 0;
+  agg.booked    += r.booked || 0;
+  agg.paid      += r.paid || 0;
+  agg.visits    += r.visits || 0;
+  agg.started   += r.started || 0;
+  agg.completed += r.completed || 0;
+}
+
 function paintMasterFunnel() {
   const fChannel  = document.getElementById('mfFilterChannel').value;
   const fLanding  = document.getElementById('mfFilterLanding').value;
@@ -646,28 +659,61 @@ function paintMasterFunnel() {
     r.leads >= fMinLeads
   );
 
+  // Build Campaign → AdSet → Ad tree aggregating all metrics at each level.
+  const tree = new Map();
+  for (const r of filtered) {
+    const campaignKey = r.utm_campaign || 'Sin campaña';
+    let camp = tree.get(campaignKey);
+    if (!camp) {
+      camp = { key: campaignKey, name: campaignKey, channel: r.channel, adsets: new Map(), ...aggNode() };
+      tree.set(campaignKey, camp);
+    }
+    addTo(camp, r);
+
+    const adsetKey = r.utm_medium || 'Sin adset';
+    let adset = camp.adsets.get(adsetKey);
+    if (!adset) {
+      adset = { key: adsetKey, name: adsetKey, ads: new Map(), ...aggNode() };
+      camp.adsets.set(adsetKey, adset);
+    }
+    addTo(adset, r);
+
+    const adKey = (r.ad_id || r.ad_display || r.utm_content) + '|' + r.sexo + '|' + r.pago;
+    let ad = adset.ads.get(adKey);
+    if (!ad) {
+      ad = {
+        key: adKey,
+        name: r.ad_display || r.utm_content,
+        ad_id: r.ad_id,
+        ad_kind: r.ad_kind,
+        channel: r.channel,
+        utm_campaign: r.utm_campaign,
+        nicho: r.nicho,
+        landing: r.landing,
+        sexo: r.sexo,
+        pago: r.pago,
+        clinica: r.clinica,
+        utm_content: r.utm_content,
+        ...aggNode(),
+      };
+      adset.ads.set(adKey, ad);
+    }
+    addTo(ad, r);
+  }
+
   const totalLeads = filtered.reduce((s, r) => s + r.leads, 0);
   const totalBooked = filtered.reduce((s, r) => s + r.booked, 0);
   const totalPaid = filtered.reduce((s, r) => s + r.paid, 0);
-
-  document.getElementById('mfRowCount').textContent = `${filtered.length} / ${_masterFunnelRows.length} filas · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
-
   const totalVisits    = filtered.reduce((s, r) => s + (r.visits || 0), 0);
   const totalStarted   = filtered.reduce((s, r) => s + (r.started || 0), 0);
   const totalCompleted = filtered.reduce((s, r) => s + (r.completed || 0), 0);
 
-  // Columns grouped left→right as the funnel flows, with visual dividers
-  // between dimension / upstream / downstream / links groups.
+  document.getElementById('mfRowCount').textContent = `${tree.size} campañas · ${filtered.length} filas base · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
+
+  // Single header with visual column groups
   let html = `<thead><tr>
-    <th>Canal</th>
-    <th>Campa&ntilde;a</th>
-    <th>AdSet</th>
-    <th>Anuncio</th>
-    <th>Nicho</th>
-    <th>Landing</th>
-    <th>Sexo</th>
-    <th>Pago</th>
-    <th>Cl&iacute;nica</th>
+    <th style="width:36px;"></th>
+    <th>Campa&ntilde;a / AdSet / Anuncio</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);">Visitas</th>
     <th class="num">Iniciados</th>
     <th class="num">Finaliz.</th>
@@ -680,80 +726,108 @@ function paintMasterFunnel() {
     <th style="border-left:2px solid var(--hc-card-border);">Links</th>
   </tr></thead><tbody>`;
 
-  filtered.forEach(r => {
-    const lcR = pctNum(r.booked, r.leads);
-    const cpR = pctNum(r.paid, r.booked);
-    const vcR = pctNum(r.booked, r.visits);
-    const lcCell = r.leads > 0
-      ? `<td class="num ${convClass(lcR)}">${pct(r.booked, r.leads)}</td>`
-      : `<td class="num" style="color:#666;">&mdash;</td>`;
-    const cpCell = r.booked > 0
-      ? `<td class="num ${convClass(cpR)}">${pct(r.paid, r.booked)}</td>`
-      : `<td class="num" style="color:#666;">&mdash;</td>`;
+  const renderMetricsCells = (n, isLeaf) => {
+    const lcR = pctNum(n.booked, n.leads);
+    const cpR = pctNum(n.paid, n.booked);
+    const vcR = pctNum(n.booked, n.visits);
     const vcClass = vcR >= 2 ? 'good' : vcR >= 0.5 ? 'warn' : vcR > 0 ? 'bad' : '';
-    const vcCell = r.visits > 0
-      ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>`
-      : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
-
-    const channelColor = CHANNEL_COLORS[r.channel] || '#78716c';
-    const sexoColor = SEXO_COLORS[r.sexo] || '#78716c';
-    const pagoColor = PAGO_COLORS[r.pago] || '#78716c';
-    const landingLabel = MASTER_LANDING_LABELS[r.landing] || r.landing;
-
-    // Prefer the backend-resolved display (Meta canonical name) over raw utm_content.
-    const adDisplayRaw = r.ad_display || r.utm_content || '-';
-    const adLabel = adDisplayRaw.length > 22 ? adDisplayRaw.substring(0, 22) + '…' : adDisplayRaw;
-    const adTitle = r.ad_id
-      ? `${adDisplayRaw} · ad_id ${r.ad_id}${r.utm_content !== r.ad_display ? ' · utm_content="' + r.utm_content + '"' : ''}`
-      : (r.utm_content || '');
-    const campLabel = (r.utm_campaign || '').length > 24 ? r.utm_campaign.substring(0, 24) + '…' : (r.utm_campaign || '-');
-    // Muted style for non-matched / junk rows
-    const adStyle = (r.ad_kind === 'placeholder' || r.ad_kind === 'macro-literal' || r.ad_kind === 'sin-atribucion')
-      ? 'color:#78716c;font-style:italic;'
-      : 'color:#fff;font-weight:500;';
-
-    const adDescriptor = buildAdLink(r);
-    const landingUrl = buildLandingUrl(r);
-
-    const adLinkHtml = adDescriptor
-      ? `<a href="${adDescriptor.url}" target="_blank" rel="noopener" title="Abrir en Meta Ads Manager" style="color:var(--hc-teal-light);margin-right:8px;">${adDescriptor.label}</a>`
-      : '';
-    const landLinkHtml = landingUrl
-      ? `<a href="${landingUrl}" target="_blank" rel="noopener" title="Abrir landing (${landingUrl.replace('https://diagnostico.hospitalcapilar.com','')})" style="color:var(--hc-teal-light);">Landing</a>`
-      : '';
-    const linksCell = adLinkHtml || landLinkHtml
-      ? `<td style="border-left:2px solid var(--hc-card-border);font-size:11px;">${adLinkHtml}${landLinkHtml}</td>`
-      : `<td style="border-left:2px solid var(--hc-card-border);color:#666;font-size:11px;">&mdash;</td>`;
-
-    html += `<tr>
-      <td><span style="color:${channelColor};">&#9679;</span> ${r.channel}</td>
-      <td style="color:var(--hc-text-muted);" title="${r.utm_campaign}">${campLabel}</td>
-      <td style="color:var(--hc-text-dim);">${r.utm_medium || '-'}</td>
-      <td style="${adStyle}" title="${adTitle}">${adLabel}</td>
-      <td style="color:var(--hc-text-muted);">${r.nicho}</td>
-      <td style="color:var(--hc-text-muted);">${landingLabel}</td>
-      <td><span style="color:${sexoColor};">&#9679;</span> ${SEXO_LABELS[r.sexo] || r.sexo}</td>
-      <td><span style="color:${pagoColor};font-weight:600;">${r.pago}</span></td>
-      <td style="color:var(--hc-text-muted);">${r.clinica}</td>
-      <td class="num" style="border-left:2px solid var(--hc-card-border);">${r.visits > 0 ? fmt(r.visits) : '<span style="color:#666;">&mdash;</span>'}</td>
-      <td class="num">${r.started > 0 ? fmt(r.started) : '<span style="color:#666;">&mdash;</span>'}</td>
-      <td class="num">${r.completed > 0 ? fmt(r.completed) : '<span style="color:#666;">&mdash;</span>'}</td>
-      <td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:600;">${fmt(r.leads)}</td>
+    const lcCell = n.leads > 0 ? `<td class="num ${convClass(lcR)}">${pct(n.booked, n.leads)}</td>` : `<td class="num" style="color:#666;">&mdash;</td>`;
+    const cpCell = n.booked > 0 ? `<td class="num ${convClass(cpR)}">${pct(n.paid, n.booked)}</td>` : `<td class="num" style="color:#666;">&mdash;</td>`;
+    const vcCell = n.visits > 0 ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>` : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
+    return `
+      <td class="num" style="border-left:2px solid var(--hc-card-border);">${n.visits > 0 ? fmt(n.visits) : '<span style="color:#666;">&mdash;</span>'}</td>
+      <td class="num">${n.started > 0 ? fmt(n.started) : '<span style="color:#666;">&mdash;</span>'}</td>
+      <td class="num">${n.completed > 0 ? fmt(n.completed) : '<span style="color:#666;">&mdash;</span>'}</td>
+      <td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:${isLeaf?'500':'700'};">${fmt(n.leads)}</td>
       ${lcCell}
-      <td class="num">${fmt(r.booked)}</td>
+      <td class="num">${fmt(n.booked)}</td>
       ${cpCell}
-      <td class="num">${fmt(r.paid)}</td>
+      <td class="num">${fmt(n.paid)}</td>
       ${vcCell}
-      ${linksCell}
+    `;
+  };
+
+  const arrow = (expanded) => expanded
+    ? `<span style="color:var(--hc-teal-light);display:inline-block;width:12px;">▾</span>`
+    : `<span style="color:var(--hc-text-muted);display:inline-block;width:12px;">▸</span>`;
+
+  // Campaign rows sorted by leads desc
+  [...tree.values()].sort((a, b) => b.leads - a.leads).forEach(camp => {
+    const campExpanded = _mfExpanded.has('c:' + camp.key);
+    const channelColor = CHANNEL_COLORS[camp.channel] || '#78716c';
+    html += `<tr class="mf-row" data-toggle="c:${camp.key}" style="cursor:pointer;background:rgba(76,169,148,0.04);font-weight:700;">
+      <td style="text-align:center;">${arrow(campExpanded)}</td>
+      <td style="color:#fff;"><span style="color:${channelColor};">&#9679;</span> ${camp.name} <span style="color:var(--hc-text-dim);font-weight:400;font-size:11px;">· ${camp.adsets.size} adset(s)</span></td>
+      ${renderMetricsCells(camp, false)}
+      <td style="border-left:2px solid var(--hc-card-border);"></td>
     </tr>`;
+
+    if (!campExpanded) return;
+
+    [...camp.adsets.values()].sort((a, b) => b.leads - a.leads).forEach(adset => {
+      const adsetExpanded = _mfExpanded.has('a:' + camp.key + '|' + adset.key);
+      // Extract "Quiz Largo" / "Quiz Rápido" / "Form directo" badge from adset name
+      const lower = (adset.name || '').toLowerCase();
+      let badge = '';
+      if (/form\.?\s*directo|form_directo/.test(lower))      badge = '<span class="landing-badge landing-formulario_directo" style="margin-right:6px;">Form</span>';
+      else if (/quiz\s*r[áa]pido|quiz\s*corto/.test(lower))  badge = '<span class="landing-badge landing-quiz_corto" style="margin-right:6px;">Quiz Rápido</span>';
+      else if (/quiz\s*largo/.test(lower))                   badge = '<span class="landing-badge landing-quiz_largo" style="margin-right:6px;">Quiz Largo</span>';
+
+      html += `<tr class="mf-row" data-toggle="a:${camp.key}|${adset.key}" style="cursor:pointer;">
+        <td style="text-align:center;">${arrow(adsetExpanded)}</td>
+        <td style="padding-left:24px;color:var(--hc-text);">${badge}<span style="color:var(--hc-text-muted);">${adset.name}</span> <span style="color:var(--hc-text-dim);font-weight:400;font-size:11px;">· ${adset.ads.size} ad(s)</span></td>
+        ${renderMetricsCells(adset, false)}
+        <td style="border-left:2px solid var(--hc-card-border);"></td>
+      </tr>`;
+
+      if (!adsetExpanded) return;
+
+      [...adset.ads.values()].sort((a, b) => b.leads - a.leads).forEach(ad => {
+        const sexoColor = SEXO_COLORS[ad.sexo] || '#78716c';
+        const pagoColor = PAGO_COLORS[ad.pago] || '#78716c';
+        const adDescriptor = buildAdLink(ad);
+        const landingUrl = buildLandingUrl(ad);
+        const adLinkHtml = adDescriptor
+          ? `<a href="${adDescriptor.url}" target="_blank" rel="noopener" style="color:var(--hc-teal-light);margin-right:8px;">${adDescriptor.label}</a>`
+          : '';
+        const landLinkHtml = landingUrl
+          ? `<a href="${landingUrl}" target="_blank" rel="noopener" style="color:var(--hc-teal-light);">Landing</a>`
+          : '';
+        const linksCell = `<td style="border-left:2px solid var(--hc-card-border);font-size:11px;">${adLinkHtml}${landLinkHtml || (adLinkHtml ? '' : '<span style="color:#666;">&mdash;</span>')}</td>`;
+
+        const adStyle = (ad.ad_kind === 'placeholder' || ad.ad_kind === 'macro-literal' || ad.ad_kind === 'sin-atribucion')
+          ? 'color:#78716c;font-style:italic;'
+          : 'color:#fff;';
+
+        const ambiguousBadge = ad.ad_kind === 'matched-ambiguous'
+          ? '<span title="Varios anuncios Meta con este nombre — puede haber colisión de atribución" style="color:#facc15;margin-left:4px;">⚠</span>'
+          : '';
+
+        html += `<tr>
+          <td></td>
+          <td style="padding-left:48px;${adStyle}font-size:12px;">
+            ${ad.name}${ambiguousBadge}
+            <span style="color:var(--hc-text-dim);font-weight:400;font-size:10px;margin-left:6px;">
+              <span style="color:${sexoColor};">●</span> ${SEXO_LABELS[ad.sexo] || ad.sexo}
+              · pago <span style="color:${pagoColor};">${ad.pago}</span>
+              · ${ad.clinica}
+              · ${MASTER_LANDING_LABELS[ad.landing] || ad.landing}
+            </span>
+          </td>
+          ${renderMetricsCells(ad, true)}
+          ${linksCell}
+        </tr>`;
+      });
+    });
   });
 
   // Total row
   const tLc = totalLeads > 0 ? pct(totalBooked, totalLeads) : '-';
   const tCp = totalBooked > 0 ? pct(totalPaid, totalBooked) : '-';
   const tVc = totalVisits > 0 ? (totalBooked / totalVisits * 100).toFixed(2) + '%' : '-';
-  html += `<tr style="font-weight:700;border-top:2px solid #444;background:rgba(76,169,148,0.05);">
-    <td colspan="9">Total (${filtered.length} filas)</td>
+  html += `<tr style="font-weight:800;border-top:2px solid #444;background:rgba(76,169,148,0.08);">
+    <td></td>
+    <td>Total</td>
     <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalVisits)}</td>
     <td class="num">${fmt(totalStarted)}</td>
     <td class="num">${fmt(totalCompleted)}</td>
@@ -766,7 +840,18 @@ function paintMasterFunnel() {
     <td style="border-left:2px solid var(--hc-card-border);">&nbsp;</td>
   </tr></tbody>`;
 
-  document.getElementById('masterFunnelTable').innerHTML = html;
+  const tbl = document.getElementById('masterFunnelTable');
+  tbl.innerHTML = html;
+
+  // Wire up expand/collapse toggles.
+  tbl.querySelectorAll('tr[data-toggle]').forEach(tr => {
+    tr.onclick = () => {
+      const key = tr.getAttribute('data-toggle');
+      if (_mfExpanded.has(key)) _mfExpanded.delete(key);
+      else _mfExpanded.add(key);
+      paintMasterFunnel();
+    };
+  });
 }
 
 function renderFunnel(k) {
