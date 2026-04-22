@@ -513,7 +513,12 @@ exports.handler = async (event) => {
         ORDER BY cnt DESC
       `),
 
-      // Ad spend by source — filter on properties.date, not event timestamp
+      // Ad spend by source — G4U-only. HC runs other campaigns through the same
+      // ad accounts ("Campaña Madrid", "Camp. Murcia", WhatsApp lead gen, etc.)
+      // that would otherwise inflate our spend. Filter to:
+      //   - Meta: campaign_name must contain 'G4U' (our naming convention)
+      //   - Google: all events pass (sync-ad-spend already filters to campaigns
+      //     whose final_urls target diagnostico.hospitalcapilar.com)
       hogqlQuery(apiKey, `
         SELECT
           properties.source as ad_source,
@@ -524,13 +529,16 @@ exports.handler = async (event) => {
         FROM events
         WHERE event = 'ad_spend_daily'
           AND properties.$insert_id IS NOT NULL
-          AND properties.source IN ('google_ads', 'meta_ads')
+          AND (
+            properties.source = 'google_ads'
+            OR (properties.source = 'meta_ads' AND toString(properties.campaign_name) LIKE '%G4U%')
+          )
           ${adDateFilter}
         GROUP BY properties.source
         ORDER BY total_spend DESC
       `),
 
-      // Ad spend daily trend — filter on properties.date
+      // Ad spend daily trend — same G4U-only filter
       hogqlQuery(apiKey, `
         SELECT
           properties.date as spend_date,
@@ -539,7 +547,10 @@ exports.handler = async (event) => {
         FROM events
         WHERE event = 'ad_spend_daily'
           AND properties.$insert_id IS NOT NULL
-          AND properties.source IN ('google_ads', 'meta_ads')
+          AND (
+            properties.source = 'google_ads'
+            OR (properties.source = 'meta_ads' AND toString(properties.campaign_name) LIKE '%G4U%')
+          )
           ${adDateFilter}
         GROUP BY properties.date, properties.source
         ORDER BY spend_date ASC
@@ -661,9 +672,7 @@ exports.handler = async (event) => {
         ORDER BY visits DESC, leads DESC
       `),
 
-      // F3 — ad spend grouped by utm_content when available (for per-ad CPL/CPA).
-      // Until Meta tracking template is applied, utm_content on ad_spend_daily is
-      // campaign-level only; rows are still useful aggregated up.
+      // F3 — ad spend grouped by campaign (G4U-only: see filter note above).
       hogqlQuery(apiKey, `
         SELECT
           toString(properties.source) as ad_source,
@@ -674,7 +683,10 @@ exports.handler = async (event) => {
           sum(toIntOrZero(toString(properties.impressions))) as impressions
         FROM events
         WHERE event = 'ad_spend_daily'
-          AND properties.source IN ('google_ads', 'meta_ads')
+          AND (
+            properties.source = 'google_ads'
+            OR (properties.source = 'meta_ads' AND toString(properties.campaign_name) LIKE '%G4U%')
+          )
           ${adDateFilter}
         GROUP BY ad_source, campaign_id, campaign_name
         ORDER BY spend DESC
