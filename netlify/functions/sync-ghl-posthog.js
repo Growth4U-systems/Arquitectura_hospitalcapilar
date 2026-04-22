@@ -55,19 +55,22 @@ async function fetchAllOpportunities() {
   let startAfterId = '';
   let hasMore = true;
 
+  const PAGE_SIZE = 100;  // GHL opportunities/search max is 100
   while (hasMore) {
-    const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=20${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
+    const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=${PAGE_SIZE}${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
     const res = await fetchWithRetry(url, { headers });
     const data = await res.json();
     const opps = data.opportunities || [];
     all = all.concat(opps);
-    hasMore = opps.length >= 20;
+    console.log(`[GHL] opportunities page fetched: ${opps.length} (total ${all.length})`);
+    hasMore = opps.length >= PAGE_SIZE;
     if (hasMore) {
       startAfterId = opps[opps.length - 1].id;
-      await sleep(200); // Small delay between pages
+      await sleep(100);
     }
   }
 
+  console.log(`[GHL] fetchAllOpportunities complete: ${all.length} total`);
   return all;
 }
 
@@ -117,6 +120,15 @@ function derivePaymentVariant({ sexo, funnel_type, monetary_value }) {
   return 'unknown';
 }
 
+// Map GHL native gender (female/male/other) to our sexo taxonomy (mujer/hombre).
+function normalizeGender(g) {
+  if (!g) return null;
+  const s = String(g).toLowerCase();
+  if (s === 'female' || s === 'mujer') return 'mujer';
+  if (s === 'male' || s === 'hombre') return 'hombre';
+  return null;
+}
+
 async function fetchContactProperties(contactId) {
   try {
     const cfRes = await fetchWithRetry(
@@ -124,12 +136,21 @@ async function fetchContactProperties(contactId) {
       { headers: { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' } }
     );
     const cfData = await cfRes.json();
-    const cfs = cfData.contact?.customFields || [];
+    const contact = cfData.contact || {};
+    const cfs = contact.customFields || [];
     const cfMap = {};
     cfs.forEach(f => { cfMap[f.id] = f.value; });
     const get = (key) => cfMap[CF_IDS[key]] || null;
+
+    // Sexo: fall back to GHL native `gender` field when the custom field is
+    // empty — in practice it is, because the GHL write path persists gender
+    // natively but the custom field `sexo` does not round-trip reliably.
+    const sexoFromCF = get('sexo');
+    const sexoFromNative = normalizeGender(contact.gender);
+    const sexo = (sexoFromCF || sexoFromNative) || null;
+
     return {
-      sexo:              get('sexo'),
+      sexo,
       ecp:               get('ecp'),
       nicho:             get('nicho'),
       funnel_type:       get('funnel_type'),
