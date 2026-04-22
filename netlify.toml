@@ -22,6 +22,10 @@
 [functions."sync-ghl-posthog"]
   schedule = "17 * * * *"
 
+# Reconcile Koibox → GHL: catches staff edits/cancellations made directly in Koibox
+[functions."reconcile-koibox-ghl"]
+  schedule = "*/15 * * * *"
+
 [[redirects]]
   from = "/ingest/static/*"
   to = "https://eu-assets.i.posthog.com/static/:splat"
