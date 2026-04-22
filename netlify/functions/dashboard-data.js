@@ -99,6 +99,8 @@ exports.handler = async (event) => {
       adSpendBySource,
       adSpendDaily,
       quizDropoff,
+      byFunnelDimensions,
+      adSpendByCampaign,
     ] = await Promise.all([
       // KPIs — all use count() for funnel consistency
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
@@ -107,9 +109,9 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
       // Bookings: count DISTINCT $insert_id — PostHog's native dedup has a short window
       // and duplicate sync runs can create repeated rows with the same insert_id.
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v4' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
 
       // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
@@ -132,7 +134,7 @@ exports.handler = async (event) => {
           uniqIf(toString(properties.$insert_id), event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
-          AND toString(properties.$insert_id) LIKE '%_v4'
+          AND toString(properties.$insert_id) LIKE '%_v5'
           ${dateFilter}
         GROUP BY properties.traffic_source
       `),
@@ -162,7 +164,7 @@ exports.handler = async (event) => {
           count(DISTINCT toString(properties.$insert_id)) as booked
         FROM events
         WHERE event = 'appointment_booked'
-          AND toString(properties.$insert_id) LIKE '%_v4'
+          AND toString(properties.$insert_id) LIKE '%_v5'
           ${dateFilter}
         GROUP BY funnel
       `),
@@ -250,16 +252,99 @@ exports.handler = async (event) => {
         ORDER BY spend_date ASC
       `),
 
-      // Quiz drop-off by question — group by question_id, take max index per question
+      // Quiz drop-off by question — group by question_id, expose question_index for
+      // correct sequential ordering in the UI (fix: antes ordenábamos por users DESC).
       hogqlQuery(apiKey, `
         SELECT
           toString(properties.question_id) as q_id,
+          min(properties.question_index) as q_idx,
           count(DISTINCT person_id) as users
         FROM events
         WHERE event = 'question_answered'
           ${dateFilter}
         GROUP BY q_id
-        ORDER BY users DESC
+        ORDER BY q_idx ASC NULLS LAST
+      `),
+
+      // F3 — master funnel table: 1 row per (utm_content, landing, nicho, sexo, payment_variant).
+      // Coalesce chain: event-level property → PostHog $utm_* autocapture → person-level
+      // $initial_utm_* (set once per person on first pageview) → person custom property.
+      // This ensures events fired AFTER the user navigated off the landing URL still
+      // attribute to the original ad.
+      hogqlQuery(apiKey, `
+        SELECT
+          coalesce(
+            nullIf(toString(properties.utm_content), ''),
+            nullIf(toString(properties.$utm_content), ''),
+            nullIf(toString(person.properties.$initial_utm_content), ''),
+            nullIf(toString(person.properties.utm_content), ''),
+            'sin-atribucion'
+          ) as ad,
+          multiIf(
+            toString(properties.$pathname) LIKE '%/rapido/%', 'quiz_corto',
+            toString(properties.$pathname) LIKE '%/form/%', 'formulario_directo',
+            coalesce(
+              nullIf(toString(properties.funnel_type), ''),
+              nullIf(toString(person.properties.funnel_type), ''),
+              'quiz_largo'
+            )
+          ) as landing,
+          coalesce(
+            nullIf(toString(properties.nicho), ''),
+            nullIf(toString(person.properties.nicho), ''),
+            'sin-nicho'
+          ) as nicho,
+          coalesce(
+            nullIf(toString(properties.sexo), ''),
+            nullIf(toString(person.properties.sexo), ''),
+            'sin-dato'
+          ) as sexo,
+          coalesce(
+            nullIf(toString(properties.payment_variant), ''),
+            nullIf(toString(person.properties.payment_variant), ''),
+            'sin-dato'
+          ) as payment_variant,
+          count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
+          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
+          countIf(event IN ('quiz_completed', 'short_quiz_completed')) as completed,
+          countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
+          uniqIf(toString(properties.$insert_id),
+                 event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v5') as booked,
+          uniqIf(toString(properties.$insert_id),
+                 event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v5') as attended,
+          uniqIf(toString(properties.$insert_id),
+                 event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v5') as no_show
+        FROM events
+        WHERE event IN (
+          '$pageview',
+          'quiz_started', 'short_quiz_started',
+          'quiz_completed', 'short_quiz_completed',
+          'form_submitted', 'direct_form_submitted', 'lead_form_submitted',
+          'appointment_booked', 'appointment_attended', 'appointment_no_show'
+        )
+          ${dateFilter}
+        GROUP BY ad, landing, nicho, sexo, payment_variant
+        HAVING visits > 0 OR started > 0 OR leads > 0 OR booked > 0
+        ORDER BY visits DESC, leads DESC
+      `),
+
+      // F3 — ad spend grouped by utm_content when available (for per-ad CPL/CPA).
+      // Until Meta tracking template is applied, utm_content on ad_spend_daily is
+      // campaign-level only; rows are still useful aggregated up.
+      hogqlQuery(apiKey, `
+        SELECT
+          toString(properties.source) as ad_source,
+          coalesce(nullIf(toString(properties.campaign_id), ''), 'unknown') as campaign_id,
+          coalesce(nullIf(toString(properties.campaign_name), ''), '') as campaign_name,
+          sum(toFloatOrZero(toString(properties.spend))) as spend,
+          sum(toIntOrZero(toString(properties.clicks))) as clicks,
+          sum(toIntOrZero(toString(properties.impressions))) as impressions
+        FROM events
+        WHERE event = 'ad_spend_daily'
+          AND properties.source IN ('google_ads', 'meta_ads')
+          ${adDateFilter}
+        GROUP BY ad_source, campaign_id, campaign_name
+        ORDER BY spend DESC
       `),
     ]);
 
@@ -356,8 +441,103 @@ exports.handler = async (event) => {
       })),
       quiz_dropoff: quizDropoff.map(row => ({
         question_id: row[0],
-        users: row[1],
+        question_index: row[1],
+        users: row[2],
       })),
+      by_funnel_dimensions: byFunnelDimensions.map(row => ({
+        utm_content: row[0],
+        landing: row[1],
+        nicho: row[2],
+        sexo: row[3],
+        payment_variant: row[4],
+        visits: row[5],
+        started: row[6],
+        completed: row[7],
+        leads: row[8],
+        booked: row[9],
+        attended: row[10],
+        no_show: row[11],
+      })),
+      ad_spend_by_campaign: adSpendByCampaign.map(row => ({
+        source: row[0],
+        campaign_id: row[1],
+        campaign_name: row[2],
+        spend: row[3],
+        clicks: row[4],
+        impressions: row[5],
+      })),
+      executive_header: (() => {
+        // Global funnel stages
+        const p = val(kpiPageviews);
+        const s = val(kpiStarted);
+        const c = val(kpiCompleted);
+        const l = val(kpiLeads);
+        const b = val(kpiBooked);
+        const a = val(kpiAttended);
+        const stages = [
+          { from: 'Visitante',      to: 'Iniciado',   prev: p, curr: s },
+          { from: 'Iniciado',       to: 'Finalizado', prev: s, curr: c },
+          { from: 'Finalizado',     to: 'Lead',       prev: c, curr: l },
+          { from: 'Lead',           to: 'Cita',       prev: l, curr: b },
+          { from: 'Cita',           to: 'Asiste',     prev: b, curr: a },
+        ];
+        const withDrop = stages
+          .filter(st => st.prev > 0)
+          .map(st => ({ ...st, drop_pct: 100 * (1 - st.curr / st.prev), retention_pct: 100 * st.curr / st.prev }));
+        const bottleneck = withDrop.length
+          ? withDrop.reduce((worst, cur) => (cur.drop_pct > worst.drop_pct ? cur : worst), withDrop[0])
+          : null;
+
+        // Top/Bottom funnels — compute ratio booked/visits per funnel line;
+        // minimum traffic gate so we don't rank noise.
+        const lines = (byFunnelDimensions || [])
+          .map(row => ({
+            utm_content: row[0],
+            landing: row[1],
+            nicho: row[2],
+            sexo: row[3],
+            payment_variant: row[4],
+            visits: row[5],
+            started: row[6],
+            completed: row[7],
+            leads: row[8],
+            booked: row[9],
+          }))
+          .filter(r => r.visits >= 30 || r.leads >= 3);
+        const scored = lines
+          .map(r => ({ ...r, conv_pct: r.visits > 0 ? 100 * r.booked / r.visits : 0 }))
+          .filter(r => r.conv_pct > 0);
+        scored.sort((x, y) => y.conv_pct - x.conv_pct);
+        const top = scored.slice(0, 3);
+        const bottom = scored.slice(-3).reverse();
+
+        // Budget: Alfonso 2026-04-21 set 500€/semana × 2 semanas = 2.000€ total
+        // for the 3-niche pilot. Overridable per-request via ?budget= later if needed.
+        const totalSpend = (adSpendBySource || []).reduce((sum, row) => sum + (Number(row[1]) || 0), 0);
+        const budgetAssigned = 2000;
+
+        return {
+          bottleneck: bottleneck
+            ? {
+                from: bottleneck.from,
+                to: bottleneck.to,
+                drop_pct: Number(bottleneck.drop_pct.toFixed(1)),
+                retention_pct: Number(bottleneck.retention_pct.toFixed(1)),
+                abs_lost: bottleneck.prev - bottleneck.curr,
+              }
+            : null,
+          top_funnels: top,
+          bottom_funnels: bottom,
+          budget: {
+            assigned: budgetAssigned,
+            spent: Number(totalSpend.toFixed(2)),
+            remaining: Number((budgetAssigned - totalSpend).toFixed(2)),
+            pct_used: budgetAssigned > 0 ? Number((100 * totalSpend / budgetAssigned).toFixed(1)) : 0,
+          },
+          global_cpl: l > 0 && totalSpend > 0 ? Number((totalSpend / l).toFixed(2)) : null,
+          global_cpa: b > 0 && totalSpend > 0 ? Number((totalSpend / b).toFixed(2)) : null,
+        };
+      })(),
     };
 
     return {

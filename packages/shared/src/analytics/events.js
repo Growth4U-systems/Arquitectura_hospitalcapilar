@@ -91,20 +91,39 @@ export const calculateLeadScore = (answers) => {
   return Math.min(score, 100); // Max 100
 };
 
-// Obtener parámetros UTM de la URL
+// Obtener parámetros UTM de la URL, con fallback a sessionStorage.
+// Caching es necesario porque el usuario navega dentro del site y pierde
+// los UTMs de la URL — eventos posteriores (quiz_started, form_submitted,
+// appointment_booked, etc.) deben seguir atribuyendo al anuncio original.
+const UTM_STORAGE_KEY = 'hc_utm_v1';
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'];
+
 export const getUTMParams = () => {
   if (typeof window === 'undefined') return {};
 
   const urlParams = new URLSearchParams(window.location.search);
-  return {
-    utm_source: urlParams.get('utm_source') || undefined,
-    utm_medium: urlParams.get('utm_medium') || undefined,
-    utm_campaign: urlParams.get('utm_campaign') || undefined,
-    utm_content: urlParams.get('utm_content') || undefined,
-    utm_term: urlParams.get('utm_term') || undefined,
-    fbclid: urlParams.get('fbclid') || undefined,
-    gclid: urlParams.get('gclid') || undefined,
-  };
+  const fromUrl = {};
+  let hasAnyInUrl = false;
+  for (const k of UTM_KEYS) {
+    const v = urlParams.get(k);
+    if (v) { fromUrl[k] = v; hasAnyInUrl = true; }
+  }
+
+  // First arrival with UTMs: persist for the rest of the journey.
+  if (hasAnyInUrl) {
+    try { sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(fromUrl)); } catch (_) {}
+    return fromUrl;
+  }
+
+  // No UTMs in URL: rehydrate from sessionStorage if available.
+  try {
+    const cached = sessionStorage.getItem(UTM_STORAGE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    }
+  } catch (_) {}
+  return {};
 };
 
 // Clasificar fuente de tráfico desde UTM params

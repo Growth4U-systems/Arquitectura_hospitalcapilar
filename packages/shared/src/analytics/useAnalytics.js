@@ -56,6 +56,8 @@ export function useAnalytics() {
       ? Date.now() - questionStartTime.current
       : 0;
 
+    const context = getEventContext();
+
     safeCapture(ANALYTICS_EVENTS.QUESTION_ANSWERED, {
       session_id: sessionId,
       question_id: questionId,
@@ -63,6 +65,7 @@ export function useAnalytics() {
       answer_value: answerValue,
       time_to_answer_ms: timeToAnswer,
       experiment_variant: experimentVariant,
+      ...context,
     });
 
     setQuizAnswers?.((prev) => ({ ...prev, [questionId]: answerValue }));
@@ -82,6 +85,7 @@ export function useAnalytics() {
       answers_count: Object.keys(answers).length,
       answers_summary: JSON.stringify(answers),
       experiment_variant: experimentVariant,
+      sexo: answers?.sexo || null,
       ...context,
     });
   }, [sessionId, experimentVariant]);
@@ -136,6 +140,7 @@ export function useAnalytics() {
       lead_score: leadScore,
       answers_hash: answersHash,
       experiment_variant: experimentVariant,
+      sexo: answers?.sexo || null,
       ...context,
     });
 
@@ -152,6 +157,7 @@ export function useAnalytics() {
           funnel_type: context.funnel_type,
           traffic_source: context.traffic_source,
           nicho: context.nicho,
+          sexo: answers?.sexo || null,
         });
       }
     } catch (e) {

@@ -81,7 +81,43 @@ async function sendBatch(events) {
   return res.ok;
 }
 
-async function fetchContactLeadSource(contactId) {
+// GHL custom field IDs (mirrors HospitalCapilarQuiz.jsx CF map)
+const CF_IDS = {
+  sexo:              'P7D2edjnOHwXLpglw9tB',
+  ecp:               'cFIcdJlT9sfnC3KMSwDD',
+  nicho:             'o4I4AG3ZK07nEzAMLTlK',
+  funnel_type:       'liIshAFJMngl2BV9MtVw',
+  traffic_source:    'miu6E3oxZowYahYGjX1A',
+  utm_source:        'MisB9YJJAH7cnh8JOtQn',
+  utm_medium:        'vykx7m6bcfbYMXRqToYP',
+  utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
+  utm_content:       'dydSaUSYbb5R7nYOboLq',
+  utm_term:          'eLdhsOthmyD38al527tG',
+  ubicacion_clinica: 'LygjPVQnLbqqdL4eqQwT',
+  door:              '2JYlfGk60lHbuyh9vcdV',
+};
+
+// Derive payment variant from contact properties + opportunity value.
+// 'clinica' = pago al terminar consulta (flow asesores)
+// '0'       = hombres, no bono
+// '195'     = mujer, bono completo (precio histórico / pago en clínica)
+// '125'     = mujer, bono anticipado web/phone (reframe 2026-04-22)
+// 'unknown' = falta dato para decidir
+function derivePaymentVariant({ sexo, funnel_type, monetary_value }) {
+  if ((funnel_type || '').toLowerCase() === 'asesores') return 'clinica';
+  const s = (sexo || '').toLowerCase();
+  if (s === 'hombre' || s === 'male') return '0';
+  if (s === 'mujer' || s === 'female') {
+    const v = Number(monetary_value) || 0;
+    if (v >= 180) return '195';
+    if (v >= 100) return '125';
+    // sin monetary_value fiable: default al precio actual (125€ advance)
+    return '125';
+  }
+  return 'unknown';
+}
+
+async function fetchContactProperties(contactId) {
   try {
     const cfRes = await fetchWithRetry(
       `${GHL_BASE}/contacts/${contactId}`,
@@ -91,10 +127,20 @@ async function fetchContactLeadSource(contactId) {
     const cfs = cfData.contact?.customFields || [];
     const cfMap = {};
     cfs.forEach(f => { cfMap[f.id] = f.value; });
+    const get = (key) => cfMap[CF_IDS[key]] || null;
     return {
-      traffic_source: cfMap['miu6E3oxZowYahYGjX1A'] || null,
-      funnel_type: cfMap['liIshAFJMngl2BV9MtVw'] || null,
-      nicho: cfMap['cFIcdJlT9sfnC3KMSwDD'] || null,
+      sexo:              get('sexo'),
+      ecp:               get('ecp'),
+      nicho:             get('nicho'),
+      funnel_type:       get('funnel_type'),
+      traffic_source:    get('traffic_source'),
+      utm_source:        get('utm_source'),
+      utm_medium:        get('utm_medium'),
+      utm_campaign:      get('utm_campaign'),
+      utm_content:       get('utm_content'),
+      utm_term:          get('utm_term'),
+      ubicacion_clinica: get('ubicacion_clinica'),
+      door:              get('door'),
     };
   } catch (e) {
     console.log(`[GHL] Contact fetch failed for ${contactId}: ${e.message}`);
@@ -132,11 +178,11 @@ exports.handler = async (event) => {
   console.log(`[GHL→PostHog Sync] ${relevantOpps.length} opps in event-emitting stages`);
 
   // Fetch all contact custom fields in parallel (5 concurrent) — prevents Netlify timeout
-  const leadSourceByOppId = new Map();
+  const contactPropsByOppId = new Map();
   await parallelMap(relevantOpps, async (opp) => {
     if (!opp.contactId) return;
-    const ls = await fetchContactLeadSource(opp.contactId);
-    leadSourceByOppId.set(opp.id, ls);
+    const props = await fetchContactProperties(opp.contactId);
+    contactPropsByOppId.set(opp.id, props);
   }, 5);
 
   const events = [];
@@ -148,7 +194,13 @@ exports.handler = async (event) => {
     const contact = opp.contact || {};
     const email = contact.email || '';
     const distinctId = email || opp.id;
-    const leadSource = leadSourceByOppId.get(opp.id) || {};
+    const contactProps = contactPropsByOppId.get(opp.id) || {};
+    const monetaryValue = opp.monetaryValue || 0;
+    const paymentVariant = derivePaymentVariant({
+      sexo: contactProps.sexo,
+      funnel_type: contactProps.funnel_type,
+      monetary_value: monetaryValue,
+    });
 
     // Use the most recent timestamp available (stage change > updated > created)
     const eventTimestamp = opp.lastStageChangeAt || opp.updatedAt || opp.createdAt || new Date().toISOString();
@@ -160,8 +212,9 @@ exports.handler = async (event) => {
       contact_phone: contact.phone || '',
       opportunity_id: opp.id,
       pipeline_stage: stageName,
-      monetary_value: opp.monetaryValue || 0,
-      ...leadSource,
+      monetary_value: monetaryValue,
+      payment_variant: paymentVariant,
+      ...contactProps,
     };
 
     // Send $set to update person properties
@@ -176,8 +229,9 @@ exports.handler = async (event) => {
             name: contact.name || opp.name || '',
             phone: contact.phone || '',
             pipeline_stage: stageName,
-            monetary_value: opp.monetaryValue || 0,
-            ...leadSource,
+            monetary_value: monetaryValue,
+            payment_variant: paymentVariant,
+            ...contactProps,
           },
         },
       });
@@ -188,7 +242,7 @@ exports.handler = async (event) => {
         event: eventName,
         distinct_id: distinctId,
         timestamp: eventTimestamp,
-        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v4` },
+        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v5` },
       });
     }
   }
