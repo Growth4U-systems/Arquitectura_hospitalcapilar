@@ -1067,18 +1067,8 @@ function renderQuizDropoff(data) {
       <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${dropBadge}</div>
     </div>`;
 
-    // Conditional sub-rows — grouped under the step, indented, tiny
-    for (const c of step.conds) {
-      const gate = QUIZ_CONDITIONALS[c.question_id] || '';
-      const subPct = firstUsers > 0 ? (c.users / firstUsers * 100) : 0;
-      html += `<div style="display:flex;align-items:center;gap:6px;height:18px;font-size:10px;color:#64748b;padding-left:64px;">
-        <span style="color:#475569;">&#x2937;</span>
-        <span style="font-style:italic;flex-shrink:0;">+${c.question_id}</span>
-        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5a7080;font-size:9px;" title="${gate}">${gate}</span>
-        <span style="width:90px;color:#64748b;font-size:10px;flex-shrink:0;">${c.users} · ${subPct.toFixed(0)}%</span>
-      </div>`;
-    }
-
+    // Conditionals are grouped into step.conds but not rendered — kept only in
+    // the data model in case we need them later.
     prevMain = step.main.users;
   }
 
