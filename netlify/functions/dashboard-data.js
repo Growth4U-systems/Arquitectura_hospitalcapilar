@@ -107,11 +107,12 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
-      // Bookings: count DISTINCT $insert_id — PostHog's native dedup has a short window
-      // and duplicate sync runs can create repeated rows with the same insert_id.
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.$insert_id)) FROM events WHERE event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v5' ${dateFilter}`),
+      // Bookings: dedupe by opportunity_id across v4+v5 sync batches. A single opp
+      // can have both a legacy _v4 insert_id and a new _v5 one after the sync
+      // re-emits with enriched properties — dedupe-by-opp keeps the count stable.
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_booked' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_attended' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_no_show' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
 
       // Leads by traffic source (separate query, quiz events only)
       hogqlQuery(apiKey, `
@@ -125,16 +126,16 @@ exports.handler = async (event) => {
         ORDER BY leads DESC
       `),
 
-      // Bookings by traffic source — dedupe by $insert_id per event type
+      // Bookings by traffic source — dedupe by opportunity_id across v4+v5
       hogqlQuery(apiKey, `
         SELECT
           properties.traffic_source as source,
-          uniqIf(toString(properties.$insert_id), event = 'appointment_booked') as booked,
-          uniqIf(toString(properties.$insert_id), event = 'appointment_attended') as attended,
-          uniqIf(toString(properties.$insert_id), event = 'appointment_no_show') as no_show
+          uniqIf(toString(properties.opportunity_id), event = 'appointment_booked') as booked,
+          uniqIf(toString(properties.opportunity_id), event = 'appointment_attended') as attended,
+          uniqIf(toString(properties.opportunity_id), event = 'appointment_no_show') as no_show
         FROM events
         WHERE event IN ('appointment_booked', 'appointment_attended', 'appointment_no_show')
-          AND toString(properties.$insert_id) LIKE '%_v5'
+          AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')
           ${dateFilter}
         GROUP BY properties.traffic_source
       `),
@@ -157,14 +158,14 @@ exports.handler = async (event) => {
         ORDER BY visits DESC
       `),
 
-      // Bookings by funnel_type — dedupe by $insert_id
+      // Bookings by funnel_type — dedupe by opportunity_id across v4+v5
       hogqlQuery(apiKey, `
         SELECT
           properties.funnel_type as funnel,
-          count(DISTINCT toString(properties.$insert_id)) as booked
+          count(DISTINCT toString(properties.opportunity_id)) as booked
         FROM events
         WHERE event = 'appointment_booked'
-          AND toString(properties.$insert_id) LIKE '%_v5'
+          AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')
           ${dateFilter}
         GROUP BY funnel
       `),
@@ -308,12 +309,12 @@ exports.handler = async (event) => {
           countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
           countIf(event IN ('quiz_completed', 'short_quiz_completed')) as completed,
           countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
-          uniqIf(toString(properties.$insert_id),
-                 event = 'appointment_booked' AND toString(properties.$insert_id) LIKE '%_v5') as booked,
-          uniqIf(toString(properties.$insert_id),
-                 event = 'appointment_attended' AND toString(properties.$insert_id) LIKE '%_v5') as attended,
-          uniqIf(toString(properties.$insert_id),
-                 event = 'appointment_no_show' AND toString(properties.$insert_id) LIKE '%_v5') as no_show
+          uniqIf(toString(properties.opportunity_id),
+                 event = 'appointment_booked' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')) as booked,
+          uniqIf(toString(properties.opportunity_id),
+                 event = 'appointment_attended' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')) as attended,
+          uniqIf(toString(properties.opportunity_id),
+                 event = 'appointment_no_show' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')) as no_show
         FROM events
         WHERE event IN (
           '$pageview',
