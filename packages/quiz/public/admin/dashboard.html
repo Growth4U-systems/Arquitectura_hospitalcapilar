@@ -698,7 +698,9 @@ function renderFunnelType(data) {
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
 
-  let html = `<thead><tr><th>Funnel</th><th class="num">Visitantes</th><th class="num">Iniciados</th><th class="num">V&rarr;I %</th><th class="num">Leads</th><th class="num">I&rarr;L %</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
+  // Columns ordered as the funnel flows: each % sits between the two counts it
+  // compares, so the eye reads left-to-right as a conversion chain.
+  let html = `<thead><tr><th>Funnel</th><th class="num">Visitantes</th><th class="num">V&rarr;I %</th><th class="num">Iniciados</th><th class="num">I&rarr;L %</th><th class="num">Leads</th><th class="num">L&rarr;C %</th><th class="num">Citas</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = FUNNEL_LABELS[name] || name;
     const color = FUNNEL_COLORS[name] || '#78716c';
@@ -713,10 +715,10 @@ function renderFunnelType(data) {
       : `<td class="num" style="color:#666;">&mdash;</td>`;
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
       <td class="num">${fmt(v.visits)}</td>
-      <td class="num">${fmt(v.started)}</td>
       ${viCell}
-      <td class="num">${fmt(v.leads)}</td>
+      <td class="num">${fmt(v.started)}</td>
       ${ilCell}
+      <td class="num">${fmt(v.leads)}</td>
       <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td></tr>`;
   });
@@ -728,10 +730,10 @@ function renderFunnelType(data) {
     : `<td class="num" style="color:#666;">&mdash;</td>`;
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
     <td class="num">${fmt(totalVisits)}</td>
-    <td class="num">${fmt(totalStarted)}</td>
     ${totalViCell}
-    <td class="num">${fmt(totalLeads)}</td>
+    <td class="num">${fmt(totalStarted)}</td>
     ${totalIlCell}
+    <td class="num">${fmt(totalLeads)}</td>
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td></tr></tbody>`;
   document.getElementById('funnelTypeTable').innerHTML = html;
@@ -783,42 +785,23 @@ function renderSexo(data) {
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
 
-  let html = `<thead><tr><th>Sexo</th><th class="num">Visitantes</th><th class="num">Iniciados</th><th class="num">V&rarr;I %</th><th class="num">Leads</th><th class="num">I&rarr;L %</th><th class="num">Conv %</th><th class="num">Citas</th></tr></thead><tbody>`;
+  // Only Leads / Citas / Conv — upstream stages don't have sexo data
+  // (sexo is captured once the user answers the first quiz question or
+  // submits the form, so visits / started aren't meaningfully segmentable).
+  let html = `<thead><tr><th>Sexo</th><th class="num">Leads</th><th class="num">Citas</th><th class="num">Conv %</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = SEXO_LABELS[name] || name;
     const color = SEXO_COLORS[name] || '#78716c';
     const convR = pctNum(v.booked, v.leads);
-    const viR = pctNum(v.started, v.visits);
-    const ilR = pctNum(v.leads, v.started);
-    const viCell = v.visits > 0
-      ? `<td class="num ${convClass(viR)}">${pct(v.started, v.visits)}</td>`
-      : `<td class="num" style="color:#666;">&mdash;</td>`;
-    const ilCell = v.started > 0
-      ? `<td class="num ${convClass(ilR)}">${pct(v.leads, v.started)}</td>`
-      : `<td class="num" style="color:#666;">&mdash;</td>`;
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
-      <td class="num">${fmt(v.visits)}</td>
-      <td class="num">${fmt(v.started)}</td>
-      ${viCell}
       <td class="num">${fmt(v.leads)}</td>
-      ${ilCell}
-      <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
-      <td class="num">${fmt(v.booked)}</td></tr>`;
+      <td class="num">${fmt(v.booked)}</td>
+      <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td></tr>`;
   });
-  const totalViCell = totalVisits > 0
-    ? `<td class="num">${pct(totalStarted, totalVisits)}</td>`
-    : `<td class="num" style="color:#666;">&mdash;</td>`;
-  const totalIlCell = totalStarted > 0
-    ? `<td class="num">${pct(totalLeads, totalStarted)}</td>`
-    : `<td class="num" style="color:#666;">&mdash;</td>`;
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
-    <td class="num">${fmt(totalVisits)}</td>
-    <td class="num">${fmt(totalStarted)}</td>
-    ${totalViCell}
     <td class="num">${fmt(totalLeads)}</td>
-    ${totalIlCell}
-    <td class="num">${pct(totalBooked, totalLeads)}</td>
-    <td class="num">${fmt(totalBooked)}</td></tr></tbody>`;
+    <td class="num">${fmt(totalBooked)}</td>
+    <td class="num">${pct(totalBooked, totalLeads)}</td></tr></tbody>`;
   document.getElementById('sexoTable').innerHTML = html;
 
   // Leads distribution bar

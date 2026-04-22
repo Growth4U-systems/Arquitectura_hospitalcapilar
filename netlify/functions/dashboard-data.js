@@ -1,9 +1,22 @@
 // Netlify Function: Dashboard Data from PostHog
-// Fetches real analytics data via PostHog HogQL queries
+// Fetches real analytics data via PostHog HogQL queries + direct GHL
+// lookups for fields that are authoritative in the CRM (sexo, pipeline
+// stage) and not reliably propagated through the PostHog sync.
 
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
 const PROJECT_ID = '137870';
 const LAUNCH_DATE = '2026-04-09';
+
+// GHL constants (mirrors sync-ghl-posthog.js)
+const GHL_BASE = 'https://services.leadconnectorhq.com';
+const GHL_PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
+const GHL_BOOKED_STAGES = new Set([
+  'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', // booked
+  '24956338-65d9-4a16-97e5-ba01b64f390f', // reminder_sent
+  '71a5cc36-584e-47dc-9cce-215803e3140d', // attended
+  '1cd97c60-fb19-4699-9293-2b32fd48b54a', // won
+  '437d0663-bd17-4d84-a939-11aed1b4b384', // no_show
+]);
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
@@ -27,6 +40,75 @@ async function hogqlQuery(apiKey, query) {
 
   const data = await res.json();
   return data.results || [];
+}
+
+// ─── Direct GHL → by_sexo aggregation ─────────────────────────────
+// GHL is the source of truth for gender (native contact.gender field,
+// populated; the custom field `sexo` is not reliably round-tripped).
+// Pulling directly avoids PostHog's person-property propagation lag.
+async function fetchGhlBySexo(startDate, endDate) {
+  const GHL_KEY = process.env.VITE_GHL_API_KEY;
+  const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
+  if (!GHL_KEY) return null;
+
+  const headers = { Authorization: `Bearer ${GHL_KEY}`, Version: '2021-07-28' };
+
+  // Fetch all opportunities in the pipeline (typically <100 for HC)
+  let allOpps = [];
+  let startAfterId = '';
+  let hasMore = true;
+  let guard = 0;
+  while (hasMore && guard++ < 20) {
+    const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${GHL_PIPELINE_ID}&limit=100${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`GHL search ${res.status}`);
+    const data = await res.json();
+    const opps = data.opportunities || [];
+    allOpps = allOpps.concat(opps);
+    hasMore = opps.length >= 100;
+    if (hasMore) startAfterId = opps[opps.length - 1].id;
+  }
+
+  // Filter to the requested date range by opportunity createdAt.
+  const startTs = new Date(startDate + 'T00:00:00Z').getTime();
+  const endTs = new Date(endDate + 'T23:59:59Z').getTime();
+  const inRange = allOpps.filter(opp => {
+    const t = new Date(opp.createdAt || opp.updatedAt || 0).getTime();
+    return t >= startTs && t <= endTs;
+  });
+
+  // Fetch each unique contact's gender (concurrency 5)
+  const contactIds = [...new Set(inRange.map(o => o.contactId).filter(Boolean))];
+  const contactById = {};
+  const concurrency = 5;
+  let idx = 0;
+  async function worker() {
+    while (idx < contactIds.length) {
+      const i = idx++;
+      const cid = contactIds[i];
+      try {
+        const r = await fetch(`${GHL_BASE}/contacts/${cid}`, { headers });
+        if (r.ok) {
+          const d = await r.json();
+          contactById[cid] = d.contact || {};
+        }
+      } catch (_) { /* skip */ }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
+
+  // Aggregate by normalized sexo
+  const buckets = {};
+  const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0 }; return buckets[k]; };
+  for (const opp of inRange) {
+    const contact = contactById[opp.contactId] || {};
+    const g = (contact.gender || '').toLowerCase();
+    const sexo = g === 'female' ? 'mujer' : g === 'male' ? 'hombre' : 'sin-dato';
+    const b = ensure(sexo);
+    b.leads++;
+    if (GHL_BOOKED_STAGES.has(opp.pipelineStageId)) b.booked++;
+  }
+  return Object.values(buckets).sort((a, b) => b.leads - a.leads);
 }
 
 exports.handler = async (event) => {
@@ -598,6 +680,20 @@ exports.handler = async (event) => {
         };
       })(),
     };
+
+    // Override by_sexo with GHL-direct aggregation when available. GHL is the
+    // source of truth for contact.gender; PostHog's person.properties.sexo
+    // lags behind by an hour (sync cadence) and new leads won't appear
+    // until the next cron tick. The PostHog fallback stays in place for when
+    // GHL is unreachable or credentials are missing.
+    try {
+      const ghlBySexo = await fetchGhlBySexo(effectiveStart, effectiveEnd);
+      if (ghlBySexo && ghlBySexo.length > 0) {
+        result.by_sexo = ghlBySexo;
+      }
+    } catch (e) {
+      console.log('[Dashboard] GHL by_sexo fallback to PostHog:', e.message);
+    }
 
     return {
       statusCode: 200,
