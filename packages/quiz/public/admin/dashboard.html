@@ -1136,32 +1136,36 @@ function renderQuizDropoff(data) {
       return ai - bi;
     });
 
-  // Build steps: each step is anchored by a LINEAR question (Paso 1..N).
-  // Conditional questions attach as sub-rows to the nearest preceding step —
-  // they don't get their own step number and don't break the staircase.
+  // Build steps walking the screen list in quiz order. Three kinds of steps:
+  // - question (linear) → numbered "Paso N"
+  // - question (conditional) → hidden (visual clutter)
+  // - social_proof (info screen) → shown as "Pausa · id", no number
+  // Contact form + welcome + results are skipped (have own anchors or are noise).
   const LINEAR = new Set(QUIZ_LINEAR_ORDER);
   const steps = [];
-  let current = null;
+  let linearNum = 0;
   for (const q of questions) {
-    if (LINEAR.has(q.question_id)) {
-      current = { num: steps.length + 1, main: q, conds: [] };
-      steps.push(current);
-    } else if (current) {
-      current.conds.push(q);
-    } else {
-      // Conditional before any linear question — rare; create an unnumbered holder
-      current = { num: 0, main: null, conds: [q] };
-      steps.push(current);
+    const type = q.screen_type;
+    if (type === 'contact_form' || q.question_id === 'welcome' || type === 'results') continue;
+    if (type === 'social_proof') {
+      steps.push({ kind: 'pausa', main: q });
+      continue;
     }
+    // screen_type === 'question' (or null for legacy events)
+    if (LINEAR.has(q.question_id)) {
+      linearNum++;
+      steps.push({ kind: 'linear', num: linearNum, main: q });
+    }
+    // Conditional questions — skipped to keep the staircase clean.
   }
 
-  const firstUsers = started > 0 ? started : (steps[0]?.main?.users || 1);
+  const firstUsers = started > 0 ? started : (steps.find(s => s.kind === 'linear')?.main.users || 1);
   let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
 
   // Anchor top: Quiz Iniciado
   const pctStarted = started > 0 ? 100 : 0;
   html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
-    <div style="width:200px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:700;">Quiz Iniciado</div>
+    <div style="width:220px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:700;">Quiz Iniciado</div>
     <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
       <div style="width:${Math.max(pctStarted,4)}%;height:100%;background:#2C3E50;border-radius:3px;display:flex;align-items:center;padding-left:6px;">
         <span style="font-size:10px;color:#fff;font-weight:600;">${started}</span>
@@ -1170,21 +1174,27 @@ function renderQuizDropoff(data) {
     <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${pctStarted.toFixed(0)}%</div>
   </div>`;
 
-  let prevMain = started > 0 ? started : firstUsers;
+  let prevUsers = started > 0 ? started : firstUsers;
   for (const step of steps) {
-    if (!step.main) continue; // skip orphan conditional-only step (rare)
-
     const retention = (step.main.users / firstUsers * 100);
     const widthPct = Math.max(retention, 4);
-    const dropPct = prevMain > 0 ? ((prevMain - step.main.users) / prevMain * 100) : 0;
-    const barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
+    const dropPct = prevUsers > 0 ? ((prevUsers - step.main.users) / prevUsers * 100) : 0;
+
+    let barColor, labelHtml;
+    if (step.kind === 'pausa') {
+      barColor = '#a855f7'; // purple for info screens
+      labelHtml = `<span style="color:#a855f7;font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:0.5px;">Pausa</span> &middot; <span style="opacity:0.85;">${step.main.question_id}</span>`;
+    } else {
+      barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
+      labelHtml = `<span style="color:var(--hc-teal);font-weight:700;">Paso ${step.num}</span> &middot; ${step.main.question_id}`;
+    }
     const dropBadge = dropPct > 0.5
       ? ` <span style="color:#f87171;">-${dropPct.toFixed(0)}%</span>`
       : '';
 
     html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
-      <div style="width:200px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        <span style="color:var(--hc-teal);font-weight:700;">Paso ${step.num}</span> &middot; ${step.main.question_id}
+      <div style="width:220px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${labelHtml}
       </div>
       <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
         <div style="width:${widthPct}%;height:100%;background:${barColor};border-radius:3px;display:flex;align-items:center;padding-left:6px;">
@@ -1194,17 +1204,15 @@ function renderQuizDropoff(data) {
       <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${dropBadge}</div>
     </div>`;
 
-    // Conditionals are grouped into step.conds but not rendered — kept only in
-    // the data model in case we need them later.
-    prevMain = step.main.users;
+    prevUsers = step.main.users;
   }
 
   // Anchor bottom: Formulario enviado
   const pctLeads = firstUsers > 0 ? (leads / firstUsers * 100) : 0;
-  const dropLeads = prevMain > 0 ? ((prevMain - leads) / prevMain * 100) : 0;
+  const dropLeads = prevUsers > 0 ? ((prevUsers - leads) / prevUsers * 100) : 0;
   const dropLeadsBadge = dropLeads > 0.5 ? ` <span style="color:#f87171;">-${dropLeads.toFixed(0)}%</span>` : '';
   html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
-    <div style="width:200px;font-size:11px;color:#4ade80;text-align:right;flex-shrink:0;font-weight:700;">Formulario enviado</div>
+    <div style="width:220px;font-size:11px;color:#4ade80;text-align:right;flex-shrink:0;font-weight:700;">Formulario enviado</div>
     <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
       <div style="width:${Math.max(pctLeads,4)}%;height:100%;background:#4ade80;border-radius:3px;display:flex;align-items:center;padding-left:6px;">
         <span style="font-size:10px;color:#fff;font-weight:600;">${leads}</span>

@@ -408,18 +408,23 @@ exports.handler = async (event) => {
         ORDER BY spend_date ASC
       `),
 
-      // Quiz drop-off by question — group by question_id, expose question_index for
-      // correct sequential ordering in the UI (fix: antes ordenábamos por users DESC).
+      // Quiz drop-off — use screen_viewed (fires on every screen render:
+      // questions, info/social-proof intermissions, contact form, results),
+      // not question_answered (which misses people who viewed a screen but
+      // never clicked an option). Expose screen_type so the UI can label
+      // info screens distinctly from questions.
       hogqlQuery(apiKey, `
         SELECT
-          toString(properties.question_id) as q_id,
-          min(properties.question_index) as q_idx,
+          toString(properties.screen_id) as s_id,
+          min(properties.screen_index) as s_idx,
+          argMin(toString(properties.screen_type), properties.screen_index) as s_type,
           count(DISTINCT person_id) as users
         FROM events
-        WHERE event = 'question_answered'
+        WHERE event = 'screen_viewed'
+          AND properties.screen_id IS NOT NULL
           ${dateFilter}
-        GROUP BY q_id
-        ORDER BY q_idx ASC NULLS LAST
+        GROUP BY s_id
+        ORDER BY s_idx ASC NULLS LAST
       `),
 
       // By sexo — resolve sexo at the PERSON level only (not the event level).
@@ -633,7 +638,8 @@ exports.handler = async (event) => {
       quiz_dropoff: quizDropoff.map(row => ({
         question_id: row[0],
         question_index: row[1],
-        users: row[2],
+        screen_type: row[2], // 'question' | 'social_proof' | 'contact_form' | 'results'
+        users: row[3],
       })),
       by_sexo: bySexo.map(row => ({
         sexo: row[0],
