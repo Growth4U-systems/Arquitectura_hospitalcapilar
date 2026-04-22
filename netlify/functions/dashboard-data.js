@@ -171,6 +171,21 @@ const GHL_CF = {
 
 const CLINICAS_OPERATIVAS = new Set(['madrid', 'murcia', 'pontevedra']);
 
+// Collapse free-text utm_campaign strings into Meta's canonical campaign
+// names. The marketer writes utm_campaign manually in ad URLs (values like
+// "quiz-largo-es-normal", "form-directo-que-me-pasa") but those aren't
+// real campaigns in Ads Manager — Meta only has 3 G4U campaigns. We route
+// each nicho slug to its canonical Meta campaign so the dashboard doesn't
+// fragment into 5+ fake campaigns.
+function canonicalCampaignFromUtm(utm_campaign) {
+  const lower = (utm_campaign || '').toLowerCase();
+  if (!lower || lower === 'sin-dato') return null;
+  if (/\bmenopausia\b|\bes[-_ ]?normal\b/.test(lower)) return 'Menopausia G4U';
+  if (/\bque[-_ ]?me[-_ ]?pasa\b/.test(lower))          return '¿Qué me pasa? G4U';
+  if (/\bpostparto\b/.test(lower))                      return 'Postparto_G4U_Madrid';
+  return null; // unknown nicho → keep raw
+}
+
 // Fetch all opportunities in the pipeline + every related contact. Returns
 // an array of flattened rows; each row has the fully resolved dimensions
 // we can use to cross-tab the master table.
@@ -361,21 +376,25 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
   const buckets = new Map();
   for (const r of rows) {
     const cls = classifyUtmContent(r.utm_content, r.channel, r.landing, metaCatalog);
-    // When Meta catalog matches the ad name, override the free-text
-    // campaign/adset from GHL with Meta's authoritative values.
-    const metaCampaign = cls.meta?.campaign_name || null;
-    const metaAdset    = cls.meta?.adset_name    || null;
+    // Campaign resolution order:
+    //   1) Meta catalog match (authoritative)
+    //   2) nicho-slug → canonical Meta campaign (Menopausia G4U, etc.)
+    //   3) raw utm_campaign string from GHL (fallback)
+    const metaCampaign = cls.meta?.campaign_name
+      || canonicalCampaignFromUtm(r.utm_campaign)
+      || r.utm_campaign;
+    const metaAdset    = cls.meta?.adset_name    || r.utm_medium;
     const metaAdId     = cls.meta?.ad_id         || null;
     const adDisplay    = cls.display;
     const adKind       = cls.kind;
 
-    const key = [r.channel, metaCampaign || r.utm_campaign, metaAdset || r.utm_medium, adKind + '|' + adDisplay, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('::');
+    const key = [r.channel, metaCampaign, metaAdset, adKind + '|' + adDisplay, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('::');
     let b = buckets.get(key);
     if (!b) {
       b = {
         channel: r.channel,
-        utm_campaign: metaCampaign || r.utm_campaign,
-        utm_medium:   metaAdset    || r.utm_medium,
+        utm_campaign: metaCampaign,
+        utm_medium:   metaAdset,
         utm_content:  r.utm_content,
         ad_display:   adDisplay,
         ad_kind:      adKind,
