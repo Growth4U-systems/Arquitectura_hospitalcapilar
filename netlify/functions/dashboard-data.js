@@ -89,14 +89,34 @@ function inferSexoFromName(fullName) {
 // When gender is missing (contacts from form-direct flows that don't ask
 // sexo), fall back to a first-name heuristic against a Spanish name list.
 // Pulling directly avoids PostHog's person-property propagation lag.
-async function fetchGhlBySexo(startDate, endDate) {
+// GHL custom field IDs (mirror of packages/quiz/src/components/HospitalCapilarQuiz.jsx)
+const GHL_CF = {
+  door:              '2JYlfGk60lHbuyh9vcdV',
+  sexo:              'P7D2edjnOHwXLpglw9tB',
+  ecp:               'cFIcdJlT9sfnC3KMSwDD',
+  ubicacion_clinica: 'LygjPVQnLbqqdL4eqQwT',
+  utm_source:        'MisB9YJJAH7cnh8JOtQn',
+  utm_medium:        'vykx7m6bcfbYMXRqToYP',
+  utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
+  utm_content:       'dydSaUSYbb5R7nYOboLq',
+  utm_term:          'eLdhsOthmyD38al527tG',
+  nicho:             'o4I4AG3ZK07nEzAMLTlK',
+  funnel_type:       'liIshAFJMngl2BV9MtVw',
+  traffic_source:    'miu6E3oxZowYahYGjX1A',
+};
+
+const CLINICAS_OPERATIVAS = new Set(['madrid', 'murcia', 'pontevedra']);
+
+// Fetch all opportunities in the pipeline + every related contact. Returns
+// an array of flattened rows; each row has the fully resolved dimensions
+// we can use to cross-tab the master table.
+async function fetchGhlOppsWithContacts(startDate, endDate) {
   const GHL_KEY = process.env.VITE_GHL_API_KEY;
   const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
   if (!GHL_KEY) return null;
 
   const headers = { Authorization: `Bearer ${GHL_KEY}`, Version: '2021-07-28' };
 
-  // Fetch all opportunities in the pipeline (typically <100 for HC)
   let allOpps = [];
   let startAfterId = '';
   let hasMore = true;
@@ -112,7 +132,6 @@ async function fetchGhlBySexo(startDate, endDate) {
     if (hasMore) startAfterId = opps[opps.length - 1].id;
   }
 
-  // Filter to the requested date range by opportunity createdAt.
   const startTs = new Date(startDate + 'T00:00:00Z').getTime();
   const endTs = new Date(endDate + 'T23:59:59Z').getTime();
   const inRange = allOpps.filter(opp => {
@@ -120,7 +139,6 @@ async function fetchGhlBySexo(startDate, endDate) {
     return t >= startTs && t <= endTs;
   });
 
-  // Fetch each unique contact's gender (concurrency 5)
   const contactIds = [...new Set(inRange.map(o => o.contactId).filter(Boolean))];
   const contactById = {};
   const concurrency = 5;
@@ -140,32 +158,111 @@ async function fetchGhlBySexo(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Aggregate by normalized sexo. Priority: GHL native gender → name heuristic
-  // → sin-dato. Native gender is missing for contacts from flows that don't
-  // ask sexo (formulario directo, some asesores paths).
-  //
-  // Pago: contact tag `bono_pagado` flipped on by stripe-webhook.js on a
-  // successful Stripe checkout. `bono_pendiente` means booked but unpaid.
-  const buckets = {};
-  const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0, paid: 0 }; return buckets[k]; };
-  for (const opp of inRange) {
+  // Flatten each opportunity into a dimension row
+  return inRange.map(opp => {
     const contact = contactById[opp.contactId] || {};
+    const cfMap = {};
+    (contact.customFields || []).forEach(f => { cfMap[f.id] = f.value; });
+    const cf = (key) => cfMap[GHL_CF[key]] || null;
+
     const g = (contact.gender || '').toLowerCase();
     let sexo = g === 'female' ? 'mujer' : g === 'male' ? 'hombre' : null;
+    if (!sexo) sexo = cf('sexo') || null;
     if (!sexo) {
       const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.name || '';
       sexo = inferSexoFromName(fullName);
     }
-    sexo = sexo || 'sin-dato';
+    sexo = (sexo || 'sin-dato').toLowerCase();
+
+    const ubicacion = (cf('ubicacion_clinica') || '').toLowerCase();
+    const clinica = CLINICAS_OPERATIVAS.has(ubicacion) ? ubicacion
+      : (ubicacion ? 'otra' : 'sin-dato');
+
+    const funnelType = cf('funnel_type') || 'sin-dato';
+    const utmSource = (cf('utm_source') || cf('traffic_source') || 'sin-dato').toLowerCase();
+    const channelMap = { meta: 'Meta', facebook: 'Meta', instagram: 'Meta', google: 'Google', google_ads: 'Google', seo: 'SEO', tiktok: 'TikTok', direct: 'Directo', directo: 'Directo' };
+    const channel = channelMap[utmSource] || (utmSource === 'sin-dato' ? 'Sin dato' : utmSource);
+
+    // Derive payment model from funnel + sexo (mirrors sync-ghl-posthog derivePaymentVariant)
+    let pago;
+    if ((funnelType || '').toLowerCase() === 'asesores') pago = 'clinica';
+    else if (sexo === 'hombre') pago = '0';
+    else if (sexo === 'mujer') pago = '125';
+    else pago = 'unknown';
+
     const tags = Array.isArray(contact.tags) ? contact.tags : [];
-    const hasPaid = tags.includes('bono_pagado');
     const isBooked = GHL_BOOKED_STAGES.has(opp.pipelineStageId);
-    const b = ensure(sexo);
-    b.leads++;
-    if (isBooked) b.booked++;
-    if (isBooked && hasPaid) b.paid++;
+    const isPaid = tags.includes('bono_pagado');
+
+    return {
+      opp_id: opp.id,
+      contact_id: opp.contactId,
+      createdAt: opp.createdAt,
+      pipeline_stage: opp.pipelineStageId,
+      channel,
+      utm_source: utmSource,
+      utm_medium: cf('utm_medium') || 'sin-dato',
+      utm_campaign: cf('utm_campaign') || 'sin-dato',
+      utm_content: cf('utm_content') || 'sin-atribucion',
+      utm_term: cf('utm_term') || 'sin-dato',
+      nicho: cf('nicho') || 'sin-dato',
+      landing: funnelType,
+      sexo,
+      pago,
+      clinica,
+      leads: 1,
+      booked: isBooked ? 1 : 0,
+      paid: isBooked && isPaid ? 1 : 0,
+    };
+  });
+}
+
+// Backward-compatible wrapper — aggregate rows by sexo only.
+async function fetchGhlBySexo(startDate, endDate) {
+  const rows = await fetchGhlOppsWithContacts(startDate, endDate);
+  if (!rows) return null;
+  const buckets = {};
+  const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0, paid: 0 }; return buckets[k]; };
+  for (const r of rows) {
+    const b = ensure(r.sexo);
+    b.leads += r.leads;
+    b.booked += r.booked;
+    b.paid += r.paid;
   }
   return Object.values(buckets).sort((a, b) => b.leads - a.leads);
+}
+
+// Master funnel aggregation — groups by all 6 dimensions. Each row
+// represents a unique (channel × campaign × adset × ad × nicho × landing
+// × sexo × pago × clinica) combination.
+function buildMasterFunnelFromGhl(rows) {
+  if (!rows) return null;
+  const buckets = new Map();
+  for (const r of rows) {
+    const key = [r.channel, r.utm_campaign, r.utm_medium, r.utm_content, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('|');
+    let b = buckets.get(key);
+    if (!b) {
+      b = {
+        channel: r.channel,
+        utm_campaign: r.utm_campaign,
+        utm_medium: r.utm_medium,
+        utm_content: r.utm_content,
+        nicho: r.nicho,
+        landing: r.landing,
+        sexo: r.sexo,
+        pago: r.pago,
+        clinica: r.clinica,
+        leads: 0,
+        booked: 0,
+        paid: 0,
+      };
+      buckets.set(key, b);
+    }
+    b.leads += r.leads;
+    b.booked += r.booked;
+    b.paid += r.paid;
+  }
+  return [...buckets.values()].sort((a, b) => b.leads - a.leads);
 }
 
 exports.handler = async (event) => {
@@ -744,18 +841,27 @@ exports.handler = async (event) => {
       })(),
     };
 
-    // Override by_sexo with GHL-direct aggregation when available. GHL is the
-    // source of truth for contact.gender; PostHog's person.properties.sexo
-    // lags behind by an hour (sync cadence) and new leads won't appear
-    // until the next cron tick. The PostHog fallback stays in place for when
-    // GHL is unreachable or credentials are missing.
+    // GHL-backed sections (source of truth for sexo, pipeline, payment tags).
+    // Fetched once, used to derive both by_sexo and the master funnel table.
     try {
-      const ghlBySexo = await fetchGhlBySexo(effectiveStart, effectiveEnd);
-      if (ghlBySexo && ghlBySexo.length > 0) {
-        result.by_sexo = ghlBySexo;
+      const ghlRows = await fetchGhlOppsWithContacts(effectiveStart, effectiveEnd);
+      if (ghlRows) {
+        // by_sexo
+        const bySexoMap = {};
+        for (const r of ghlRows) {
+          if (!bySexoMap[r.sexo]) bySexoMap[r.sexo] = { sexo: r.sexo, leads: 0, booked: 0, paid: 0 };
+          bySexoMap[r.sexo].leads += r.leads;
+          bySexoMap[r.sexo].booked += r.booked;
+          bySexoMap[r.sexo].paid += r.paid;
+        }
+        const bySexoArr = Object.values(bySexoMap).sort((a, b) => b.leads - a.leads);
+        if (bySexoArr.length > 0) result.by_sexo = bySexoArr;
+
+        // Master funnel — one row per unique 9-dim combination
+        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows);
       }
     } catch (e) {
-      console.log('[Dashboard] GHL by_sexo fallback to PostHog:', e.message);
+      console.log('[Dashboard] GHL fetch failed, falling back to PostHog:', e.message);
     }
 
     return {

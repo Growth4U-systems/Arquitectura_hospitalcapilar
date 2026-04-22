@@ -295,6 +295,42 @@
   </div>
 </div>
 
+<!-- MASTER FUNNEL TABLE -->
+<div class="section-header">
+  Tabla maestra del funnel
+  <span style="font-size:11px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;margin-left:8px;">
+    &mdash; una fila = combinaci&oacute;n &uacute;nica (canal &times; campa&ntilde;a &times; adset &times; anuncio &times; nicho &times; landing &times; sexo &times; pago &times; cl&iacute;nica)
+  </span>
+</div>
+<div class="grid">
+  <div class="card full-width">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--hc-card-border);align-items:center;font-size:11px;">
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Canal
+        <select id="mfFilterChannel" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Landing
+        <select id="mfFilterLanding" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Sexo
+        <select id="mfFilterSexo" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Pago
+        <select id="mfFilterPago" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Cl&iacute;nica
+        <select id="mfFilterClinica" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todas</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Min leads
+        <input type="number" id="mfFilterMinLeads" value="0" min="0" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;width:60px;">
+      </label>
+      <span style="margin-left:auto;font-size:11px;color:var(--hc-text-dim);" id="mfRowCount"></span>
+    </div>
+    <div class="card-body" style="overflow-x:auto;">
+      <table id="masterFunnelTable" style="font-size:12px;white-space:nowrap;"></table>
+    </div>
+  </div>
+</div>
+
 <div class="dashboard-footer">
   Hospital Capilar &mdash; Analytics Dashboard &mdash; Datos en vivo de PostHog
 </div>
@@ -504,6 +540,137 @@ function renderDashboard(data) {
 
   // Ad Spend / ROI
   renderAdSpend(data);
+
+  // Master funnel table (end of dashboard)
+  renderMasterFunnel(data);
+}
+
+// ─── Master funnel table ──────────────────────────────────────────
+let _masterFunnelRows = [];
+const PAGO_COLORS = { '195': '#f87171', '125': '#facc15', '0': '#94a3b8', clinica: '#5fbfa8', unknown: '#78716c' };
+const CHANNEL_COLORS = { Meta: '#1877f2', Google: '#34a853', SEO: '#a855f7', TikTok: '#ff0050', Directo: '#6b7280', 'Sin dato': '#78716c' };
+const MASTER_LANDING_LABELS = { quiz_largo: 'Quiz Largo', quiz_corto: 'Quiz Corto', formulario_directo: 'Form Directo', form_directo: 'Form Directo', form: 'Form Directo', 'sin-dato': 'Sin dato' };
+
+function renderMasterFunnel(data) {
+  _masterFunnelRows = (data.by_master_funnel || []).slice();
+  if (_masterFunnelRows.length === 0) {
+    document.getElementById('masterFunnelTable').innerHTML = '<tbody><tr><td style="padding:20px;text-align:center;color:#666;">Sin datos de GHL</td></tr></tbody>';
+    document.getElementById('mfRowCount').textContent = '';
+    return;
+  }
+
+  const fill = (id, values) => {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    const uniques = [...new Set(values.filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">' + (id === 'mfFilterClinica' ? 'Todas' : 'Todos') + '</option>'
+      + uniques.map(v => `<option value="${v}">${v}</option>`).join('');
+    if (current && uniques.includes(current)) sel.value = current;
+  };
+  fill('mfFilterChannel', _masterFunnelRows.map(r => r.channel));
+  fill('mfFilterLanding', _masterFunnelRows.map(r => r.landing));
+  fill('mfFilterSexo',    _masterFunnelRows.map(r => r.sexo));
+  fill('mfFilterPago',    _masterFunnelRows.map(r => r.pago));
+  fill('mfFilterClinica', _masterFunnelRows.map(r => r.clinica));
+
+  ['mfFilterChannel','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica'].forEach(id => {
+    document.getElementById(id).onchange = paintMasterFunnel;
+  });
+  document.getElementById('mfFilterMinLeads').oninput = paintMasterFunnel;
+
+  paintMasterFunnel();
+}
+
+function paintMasterFunnel() {
+  const fChannel = document.getElementById('mfFilterChannel').value;
+  const fLanding = document.getElementById('mfFilterLanding').value;
+  const fSexo    = document.getElementById('mfFilterSexo').value;
+  const fPago    = document.getElementById('mfFilterPago').value;
+  const fClinica = document.getElementById('mfFilterClinica').value;
+  const fMinLeads = parseInt(document.getElementById('mfFilterMinLeads').value) || 0;
+
+  const filtered = _masterFunnelRows.filter(r =>
+    (!fChannel || r.channel === fChannel) &&
+    (!fLanding || r.landing === fLanding) &&
+    (!fSexo    || r.sexo === fSexo) &&
+    (!fPago    || r.pago === fPago) &&
+    (!fClinica || r.clinica === fClinica) &&
+    r.leads >= fMinLeads
+  );
+
+  const totalLeads = filtered.reduce((s, r) => s + r.leads, 0);
+  const totalBooked = filtered.reduce((s, r) => s + r.booked, 0);
+  const totalPaid = filtered.reduce((s, r) => s + r.paid, 0);
+
+  document.getElementById('mfRowCount').textContent = `${filtered.length} / ${_masterFunnelRows.length} filas · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
+
+  let html = `<thead><tr>
+    <th>Canal</th>
+    <th>Campa&ntilde;a</th>
+    <th>AdSet</th>
+    <th>Anuncio</th>
+    <th>Nicho</th>
+    <th>Landing</th>
+    <th>Sexo</th>
+    <th>Pago</th>
+    <th>Cl&iacute;nica</th>
+    <th class="num" style="border-left:2px solid var(--hc-card-border);">Leads</th>
+    <th class="num">L&rarr;C %</th>
+    <th class="num">Citas</th>
+    <th class="num">C&rarr;P %</th>
+    <th class="num">Pagos</th>
+  </tr></thead><tbody>`;
+
+  filtered.forEach(r => {
+    const lcR = pctNum(r.booked, r.leads);
+    const cpR = pctNum(r.paid, r.booked);
+    const lcCell = r.leads > 0
+      ? `<td class="num ${convClass(lcR)}">${pct(r.booked, r.leads)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
+    const cpCell = r.booked > 0
+      ? `<td class="num ${convClass(cpR)}">${pct(r.paid, r.booked)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
+
+    const channelColor = CHANNEL_COLORS[r.channel] || '#78716c';
+    const sexoColor = SEXO_COLORS[r.sexo] || '#78716c';
+    const pagoColor = PAGO_COLORS[r.pago] || '#78716c';
+    const landingLabel = MASTER_LANDING_LABELS[r.landing] || r.landing;
+
+    const adLabel = (r.utm_content || '').length > 22 ? r.utm_content.substring(0, 22) + '…' : (r.utm_content || '-');
+    const adTitle = r.utm_content || '';
+    const campLabel = (r.utm_campaign || '').length > 24 ? r.utm_campaign.substring(0, 24) + '…' : (r.utm_campaign || '-');
+
+    html += `<tr>
+      <td><span style="color:${channelColor};">&#9679;</span> ${r.channel}</td>
+      <td style="color:var(--hc-text-muted);" title="${r.utm_campaign}">${campLabel}</td>
+      <td style="color:var(--hc-text-dim);">${r.utm_medium || '-'}</td>
+      <td style="color:#fff;font-weight:500;" title="${adTitle}">${adLabel}</td>
+      <td style="color:var(--hc-text-muted);">${r.nicho}</td>
+      <td style="color:var(--hc-text-muted);">${landingLabel}</td>
+      <td><span style="color:${sexoColor};">&#9679;</span> ${SEXO_LABELS[r.sexo] || r.sexo}</td>
+      <td><span style="color:${pagoColor};font-weight:600;">${r.pago}</span></td>
+      <td style="color:var(--hc-text-muted);">${r.clinica}</td>
+      <td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:600;">${fmt(r.leads)}</td>
+      ${lcCell}
+      <td class="num">${fmt(r.booked)}</td>
+      ${cpCell}
+      <td class="num">${fmt(r.paid)}</td>
+    </tr>`;
+  });
+
+  // Total row
+  const tLc = totalLeads > 0 ? pct(totalBooked, totalLeads) : '-';
+  const tCp = totalBooked > 0 ? pct(totalPaid, totalBooked) : '-';
+  html += `<tr style="font-weight:700;border-top:2px solid #444;background:rgba(76,169,148,0.05);">
+    <td colspan="9">Total (${filtered.length} filas)</td>
+    <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalLeads)}</td>
+    <td class="num">${tLc}</td>
+    <td class="num">${fmt(totalBooked)}</td>
+    <td class="num">${tCp}</td>
+    <td class="num">${fmt(totalPaid)}</td>
+  </tr></tbody>`;
+
+  document.getElementById('masterFunnelTable').innerHTML = html;
 }
 
 function renderFunnel(k) {
