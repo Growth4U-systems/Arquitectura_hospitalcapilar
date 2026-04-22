@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronRight, CheckCircle2, ArrowLeft, ShieldCheck, Stethoscope,
   Sparkles, Dna, MapPin, Info, PhoneCall, Calendar, Download, FileText,
-  Check, X, Star, ChevronDown, Lock, Phone, Users, Heart
+  Check, X, Star, ChevronDown, Lock, Phone, Users, Heart, Clock
 } from 'lucide-react';
 import { useAnalytics } from '@hospital-capilar/shared/analytics';
 import { getUTMParams, classifyTrafficSource, detectFunnelType } from '@hospital-capilar/shared/analytics';
@@ -459,9 +459,9 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       type: 'single',
       microTipFn: (ans) => `La pérdida de pelo afecta a la autoestima del 75% de las personas que la sufren. No estás ${ans.sexo === 'mujer' ? 'sola' : 'solo'}.`,
       options: [
-        { label: 'Poco — me preocupa pero no me limita', value: 'bajo' },
-        { label: 'Bastante — evito ciertas situaciones o peinados', value: 'medio' },
-        { label: 'Mucho — afecta mi autoestima y mi vida social', value: 'alto' },
+        { label: 'Poco: me preocupa pero no me limita', value: 'bajo' },
+        { label: 'Bastante: evito ciertas situaciones o peinados', value: 'medio' },
+        { label: 'Mucho: afecta mi autoestima y mi vida social', value: 'alto' },
         { label: 'Es lo que más me preocupa de mi salud ahora mismo', value: 'critico' }
       ]
     },
@@ -530,7 +530,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       title: '¿Qué resultado esperas conseguir?',
       type: 'single',
       options: [
-        { label: 'Frenar la caída — que no vaya a más', value: 'frenar' },
+        { label: 'Frenar la caída: que no vaya a más', value: 'frenar' },
         { label: 'Recuperar densidad sin cirugía', value: 'densidad' },
         { label: 'Saber si necesito cirugía o tratamiento', value: 'diagnostico' },
         { label: 'Mantener los resultados de mi cirugía', value: 'mantenimiento' }
@@ -583,7 +583,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       options: [
         { label: 'Quiero reservar un test capilar presencial', value: 'presencial' },
         { label: 'Prefiero que me llamen para explicarme', value: 'llamada' },
-        { label: 'Quiero empezar ya — si hay un plan, lo quiero', value: 'directo' },
+        { label: 'Quiero empezar ya: si hay un plan, lo quiero', value: 'directo' },
         { label: 'Necesito más información antes de decidir', value: 'info' }
       ]
     },
@@ -903,7 +903,27 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // Launch pricing — 195€ anchor tachado, 125€ oferta limitada (single funnel price)
   const ORIGINAL_PRICE = 195;
   const bonoPrice = 125;
+  const DISCOUNT_PCT = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
   const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06';
+
+  // 24h countdown for "oferta limitada" — session-scoped urgency
+  const [countdownSeconds, setCountdownSeconds] = useState(() => {
+    if (typeof window === 'undefined') return 24 * 60 * 60;
+    const stored = window.sessionStorage.getItem('bonoOfferStart');
+    const startTime = stored ? parseInt(stored, 10) : Date.now();
+    if (!stored) window.sessionStorage.setItem('bonoOfferStart', String(startTime));
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    return Math.max(0, 24 * 60 * 60 - elapsed);
+  });
+
+  useEffect(() => {
+    const intv = setInterval(() => {
+      setCountdownSeconds(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(intv);
+  }, []);
+
+  const countdownDisplay = `${String(Math.floor(countdownSeconds / 3600)).padStart(2, '0')}:${String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, '0')}:${String(countdownSeconds % 60).padStart(2, '0')}`;
 
   const getCTAConfig = (ecp, perfil, frame) => {
     // DERIVACION — artículo educativo
@@ -1547,7 +1567,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
               {firstName}, {isDerivacion ? 'esto es lo que hemos encontrado' : 'descubre qué le pasa a tu pelo'}
             </h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
               {isDerivacion
                 ? 'Basado en tus respuestas, este es nuestro análisis.'
                 : ecpSubtitles[ecp] || 'Basado en tus respuestas, este es nuestro análisis.'}
@@ -1613,17 +1633,28 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
           {/* Price card (only for payment CTA) */}
           {ctaType === 'pagar_bono' && (
-            <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
-                Oferta limitada
+            <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 mb-4 shadow-sm relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1.5 rounded-full flex items-center gap-1 whitespace-nowrap shadow-md">
+                <Sparkles size={12} fill="currentColor" />
+                <span>Oferta limitada</span>
               </div>
-              <div className="text-center pt-2">
-                <div className="flex items-baseline justify-center gap-3">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+                  <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}%</span>
                   <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
-                  <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">Pago único · Se descuenta si inicias tratamiento</p>
+                <div className="text-5xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
+                <p className="text-sm text-gray-500 mt-2">Pago único · Se descuenta si inicias tratamiento</p>
               </div>
+            </div>
+          )}
+
+          {/* Countdown — "oferta limitada" running clock */}
+          {ctaType === 'pagar_bono' && (
+            <div className="flex items-center justify-center gap-2 bg-white rounded-full border border-gray-200 px-4 py-2 mb-6 mx-auto w-fit shadow-sm">
+              <Clock size={14} className="text-[#2C3E50]" />
+              <span className="text-xs font-semibold text-gray-700">Oferta limitada:</span>
+              <span className="text-sm font-extrabold text-[#2C3E50] tabular-nums">{countdownDisplay}</span>
             </div>
           )}
 

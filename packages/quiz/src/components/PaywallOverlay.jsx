@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, X, Star, ChevronDown, Lock, Phone } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Check, X, Star, ChevronDown, Lock, Phone, Clock } from 'lucide-react';
 
 const TESTIMONIALS_BY_ECP = {
   'Es Normal': [
@@ -56,6 +56,21 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
   const [openFaq, setOpenFaq] = useState(null);
   const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
   const discountPct = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
+
+  // 24h countdown for "oferta limitada" — session-scoped urgency
+  const [countdownSeconds, setCountdownSeconds] = useState(() => {
+    if (typeof window === 'undefined') return 24 * 60 * 60;
+    const stored = window.sessionStorage.getItem('bonoOfferStart');
+    const startTime = stored ? parseInt(stored, 10) : Date.now();
+    if (!stored) window.sessionStorage.setItem('bonoOfferStart', String(startTime));
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    return Math.max(0, 24 * 60 * 60 - elapsed);
+  });
+  useEffect(() => {
+    const intv = setInterval(() => setCountdownSeconds(prev => (prev > 0 ? prev - 1 : 0)), 1000);
+    return () => clearInterval(intv);
+  }, []);
+  const countdownDisplay = `${String(Math.floor(countdownSeconds / 3600)).padStart(2, '0')}:${String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, '0')}:${String(countdownSeconds % 60).padStart(2, '0')}`;
   const dynamicTruth = `Los ${bonoPrice}€ se descuentan íntegros si inicias tratamiento.`;
   const dynamicOtcTruth = `Un test capilar de ${bonoPrice}€ (descontable) puede ahorrarte años de productos que no funcionan.`;
   const rawObjections = OBJECTIONS[ecp] || OBJECTIONS['Es Normal'];
@@ -86,7 +101,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
             {firstName}, descubre qué le pasa a tu pelo
           </h2>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
             {ecp === 'Lo Que Vino Con el Bebé'
               ? 'Tu caso necesita un test capilar que cruce tu perfil hormonal postparto con un estudio capilar completo.'
               : ecp === '¿Qué Me Pasa?'
@@ -138,18 +153,25 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         </div>
 
         {/* Price card */}
-        <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+        <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 mb-4 shadow-sm relative">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1.5 rounded-full whitespace-nowrap shadow-md">
             Oferta limitada
           </div>
-          <div className="text-center pt-2">
-            <div className="flex items-baseline justify-center gap-3 flex-wrap">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
               <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}%</span>
               <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
-              <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
             </div>
+            <div className="text-5xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
             <p className="text-sm text-gray-500 mt-2">Pago único · Se descuenta si inicias tratamiento</p>
           </div>
+        </div>
+
+        {/* Countdown */}
+        <div className="flex items-center justify-center gap-2 bg-white rounded-full border border-gray-200 px-4 py-2 mb-6 mx-auto w-fit shadow-sm">
+          <Clock size={14} className="text-[#2C3E50]" />
+          <span className="text-xs font-semibold text-gray-700">Oferta limitada:</span>
+          <span className="text-sm font-extrabold text-[#2C3E50] tabular-nums">{countdownDisplay}</span>
         </div>
 
         {/* Testimonials */}
