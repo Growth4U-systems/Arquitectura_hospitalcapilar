@@ -99,6 +99,7 @@ exports.handler = async (event) => {
       adSpendBySource,
       adSpendDaily,
       quizDropoff,
+      bySexo,
       byFunnelDimensions,
       adSpendByCampaign,
     ] = await Promise.all([
@@ -265,6 +266,38 @@ exports.handler = async (event) => {
           ${dateFilter}
         GROUP BY q_id
         ORDER BY q_idx ASC NULLS LAST
+      `),
+
+      // By sexo — same columns as by_funnel_type. Sexo arrives from:
+      // - event property (set by the quiz/form on quiz_completed / form_submitted)
+      // - person property (set via $identify at form submit, and by the GHL sync
+      //   that writes GHL custom field sexo into the person). The person fallback
+      //   lets us attribute pageviews & quiz_starteds to the same sexo retroactively
+      //   once the user identifies later in the funnel.
+      hogqlQuery(apiKey, `
+        SELECT
+          coalesce(
+            nullIf(lower(toString(properties.sexo)), ''),
+            nullIf(lower(toString(person.properties.sexo)), ''),
+            'sin-dato'
+          ) as sexo,
+          count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
+          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
+          countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
+          uniqIf(toString(properties.opportunity_id),
+                 event = 'appointment_booked'
+                 AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')) as booked
+        FROM events
+        WHERE event IN (
+          '$pageview',
+          'quiz_started', 'short_quiz_started',
+          'form_submitted', 'direct_form_submitted', 'lead_form_submitted',
+          'appointment_booked'
+        )
+          ${dateFilter}
+        GROUP BY sexo
+        HAVING visits > 0 OR started > 0 OR leads > 0 OR booked > 0
+        ORDER BY leads DESC
       `),
 
       // F3 — master funnel table: 1 row per (utm_content, landing, nicho, sexo, payment_variant).
@@ -444,6 +477,13 @@ exports.handler = async (event) => {
         question_id: row[0],
         question_index: row[1],
         users: row[2],
+      })),
+      by_sexo: bySexo.map(row => ({
+        sexo: row[0],
+        visits: row[1],
+        started: row[2],
+        leads: row[3],
+        booked: row[4],
       })),
       by_funnel_dimensions: byFunnelDimensions.map(row => ({
         utm_content: row[0],
