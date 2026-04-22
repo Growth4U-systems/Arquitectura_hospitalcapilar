@@ -143,8 +143,11 @@ async function fetchGhlBySexo(startDate, endDate) {
   // Aggregate by normalized sexo. Priority: GHL native gender → name heuristic
   // → sin-dato. Native gender is missing for contacts from flows that don't
   // ask sexo (formulario directo, some asesores paths).
+  //
+  // Pago: contact tag `bono_pagado` flipped on by stripe-webhook.js on a
+  // successful Stripe checkout. `bono_pendiente` means booked but unpaid.
   const buckets = {};
-  const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0 }; return buckets[k]; };
+  const ensure = (k) => { if (!buckets[k]) buckets[k] = { sexo: k, leads: 0, booked: 0, paid: 0 }; return buckets[k]; };
   for (const opp of inRange) {
     const contact = contactById[opp.contactId] || {};
     const g = (contact.gender || '').toLowerCase();
@@ -154,9 +157,13 @@ async function fetchGhlBySexo(startDate, endDate) {
       sexo = inferSexoFromName(fullName);
     }
     sexo = sexo || 'sin-dato';
+    const tags = Array.isArray(contact.tags) ? contact.tags : [];
+    const hasPaid = tags.includes('bono_pagado');
+    const isBooked = GHL_BOOKED_STAGES.has(opp.pipelineStageId);
     const b = ensure(sexo);
     b.leads++;
-    if (GHL_BOOKED_STAGES.has(opp.pipelineStageId)) b.booked++;
+    if (isBooked) b.booked++;
+    if (isBooked && hasPaid) b.paid++;
   }
   return Object.values(buckets).sort((a, b) => b.leads - a.leads);
 }

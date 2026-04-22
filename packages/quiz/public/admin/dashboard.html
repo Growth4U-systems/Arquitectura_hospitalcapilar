@@ -760,17 +760,21 @@ function renderSexo(data) {
   const rows = (data.by_sexo || []).map(r => {
     const key = (r.sexo || 'sin-dato').toLowerCase();
     const norm = (key === 'female') ? 'mujer' : (key === 'male') ? 'hombre' : key;
-    return { sexo: norm, visits: r.visits || 0, started: r.started || 0, leads: r.leads || 0, booked: r.booked || 0 };
+    return {
+      sexo: norm,
+      leads: r.leads || 0,
+      booked: r.booked || 0,
+      paid: r.paid || 0,
+    };
   });
 
   // Merge entries that normalize to the same key (e.g., male+hombre)
   const sMap = {};
   rows.forEach(r => {
-    if (!sMap[r.sexo]) sMap[r.sexo] = { visits: 0, started: 0, leads: 0, booked: 0 };
-    sMap[r.sexo].visits += r.visits;
-    sMap[r.sexo].started += r.started;
+    if (!sMap[r.sexo]) sMap[r.sexo] = { leads: 0, booked: 0, paid: 0 };
     sMap[r.sexo].leads += r.leads;
     sMap[r.sexo].booked += r.booked;
+    sMap[r.sexo].paid += r.paid;
   });
 
   // Stable row order: mujer first (typically majority), hombre, sin-dato last
@@ -780,28 +784,36 @@ function renderSexo(data) {
     return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
   });
 
-  const totalVisits = entries.reduce((s, [, v]) => s + v.visits, 0);
-  const totalStarted = entries.reduce((s, [, v]) => s + v.started, 0);
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
+  const totalPaid = entries.reduce((s, [, v]) => s + v.paid, 0);
 
-  // Only Leads / Citas / Conv — upstream stages don't have sexo data
-  // (sexo is captured once the user answers the first quiz question or
-  // submits the form, so visits / started aren't meaningfully segmentable).
-  let html = `<thead><tr><th>Sexo</th><th class="num">Leads</th><th class="num">Citas</th><th class="num">Conv %</th></tr></thead><tbody>`;
+  // Funnel order: Leads → L→C% → Citas → C→P% → Pagos
+  let html = `<thead><tr><th>Sexo</th><th class="num">Leads</th><th class="num">L&rarr;C %</th><th class="num">Citas</th><th class="num">C&rarr;P %</th><th class="num">Pagos</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = SEXO_LABELS[name] || name;
     const color = SEXO_COLORS[name] || '#78716c';
-    const convR = pctNum(v.booked, v.leads);
+    const lcR = pctNum(v.booked, v.leads);
+    const cpR = pctNum(v.paid, v.booked);
+    const cpCell = v.booked > 0
+      ? `<td class="num ${convClass(cpR)}">${pct(v.paid, v.booked)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
       <td class="num">${fmt(v.leads)}</td>
+      <td class="num ${convClass(lcR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td>
-      <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td></tr>`;
+      ${cpCell}
+      <td class="num">${fmt(v.paid)}</td></tr>`;
   });
+  const totalCpCell = totalBooked > 0
+    ? `<td class="num">${pct(totalPaid, totalBooked)}</td>`
+    : `<td class="num" style="color:#666;">&mdash;</td>`;
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
     <td class="num">${fmt(totalLeads)}</td>
+    <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td>
-    <td class="num">${pct(totalBooked, totalLeads)}</td></tr></tbody>`;
+    ${totalCpCell}
+    <td class="num">${fmt(totalPaid)}</td></tr></tbody>`;
   document.getElementById('sexoTable').innerHTML = html;
 
   // Leads distribution bar
