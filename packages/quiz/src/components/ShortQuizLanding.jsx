@@ -114,7 +114,6 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
   const quizRef = useRef(null);
 
   const handleStartQuiz = () => {
-    analytics.trackQuizStarted();
     analytics.trackEvent('short_quiz_started', { nicho });
     window.scrollTo(0, 0);
     setPhase('quiz');

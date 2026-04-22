@@ -105,7 +105,7 @@ exports.handler = async (event) => {
     ] = await Promise.all([
       // KPIs — all use count() for funnel consistency
       hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
-      hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_started', 'short_quiz_started') ${dateFilter}`),
+      hogqlQuery(apiKey, `SELECT count() FROM events WHERE (event = 'short_quiz_started' OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')) ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
       // Bookings: dedupe by opportunity_id across v4+v5 sync batches. A single opp
@@ -142,20 +142,35 @@ exports.handler = async (event) => {
       `),
 
       // Visits + leads by URL path
+      // NOTE: short flow emits both 'quiz_started' and 'short_quiz_started' on the
+      // same CTA click, so we count short_quiz_started on /rapido/* and quiz_started
+      // elsewhere to avoid double counting.
+      // Non-landing paths (/agendar, /mi-cita, /test-*, /preview/*) are bucketed as
+      // 'other' and filtered out so quiz_largo visits reflect only landing traffic.
       hogqlQuery(apiKey, `
         SELECT
           multiIf(
             properties.$pathname LIKE '%/rapido/%', 'quiz_corto',
             properties.$pathname LIKE '%/form/%', 'formulario_directo',
+            properties.$pathname LIKE '/agendar%'
+              OR properties.$pathname LIKE '/mi-cita%'
+              OR properties.$pathname LIKE '/test-%'
+              OR properties.$pathname LIKE '/preview/%'
+              OR properties.$pathname LIKE '/admin%'
+              OR properties.$pathname LIKE '/api/%', 'other',
             'quiz_largo'
           ) as funnel,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
-          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
+          countIf(
+            event = 'short_quiz_started'
+            OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')
+          ) as started,
           countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads
         FROM events
         WHERE event IN ('$pageview', 'quiz_started', 'short_quiz_started', 'form_submitted', 'direct_form_submitted')
           ${dateFilter}
         GROUP BY funnel
+        HAVING funnel != 'other'
         ORDER BY visits DESC
       `),
 
@@ -282,7 +297,10 @@ exports.handler = async (event) => {
             'sin-dato'
           ) as sexo,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
-          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
+          countIf(
+            event = 'short_quiz_started'
+            OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')
+          ) as started,
           countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
           uniqIf(toString(properties.opportunity_id),
                  event = 'appointment_booked'
@@ -339,7 +357,10 @@ exports.handler = async (event) => {
             'sin-dato'
           ) as payment_variant,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
-          countIf(event IN ('quiz_started', 'short_quiz_started')) as started,
+          countIf(
+            event = 'short_quiz_started'
+            OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')
+          ) as started,
           countIf(event IN ('quiz_completed', 'short_quiz_completed')) as completed,
           countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
           uniqIf(toString(properties.opportunity_id),
