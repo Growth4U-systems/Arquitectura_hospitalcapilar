@@ -574,7 +574,7 @@ function renderMasterFunnel(data) {
   fill('mfFilterSexo',     _masterFunnelRows.map(r => r.sexo));
   fill('mfFilterPago',     _masterFunnelRows.map(r => r.pago));
   fill('mfFilterClinica',  _masterFunnelRows.map(r => r.clinica));
-  fill('mfFilterAd',       _masterFunnelRows.map(r => r.utm_content));
+  fill('mfFilterAd',       _masterFunnelRows.map(r => r.ad_display || r.utm_content));
   fill('mfFilterCampaign', _masterFunnelRows.map(r => r.utm_campaign));
 
   ['mfFilterChannel','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica','mfFilterAd','mfFilterCampaign'].forEach(id => {
@@ -609,12 +609,16 @@ function buildLandingUrl(r) {
 
 function buildAdLink(r) {
   const ac = '898774584294194';
-  // Meta ad.id numeric (after Miguel applies {{ad.id}}): deep-link to the ad row
-  if (/^\d{10,}$/.test(r.utm_content || '')) {
+  // Backend resolved Meta ad_id by cross-referencing utm_content with the
+  // live Meta ads catalog — deep-link directly to the ad row.
+  if (r.ad_id) {
+    return { url: `https://business.facebook.com/adsmanager/manage/ads?act=${ac}&selected_ad_ids=${r.ad_id}`, label: 'Ad' };
+  }
+  // Raw utm_content already numeric (future {{ad.id}} template)
+  if (/^\d{10,}$/.test(r.utm_content || '') && r.channel === 'Meta') {
     return { url: `https://business.facebook.com/adsmanager/manage/ads?act=${ac}&selected_ad_ids=${r.utm_content}`, label: 'Ad' };
   }
-  // Fallback for text utm_content (current Meta state): link to the campaign
-  // filter view using utm_campaign as the search term.
+  // Campaign-level fallback (pre-match state)
   if (r.utm_campaign && r.utm_campaign !== 'sin-dato' && r.channel === 'Meta') {
     return { url: `https://business.facebook.com/adsmanager/manage/campaigns?act=${ac}&search=${encodeURIComponent(r.utm_campaign)}`, label: 'Campaña' };
   }
@@ -637,7 +641,7 @@ function paintMasterFunnel() {
     (!fSexo     || r.sexo === fSexo) &&
     (!fPago     || r.pago === fPago) &&
     (!fClinica  || r.clinica === fClinica) &&
-    (!fAd       || r.utm_content === fAd) &&
+    (!fAd       || (r.ad_display || r.utm_content) === fAd) &&
     (!fCampaign || r.utm_campaign === fCampaign) &&
     r.leads >= fMinLeads
   );
@@ -696,9 +700,17 @@ function paintMasterFunnel() {
     const pagoColor = PAGO_COLORS[r.pago] || '#78716c';
     const landingLabel = MASTER_LANDING_LABELS[r.landing] || r.landing;
 
-    const adLabel = (r.utm_content || '').length > 22 ? r.utm_content.substring(0, 22) + '…' : (r.utm_content || '-');
-    const adTitle = r.utm_content || '';
+    // Prefer the backend-resolved display (Meta canonical name) over raw utm_content.
+    const adDisplayRaw = r.ad_display || r.utm_content || '-';
+    const adLabel = adDisplayRaw.length > 22 ? adDisplayRaw.substring(0, 22) + '…' : adDisplayRaw;
+    const adTitle = r.ad_id
+      ? `${adDisplayRaw} · ad_id ${r.ad_id}${r.utm_content !== r.ad_display ? ' · utm_content="' + r.utm_content + '"' : ''}`
+      : (r.utm_content || '');
     const campLabel = (r.utm_campaign || '').length > 24 ? r.utm_campaign.substring(0, 24) + '…' : (r.utm_campaign || '-');
+    // Muted style for non-matched / junk rows
+    const adStyle = (r.ad_kind === 'placeholder' || r.ad_kind === 'macro-literal' || r.ad_kind === 'sin-atribucion')
+      ? 'color:#78716c;font-style:italic;'
+      : 'color:#fff;font-weight:500;';
 
     const adDescriptor = buildAdLink(r);
     const landingUrl = buildLandingUrl(r);
@@ -717,7 +729,7 @@ function paintMasterFunnel() {
       <td><span style="color:${channelColor};">&#9679;</span> ${r.channel}</td>
       <td style="color:var(--hc-text-muted);" title="${r.utm_campaign}">${campLabel}</td>
       <td style="color:var(--hc-text-dim);">${r.utm_medium || '-'}</td>
-      <td style="color:#fff;font-weight:500;" title="${adTitle}">${adLabel}</td>
+      <td style="${adStyle}" title="${adTitle}">${adLabel}</td>
       <td style="color:var(--hc-text-muted);">${r.nicho}</td>
       <td style="color:var(--hc-text-muted);">${landingLabel}</td>
       <td><span style="color:${sexoColor};">&#9679;</span> ${SEXO_LABELS[r.sexo] || r.sexo}</td>

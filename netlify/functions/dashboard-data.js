@@ -89,6 +89,59 @@ function inferSexoFromName(fullName) {
 // When gender is missing (contacts from form-direct flows that don't ask
 // sexo), fall back to a first-name heuristic against a Spanish name list.
 // Pulling directly avoids PostHog's person-property propagation lag.
+// Fetch current Meta ads catalog: ad_id → { ad_name, adset_name, campaign_name }.
+// Lets us cross-reference the free-text utm_content that GHL stores (which is
+// whatever the marketer typed in the URL params) against Meta's real structure
+// of campaigns → adsets → ads. Each HC campaign has BOTH Quiz Largo and Quiz
+// Corto adsets inside, so proper attribution needs the adset_name.
+async function fetchMetaAdCatalog() {
+  const token = process.env.META_ACCESS_TOKEN;
+  const account = process.env.META_AD_ACCOUNT_ID;
+  if (!token || !account) return null;
+  try {
+    const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=id,name,status,effective_status,adset{id,name},campaign{id,name}&limit=500&access_token=${token}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const ads = data.data || [];
+    const byId = {};
+    // Multiple ads often share the same creative name across campaigns (e.g.,
+    // "Miniaturizacion soto" runs in both "¿Qué me pasa? G4U" and "Camp.
+    // Galicia"). Prefer G4U when disambiguating — those are our campaigns;
+    // HC-own campaigns share the same creative but don't belong to us.
+    const byNameLower = {};
+    const isG4U = (camp) => /G4U|Postparto_G4U|Menopausia G4U|¿Qué me pasa/i.test(camp || '');
+    for (const a of ads) {
+      const info = {
+        ad_id: a.id,
+        ad_name: a.name || '',
+        adset_id: a.adset?.id || '',
+        adset_name: a.adset?.name || '',
+        campaign_id: a.campaign?.id || '',
+        campaign_name: a.campaign?.name || '',
+        status: a.effective_status || a.status || '',
+        is_g4u: isG4U(a.campaign?.name),
+      };
+      byId[a.id] = info;
+      const key = (a.name || '').trim().toLowerCase();
+      if (!key) continue;
+      const existing = byNameLower[key];
+      // Prefer: G4U over non-G4U, ACTIVE over paused, otherwise first wins
+      if (!existing) {
+        byNameLower[key] = info;
+      } else if (info.is_g4u && !existing.is_g4u) {
+        byNameLower[key] = info;
+      } else if (info.is_g4u === existing.is_g4u && info.status === 'ACTIVE' && existing.status !== 'ACTIVE') {
+        byNameLower[key] = info;
+      }
+    }
+    return { byId, byNameLower, count: ads.length };
+  } catch (e) {
+    console.log('[Meta catalog] fetch failed:', e.message);
+    return null;
+  }
+}
+
 // GHL custom field IDs (mirror of packages/quiz/src/components/HospitalCapilarQuiz.jsx)
 const GHL_CF = {
   door:              '2JYlfGk60lHbuyh9vcdV',
@@ -232,12 +285,35 @@ async function fetchGhlBySexo(startDate, endDate) {
   return Object.values(buckets).sort((a, b) => b.leads - a.leads);
 }
 
+// Normalize junk utm_content values that don't correspond to real ads.
+// Examples seen in practice:
+//   "***Cambiar video***"  → placeholder text
+//   "{{ad.name}}"          → Meta macro written literally, never substituted
+//   "198626380310"         → Google Ads {adgroupid} on a Meta-attributed row
+//   ""                     → empty
+function classifyUtmContent(utm, channel, metaCatalog) {
+  if (!utm || utm === 'sin-atribucion' || utm === 'sin-dato') {
+    return { kind: 'sin-atribucion', display: 'Sin atribuir' };
+  }
+  if (/^\*+.+\*+$/.test(utm))              return { kind: 'placeholder',   display: 'Sin atribuir (placeholder)' };
+  if (/^\{\{.+\}\}$/.test(utm))            return { kind: 'macro-literal', display: 'Sin atribuir (macro)' };
+  if (/^\d{10,}$/.test(utm) && channel !== 'Meta') {
+    return { kind: 'google-adgroupid', display: `Google adgroup ${utm}` };
+  }
+  // Try to match against current Meta catalog
+  if (metaCatalog) {
+    const hit = metaCatalog.byNameLower[utm.trim().toLowerCase()];
+    if (hit) return { kind: 'matched', display: hit.ad_name, meta: hit };
+  }
+  return { kind: 'unmatched', display: utm };
+}
+
 // Master funnel aggregation — groups by all 9 dimensions. Each row
 // represents a unique (channel × campaign × adset × ad × nicho × landing
-// × sexo × pago × clinica) combination. Optionally enriches with upstream
-// counts (visits / started / completed) from the PostHog by_funnel_dimensions
-// slice when matched by utm_content + landing.
-function buildMasterFunnelFromGhl(rows, phDimensions = []) {
+// × sexo × pago × clinica) combination. When a Meta ads catalog is available,
+// utm_content values that match a current Meta ad name get enriched with the
+// real ad_id + campaign/adset names from Ads Manager.
+function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
   if (!rows) return null;
 
   // Index PostHog dimensions by (utm_content, landing) for upstream enrichment.
@@ -256,14 +332,26 @@ function buildMasterFunnelFromGhl(rows, phDimensions = []) {
 
   const buckets = new Map();
   for (const r of rows) {
-    const key = [r.channel, r.utm_campaign, r.utm_medium, r.utm_content, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('|');
+    const cls = classifyUtmContent(r.utm_content, r.channel, metaCatalog);
+    // When Meta catalog matches the ad name, override the free-text
+    // campaign/adset from GHL with Meta's authoritative values.
+    const metaCampaign = cls.meta?.campaign_name || null;
+    const metaAdset    = cls.meta?.adset_name    || null;
+    const metaAdId     = cls.meta?.ad_id         || null;
+    const adDisplay    = cls.display;
+    const adKind       = cls.kind;
+
+    const key = [r.channel, metaCampaign || r.utm_campaign, metaAdset || r.utm_medium, adKind + '|' + adDisplay, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('::');
     let b = buckets.get(key);
     if (!b) {
       b = {
         channel: r.channel,
-        utm_campaign: r.utm_campaign,
-        utm_medium: r.utm_medium,
-        utm_content: r.utm_content,
+        utm_campaign: metaCampaign || r.utm_campaign,
+        utm_medium:   metaAdset    || r.utm_medium,
+        utm_content:  r.utm_content,
+        ad_display:   adDisplay,
+        ad_kind:      adKind,
+        ad_id:        metaAdId,
         nicho: r.nicho,
         landing: r.landing,
         sexo: r.sexo,
@@ -910,8 +998,11 @@ exports.handler = async (event) => {
         if (bySexoArr.length > 0) result.by_sexo = bySexoArr;
 
         // Master funnel — one row per unique 9-dim combination, enriched
-        // with upstream counts from the PostHog slice we already computed.
-        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions);
+        // with upstream counts from the PostHog slice + Meta catalog so
+        // utm_content → ad_id/adset_name/campaign_name reflect real Meta.
+        const metaCatalog = await fetchMetaAdCatalog();
+        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog);
+        result.meta_ads_catalog_size = metaCatalog?.count || 0;
       }
     } catch (e) {
       console.log('[Dashboard] GHL fetch failed, falling back to PostHog:', e.message);
