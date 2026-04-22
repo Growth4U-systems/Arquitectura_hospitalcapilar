@@ -192,13 +192,9 @@
 <!-- BY TRAFFIC SOURCE -->
 <div class="section-header">Por fuente de tr&aacute;fico</div>
 <div class="grid">
-  <div class="card">
+  <div class="card full-width">
     <div class="card-header"><h3>Leads y citas por fuente</h3><span class="type">Table</span></div>
     <div class="card-body"><table id="trafficTable1"></table></div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3>Conversi&oacute;n por fuente (lead &rarr; cita)</h3><span class="type">Table</span></div>
-    <div class="card-body"><table id="trafficTable2"></table></div>
   </div>
 </div>
 
@@ -830,41 +826,38 @@ function renderTrafficTables(data) {
   const totalAttended = Object.values(attendedMap).reduce((s, v) => s + v, 0);
   const totalNoShow = Object.values(noShowMap).reduce((s, v) => s + v, 0);
 
-  // Table 1: Leads y citas por fuente
-  let t1 = `<thead><tr><th>Fuente</th><th class="num">Leads</th><th class="num">% Leads</th><th class="num">Citas</th><th class="num">Lead&rarr;Cita</th></tr></thead><tbody>`;
-  sources.forEach(([name, v]) => {
-    const convR = pctNum(v.booked, v.leads);
-    t1 += `<tr><td><span style="color:${sourceColor(name)};">&#9679;</span> ${name}</td>
-      <td class="num">${fmt(v.leads)}</td>
-      <td class="num">${pct(v.leads, totalLeads)}</td>
-      <td class="num">${fmt(v.booked)}</td>
-      <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td></tr>`;
-  });
-  t1 += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
-    <td class="num">${fmt(totalLeads)}</td><td class="num">100%</td>
-    <td class="num">${fmt(totalBooked)}</td><td class="num">${pct(totalBooked, totalLeads)}</td></tr></tbody>`;
-  document.getElementById('trafficTable1').innerHTML = t1;
-
-  // Table 2: Conversion por fuente
-  let t2 = `<thead><tr><th>Fuente</th><th class="num">Leads</th><th class="num">Citas</th><th class="num">Conv %</th><th class="num">No-show</th><th class="num">Show %</th></tr></thead><tbody>`;
+  // Single unified table: Leads y citas por fuente (merge of the previous
+  // trafficTable1 and trafficTable2 which were mostly duplicated columns).
+  let t1 = `<thead><tr>
+    <th>Fuente</th>
+    <th class="num">Leads</th>
+    <th class="num">% Leads</th>
+    <th class="num">Citas</th>
+    <th class="num">Lead&rarr;Cita</th>
+    <th class="num">No-show</th>
+    <th class="num">Show %</th>
+  </tr></thead><tbody>`;
   sources.forEach(([name, v]) => {
     const att = attendedMap[name] || 0;
     const ns = noShowMap[name] || 0;
     const convR = pctNum(v.booked, v.leads);
     const showR = v.booked > 0 ? pctNum(att, v.booked) : 0;
-    t2 += `<tr><td><span style="color:${sourceColor(name)};">&#9679;</span> ${name}</td>
+    t1 += `<tr><td><span style="color:${sourceColor(name)};">&#9679;</span> ${name}</td>
       <td class="num">${fmt(v.leads)}</td>
+      <td class="num">${pct(v.leads, totalLeads)}</td>
       <td class="num">${fmt(v.booked)}</td>
       <td class="num ${convClass(convR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(ns)}</td>
       <td class="num ${showR >= 70 ? 'good' : showR >= 50 ? 'warn' : 'bad'}">${v.booked > 0 ? pct(att, v.booked) : '-'}</td></tr>`;
   });
-  t2 += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
-    <td class="num">${fmt(totalLeads)}</td><td class="num">${fmt(totalBooked)}</td>
+  t1 += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
+    <td class="num">${fmt(totalLeads)}</td>
+    <td class="num">100%</td>
+    <td class="num">${fmt(totalBooked)}</td>
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalNoShow)}</td>
     <td class="num">${totalBooked > 0 ? pct(totalAttended, totalBooked) : '-'}</td></tr></tbody>`;
-  document.getElementById('trafficTable2').innerHTML = t2;
+  document.getElementById('trafficTable1').innerHTML = t1;
 }
 
 function renderDailyChart(data) {
