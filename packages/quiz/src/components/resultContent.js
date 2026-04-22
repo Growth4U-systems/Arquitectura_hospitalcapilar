@@ -86,9 +86,11 @@ export const TESTIMONIALS_BY_ECP = {
 // ─── WHAT'S INCLUDED — by CTA type ─────────────────────────
 export const INCLUDED_BY_CTA = {
   pagar_bono: [
+    '⚠️ Todo en el mismo día · sin esperas ni vueltas',
     'Tricoscopia digital con microscopio de alta resolución',
     'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
     'Valoración con médico especialista (30 min)',
+    'Pauta médica con receta incluida en la primera consulta si fuera necesario',
     'Informe personalizado con plan de tratamiento',
   ],
   agendar_consulta: [

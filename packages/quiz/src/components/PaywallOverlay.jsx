@@ -44,7 +44,7 @@ const OBJECTIONS = {
 };
 
 const getfaqs = (price) => [
-  { q: '¿Qué incluye exactamente la analítica?', a: 'Analítica completa personalizada (perfil hormonal + serología + hemograma completo), tricoscopia digital (microscopio capilar de alta resolución), valoración con médico especialista (30 min) e informe personalizado con plan de tratamiento.' },
+  { q: '¿Qué incluye exactamente la analítica?', a: 'Todo en el mismo día: tricoscopia digital (microscopio capilar de alta resolución), analítica completa personalizada (perfil hormonal + serología + hemograma completo), valoración con médico especialista (30 min), pauta médica con receta si fuera necesario e informe personalizado con plan de tratamiento.' },
   { q: `¿Por qué se paga por adelantado?`, a: `Reservamos 30 minutos de tiempo médico exclusivo y una analítica de laboratorio a tu nombre. El pago por adelantado garantiza tu plaza y nos permite preparar tu caso antes de la cita.` },
   { q: `¿Los ${price}€ se descuentan si hago tratamiento?`, a: `Sí. Si decides iniciar tratamiento en Hospital Capilar, los ${price}€ del test se descuentan íntegros del coste.` },
   { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te dan un informe objetivo (microscopio + analítica) y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
@@ -152,10 +152,16 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         <div className="mb-6">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu test capilar</h3>
           <div className="space-y-2">
+            {/* Highlighted: same-day differentiator */}
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 flex items-center gap-3 shadow-sm">
+              <span className="text-2xl shrink-0" aria-hidden="true">⚠️</span>
+              <span className="text-amber-900 text-sm font-extrabold">Todo en el mismo día · sin esperas ni vueltas</span>
+            </div>
             {[
               'Tricoscopia digital con microscopio de alta resolución',
               'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
               'Valoración con médico especialista (30 min)',
+              'Pauta médica con receta incluida en la primera consulta si fuera necesario',
               'Informe personalizado con plan de tratamiento',
             ].map((text, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">

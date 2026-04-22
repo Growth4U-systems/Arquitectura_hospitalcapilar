@@ -152,6 +152,10 @@ export default function AgendarPage() {
                 <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}% reservando online</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-3 mb-3 flex items-center gap-2">
+                  <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
+                  <span className="text-amber-900 text-sm font-extrabold">Todo en el mismo día · sin esperas ni vueltas</span>
+                </div>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
@@ -164,6 +168,10 @@ export default function AgendarPage() {
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
                     Valoración con médico especialista
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#4CA994] mt-0.5">✓</span>
+                    Pauta médica con receta incluida en la primera consulta si fuera necesario
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
