@@ -249,7 +249,7 @@ const DirectFormLanding = ({ nicho = 'que-me-pasa' }) => {
         <div className="max-w-2xl mx-auto px-6 py-16">
           {/* Logo */}
           <div className="text-center mb-10">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-12 mx-auto" />
+            <img src="/logo-hc.png" alt="Hospital Capilar" className="h-12 mx-auto" />
           </div>
 
           {/* Success card */}
@@ -407,7 +407,7 @@ const DirectFormLanding = ({ nicho = 'que-me-pasa' }) => {
         <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div>
             <div className="flex items-center gap-3 mb-6">
-              <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-10" />
+              <img src="/logo-hc-white.png" alt="Hospital Capilar" className="h-10" />
             </div>
             <p className="text-[#4CA994] text-sm font-bold tracking-widest uppercase mb-4">{config.badge}</p>
             <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4">{config.headline}</h1>

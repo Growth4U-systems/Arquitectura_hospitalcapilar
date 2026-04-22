@@ -384,7 +384,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
         <div className="max-w-lg mx-auto px-4 pb-40">
           {/* Header */}
           <div className="text-center py-6">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
+            <img src="/logo-hc.png" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
               {form.nombre.split(' ')[0]}, aquí tienes tu resultado
             </h2>
@@ -599,7 +599,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
             <button onClick={handleBack} className="text-gray-400 hover:text-gray-600 p-1.5 -ml-1.5 rounded-full hover:bg-gray-50">
               <ArrowLeft size={20} />
             </button>
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-6" />
+            <img src="/logo-hc.png" alt="Hospital Capilar" className="h-6" />
             <div className="w-8" />
           </div>
 
@@ -828,7 +828,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
       <div className="relative bg-[#2C3E50] text-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div className="flex items-center gap-3 mb-6">
-            <img src="/logo-hc-white.svg" alt="Hospital Capilar" className="h-10" />
+            <img src="/logo-hc-white.png" alt="Hospital Capilar" className="h-10" />
           </div>
           <p className="text-[#4CA994] text-sm font-bold tracking-widest uppercase mb-4">{config.badge}</p>
           <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4 max-w-3xl">{config.headline}</h1>

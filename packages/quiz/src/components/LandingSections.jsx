@@ -198,7 +198,7 @@ export const CEOSection = () => (
 export const Footer = () => (
   <footer className="py-8 border-t border-gray-100">
     <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-      <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-8 opacity-40" />
+      <img src="/logo-hc.png" alt="Hospital Capilar" className="h-8 opacity-40" />
       <div className="flex gap-6 text-sm text-gray-400">
         <span>Madrid</span>
         <span>Murcia</span>

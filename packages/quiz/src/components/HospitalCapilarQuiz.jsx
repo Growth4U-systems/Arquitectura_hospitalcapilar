@@ -1316,7 +1316,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     return (
       <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
         <div className="absolute top-0 left-0 w-full h-1.5" style={{ backgroundColor: theme.primary }}></div>
-        <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-14 mb-12" />
+        <img src="/logo-hc.png" alt="Hospital Capilar" className="h-14 mb-12" />
         <div className="max-w-xl text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
             ¡Hola de nuevo, {returningLead.nombre.split(' ')[0]}!
@@ -1350,7 +1350,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     return (
       <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
         <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-400"></div>
-        <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-14 mb-12" />
+        <img src="/logo-hc.png" alt="Hospital Capilar" className="h-14 mb-12" />
         <div className="max-w-xl text-center">
           <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 mb-6">
             <div className="text-4xl mb-4">{isCueroCabelludo ? '🩺' : '📋'}</div>
@@ -1391,7 +1391,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     return (
       <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
         <div className="absolute top-0 left-0 w-full h-1.5" style={{ backgroundColor: theme.primary }}></div>
-        <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-14 mb-12" />
+        <img src="/logo-hc.png" alt="Hospital Capilar" className="h-14 mb-12" />
         <div className="max-w-xl text-center">
           <div className="bg-[#E6F0F0] text-[#2E4C4C] px-4 py-1.5 rounded-full text-sm font-bold mb-6 inline-flex items-center gap-2">
             <Stethoscope size={16} /> {badgeText}
@@ -1563,7 +1563,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         <div className="max-w-lg mx-auto px-4 pb-40">
           {/* Header */}
           <div className="text-center py-6">
-            <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
+            <img src="/logo-hc.png" alt="Hospital Capilar" className="h-7 mx-auto mb-4" />
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
               {firstName}, {isDerivacion ? 'esto es lo que hemos encontrado' : 'descubre qué le pasa a tu pelo'}
             </h2>
@@ -1824,7 +1824,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           <button onClick={handleBack} className="text-gray-400 hover:text-gray-600 p-1.5 -ml-1.5 rounded-full hover:bg-gray-50">
             <ArrowLeft size={20} />
           </button>
-          <img src="/logo-hc.svg" alt="Hospital Capilar" className="h-6" />
+          <img src="/logo-hc.png" alt="Hospital Capilar" className="h-6" />
           <div className="w-8" />
         </div>
 

@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component {
           }} />
 
           <img
-            src="/logo-hc.svg"
+            src="/logo-hc.png"
             alt="Hospital Capilar"
             style={{ height: '56px', marginBottom: '32px' }}
             onError={(e) => { e.target.style.display = 'none'; }}
