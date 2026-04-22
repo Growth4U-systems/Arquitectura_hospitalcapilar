@@ -200,6 +200,22 @@
     <div class="card-header"><h3>Conversi&oacute;n por fuente (lead &rarr; cita)</h3><span class="type">Table</span></div>
     <div class="card-body"><table id="trafficTable2"></table></div>
   </div>
+</div>
+
+<!-- BY FUNNEL TYPE (moved above daily chart per feedback) -->
+<div class="section-header">Por tipo de funnel</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>Comparativa por funnel</h3><span class="type">Table</span></div>
+    <div class="card-body">
+      <table id="funnelTypeTable"></table>
+      <div id="funnelTypeBreakdown" style="margin-top:16px;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Leads por nicho</h3><span class="type">Breakdown</span></div>
+    <div class="card-body" id="nichoChart"></div>
+  </div>
   <div class="card full-width">
     <div class="card-header"><h3>Leads diarios por fuente</h3><span class="type">Trend (stacked)</span></div>
     <div class="card-body">
@@ -214,22 +230,6 @@
         <div class="legend-item"><div class="legend-dot c-other"></div>Otro</div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- BY FUNNEL TYPE -->
-<div class="section-header">Por tipo de funnel</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-header"><h3>Comparativa por funnel</h3><span class="type">Table</span></div>
-    <div class="card-body">
-      <table id="funnelTypeTable"></table>
-      <div id="funnelTypeBreakdown" style="margin-top:16px;"></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3>Leads por nicho</h3><span class="type">Breakdown</span></div>
-    <div class="card-body" id="nichoChart"></div>
   </div>
   <div class="card full-width">
     <div class="card-header"><h3>Drop-off por pregunta (Quiz Largo)</h3><span class="type">Funnel</span></div>
@@ -319,6 +319,12 @@
       </label>
       <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Cl&iacute;nica
         <select id="mfFilterClinica" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todas</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Anuncio
+        <select id="mfFilterAd" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;max-width:180px;"><option value="">Todos</option></select>
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Campa&ntilde;a
+        <select id="mfFilterCampaign" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;max-width:180px;"><option value="">Todas</option></select>
       </label>
       <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Min leads
         <input type="number" id="mfFilterMinLeads" value="0" min="0" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;width:60px;">
@@ -567,13 +573,15 @@ function renderMasterFunnel(data) {
       + uniques.map(v => `<option value="${v}">${v}</option>`).join('');
     if (current && uniques.includes(current)) sel.value = current;
   };
-  fill('mfFilterChannel', _masterFunnelRows.map(r => r.channel));
-  fill('mfFilterLanding', _masterFunnelRows.map(r => r.landing));
-  fill('mfFilterSexo',    _masterFunnelRows.map(r => r.sexo));
-  fill('mfFilterPago',    _masterFunnelRows.map(r => r.pago));
-  fill('mfFilterClinica', _masterFunnelRows.map(r => r.clinica));
+  fill('mfFilterChannel',  _masterFunnelRows.map(r => r.channel));
+  fill('mfFilterLanding',  _masterFunnelRows.map(r => r.landing));
+  fill('mfFilterSexo',     _masterFunnelRows.map(r => r.sexo));
+  fill('mfFilterPago',     _masterFunnelRows.map(r => r.pago));
+  fill('mfFilterClinica',  _masterFunnelRows.map(r => r.clinica));
+  fill('mfFilterAd',       _masterFunnelRows.map(r => r.utm_content));
+  fill('mfFilterCampaign', _masterFunnelRows.map(r => r.utm_campaign));
 
-  ['mfFilterChannel','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica'].forEach(id => {
+  ['mfFilterChannel','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica','mfFilterAd','mfFilterCampaign'].forEach(id => {
     document.getElementById(id).onchange = paintMasterFunnel;
   });
   document.getElementById('mfFilterMinLeads').oninput = paintMasterFunnel;
@@ -581,20 +589,60 @@ function renderMasterFunnel(data) {
   paintMasterFunnel();
 }
 
+// Extract nicho slug from utm_campaign pattern "quiz-{largo|corto|rapido}-{slug}"
+// when the GHL nicho custom field is empty. Lets us build proper landing URLs.
+function nichoFromCampaign(utm_campaign) {
+  if (!utm_campaign) return null;
+  const m = utm_campaign.match(/^quiz-(?:largo|corto|rapido)-(.+)$/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
+function buildLandingUrl(r) {
+  const base = 'https://diagnostico.hospitalcapilar.com';
+  const slug = (r.nicho && r.nicho !== 'sin-dato' && r.nicho !== 'general')
+    ? r.nicho
+    : nichoFromCampaign(r.utm_campaign);
+  const landing = r.landing;
+  if (landing === 'quiz_corto')        return slug ? `${base}/rapido/${slug}` : `${base}/rapido/`;
+  if (landing === 'formulario_directo' || landing === 'form' || landing === 'form_directo') {
+    return slug ? `${base}/form/${slug}` : `${base}/form/`;
+  }
+  if (landing === 'quiz_largo')        return slug ? `${base}/${slug}` : base;
+  return null;
+}
+
+function buildAdLink(r) {
+  const ac = '898774584294194';
+  // Meta ad.id numeric (after Miguel applies {{ad.id}}): deep-link to the ad row
+  if (/^\d{10,}$/.test(r.utm_content || '')) {
+    return { url: `https://business.facebook.com/adsmanager/manage/ads?act=${ac}&selected_ad_ids=${r.utm_content}`, label: 'Ad' };
+  }
+  // Fallback for text utm_content (current Meta state): link to the campaign
+  // filter view using utm_campaign as the search term.
+  if (r.utm_campaign && r.utm_campaign !== 'sin-dato' && r.channel === 'Meta') {
+    return { url: `https://business.facebook.com/adsmanager/manage/campaigns?act=${ac}&search=${encodeURIComponent(r.utm_campaign)}`, label: 'Campaña' };
+  }
+  return null;
+}
+
 function paintMasterFunnel() {
-  const fChannel = document.getElementById('mfFilterChannel').value;
-  const fLanding = document.getElementById('mfFilterLanding').value;
-  const fSexo    = document.getElementById('mfFilterSexo').value;
-  const fPago    = document.getElementById('mfFilterPago').value;
-  const fClinica = document.getElementById('mfFilterClinica').value;
+  const fChannel  = document.getElementById('mfFilterChannel').value;
+  const fLanding  = document.getElementById('mfFilterLanding').value;
+  const fSexo     = document.getElementById('mfFilterSexo').value;
+  const fPago     = document.getElementById('mfFilterPago').value;
+  const fClinica  = document.getElementById('mfFilterClinica').value;
+  const fAd       = document.getElementById('mfFilterAd').value;
+  const fCampaign = document.getElementById('mfFilterCampaign').value;
   const fMinLeads = parseInt(document.getElementById('mfFilterMinLeads').value) || 0;
 
   const filtered = _masterFunnelRows.filter(r =>
-    (!fChannel || r.channel === fChannel) &&
-    (!fLanding || r.landing === fLanding) &&
-    (!fSexo    || r.sexo === fSexo) &&
-    (!fPago    || r.pago === fPago) &&
-    (!fClinica || r.clinica === fClinica) &&
+    (!fChannel  || r.channel === fChannel) &&
+    (!fLanding  || r.landing === fLanding) &&
+    (!fSexo     || r.sexo === fSexo) &&
+    (!fPago     || r.pago === fPago) &&
+    (!fClinica  || r.clinica === fClinica) &&
+    (!fAd       || r.utm_content === fAd) &&
+    (!fCampaign || r.utm_campaign === fCampaign) &&
     r.leads >= fMinLeads
   );
 
@@ -656,26 +704,17 @@ function paintMasterFunnel() {
     const adTitle = r.utm_content || '';
     const campLabel = (r.utm_campaign || '').length > 24 ? r.utm_campaign.substring(0, 24) + '…' : (r.utm_campaign || '-');
 
-    // Links: Meta Ads Manager when utm_content is numeric (ad.id),
-    // landing URL reconstructed from landing + nicho.
-    const metaAdLink = /^\d{10,}$/.test(r.utm_content || '')
-      ? `https://business.facebook.com/adsmanager/manage/ads?act=898774584294194&selected_ad_ids=${r.utm_content}`
-      : null;
-    const landingSlug = (r.nicho && r.nicho !== 'sin-dato') ? r.nicho : '';
-    let landingUrl = null;
-    if (r.landing === 'quiz_largo' && landingSlug)     landingUrl = `https://diagnostico.hospitalcapilar.com/${landingSlug}`;
-    else if (r.landing === 'quiz_corto' && landingSlug) landingUrl = `https://diagnostico.hospitalcapilar.com/rapido/${landingSlug}`;
-    else if ((r.landing === 'formulario_directo' || r.landing === 'form') && landingSlug) landingUrl = `https://diagnostico.hospitalcapilar.com/form/${landingSlug}`;
-    else if (r.landing === 'quiz_largo')                landingUrl = `https://diagnostico.hospitalcapilar.com/`;
+    const adDescriptor = buildAdLink(r);
+    const landingUrl = buildLandingUrl(r);
 
-    const adLink = metaAdLink
-      ? `<a href="${metaAdLink}" target="_blank" rel="noopener" title="Abrir anuncio en Meta Ads Manager" style="color:var(--hc-teal-light);margin-right:6px;">Ad</a>`
+    const adLinkHtml = adDescriptor
+      ? `<a href="${adDescriptor.url}" target="_blank" rel="noopener" title="Abrir en Meta Ads Manager" style="color:var(--hc-teal-light);margin-right:8px;">${adDescriptor.label}</a>`
       : '';
-    const landLink = landingUrl
-      ? `<a href="${landingUrl}" target="_blank" rel="noopener" title="Abrir landing" style="color:var(--hc-teal-light);">Landing</a>`
+    const landLinkHtml = landingUrl
+      ? `<a href="${landingUrl}" target="_blank" rel="noopener" title="Abrir landing (${landingUrl.replace('https://diagnostico.hospitalcapilar.com','')})" style="color:var(--hc-teal-light);">Landing</a>`
       : '';
-    const linksCell = adLink || landLink
-      ? `<td style="border-left:2px solid var(--hc-card-border);font-size:11px;">${adLink}${landLink}</td>`
+    const linksCell = adLinkHtml || landLinkHtml
+      ? `<td style="border-left:2px solid var(--hc-card-border);font-size:11px;">${adLinkHtml}${landLinkHtml}</td>`
       : `<td style="border-left:2px solid var(--hc-card-border);color:#666;font-size:11px;">&mdash;</td>`;
 
     html += `<tr>
