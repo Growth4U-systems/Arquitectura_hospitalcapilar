@@ -995,8 +995,7 @@ function renderQuizDropoff(data) {
     return;
   }
 
-  // Order by question_index (backend-provided). Fallback to QUIZ_LINEAR_ORDER
-  // position for older data without question_index.
+  // Order by question_index (backend-provided), fallback to QUIZ_LINEAR_ORDER for old data
   const orderHint = (qid) => {
     const i = QUIZ_LINEAR_ORDER.indexOf(qid);
     return i >= 0 ? i : 999;
@@ -1010,64 +1009,94 @@ function renderQuizDropoff(data) {
       return ai - bi;
     });
 
-  // Full sequence: Quiz Iniciado → questions (lineales + condicionales interleaveadas) → Formulario enviado
-  const steps = [
-    { label: 'Quiz Iniciado', users: started, kind: 'anchor-start' },
-    ...questions.map(q => ({
-      label: q.question_id,
-      users: q.users,
-      kind: QUIZ_CONDITIONALS[q.question_id] ? 'conditional' : 'linear',
-      gate: QUIZ_CONDITIONALS[q.question_id] || null,
-    })),
-    { label: 'Formulario enviado', users: leads, kind: 'anchor-end' },
-  ];
+  // Build steps: each step is anchored by a LINEAR question (Paso 1..N).
+  // Conditional questions attach as sub-rows to the nearest preceding step —
+  // they don't get their own step number and don't break the staircase.
+  const LINEAR = new Set(QUIZ_LINEAR_ORDER);
+  const steps = [];
+  let current = null;
+  for (const q of questions) {
+    if (LINEAR.has(q.question_id)) {
+      current = { num: steps.length + 1, main: q, conds: [] };
+      steps.push(current);
+    } else if (current) {
+      current.conds.push(q);
+    } else {
+      // Conditional before any linear question — rare; create an unnumbered holder
+      current = { num: 0, main: null, conds: [q] };
+      steps.push(current);
+    }
+  }
 
-  const firstUsers = started > 0 ? started : (questions[0]?.users || 1);
+  const firstUsers = started > 0 ? started : (steps[0]?.main?.users || 1);
+  let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
 
-  const renderRow = (s, prev, isFirst) => {
-    const retention = (s.users / firstUsers * 100);
+  // Anchor top: Quiz Iniciado
+  const pctStarted = started > 0 ? 100 : 0;
+  html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+    <div style="width:200px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:700;">Quiz Iniciado</div>
+    <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
+      <div style="width:${Math.max(pctStarted,4)}%;height:100%;background:#2C3E50;border-radius:3px;display:flex;align-items:center;padding-left:6px;">
+        <span style="font-size:10px;color:#fff;font-weight:600;">${started}</span>
+      </div>
+    </div>
+    <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${pctStarted.toFixed(0)}%</div>
+  </div>`;
+
+  let prevMain = started > 0 ? started : firstUsers;
+  for (const step of steps) {
+    if (!step.main) continue; // skip orphan conditional-only step (rare)
+
+    const retention = (step.main.users / firstUsers * 100);
     const widthPct = Math.max(retention, 4);
-    const dropPct = prev > 0 ? ((prev - s.users) / prev * 100) : 0;
-
-    let barColor;
-    if (s.kind === 'anchor-start') barColor = '#2C3E50';
-    else if (s.kind === 'anchor-end') barColor = '#4ade80';
-    else if (s.kind === 'conditional') barColor = '#64748b';
-    else barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
-
-    const dropBadge = (!isFirst && dropPct > 0 && s.kind !== 'conditional')
+    const dropPct = prevMain > 0 ? ((prevMain - step.main.users) / prevMain * 100) : 0;
+    const barColor = retention >= 70 ? '#4CA994' : retention >= 40 ? '#f59e0b' : '#f87171';
+    const dropBadge = dropPct > 0.5
       ? ` <span style="color:#f87171;">-${dropPct.toFixed(0)}%</span>`
       : '';
-    const labelOpacity = s.kind === 'conditional' ? '0.75' : '1';
-    const labelWeight = (s.kind === 'anchor-start' || s.kind === 'anchor-end') ? '700' : '500';
-    const gateText = s.gate
-      ? `<span style="font-size:9px;color:#64748b;"> · ${s.gate}</span>`
-      : '';
-    const retentionText = s.kind === 'conditional'
-      ? `<span title="${s.gate || ''}" style="color:#64748b;">cond.</span>`
-      : `${retention.toFixed(0)}%${dropBadge}`;
 
-    return `<div style="display:flex;align-items:center;gap:6px;height:24px;opacity:${labelOpacity};">
-      <div style="width:160px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:${labelWeight};" title="${s.label}${s.gate ? ' — ' + s.gate : ''}">${s.label}${gateText}</div>
-      <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;position:relative;">
+    html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+      <div style="width:200px;font-size:11px;color:#8fa3b0;text-align:right;flex-shrink:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        <span style="color:var(--hc-teal);font-weight:700;">Paso ${step.num}</span> &middot; ${step.main.question_id}
+      </div>
+      <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
         <div style="width:${widthPct}%;height:100%;background:${barColor};border-radius:3px;display:flex;align-items:center;padding-left:6px;">
-          <span style="font-size:10px;color:#fff;font-weight:600;">${s.users}</span>
+          <span style="font-size:10px;color:#fff;font-weight:600;">${step.main.users}</span>
         </div>
       </div>
-      <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retentionText}</div>
+      <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${retention.toFixed(0)}%${dropBadge}</div>
     </div>`;
-  };
 
-  // Drop% uses the previous LINEAR step as denominator. Condicionales no rompen la cadena.
-  let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
-  let lastLinearUsers = null;
-  steps.forEach((s, i) => {
-    const prev = lastLinearUsers ?? s.users;
-    html += renderRow(s, prev, i === 0);
-    if (s.kind !== 'conditional') lastLinearUsers = s.users;
-  });
+    // Conditional sub-rows — grouped under the step, indented, tiny
+    for (const c of step.conds) {
+      const gate = QUIZ_CONDITIONALS[c.question_id] || '';
+      const subPct = firstUsers > 0 ? (c.users / firstUsers * 100) : 0;
+      html += `<div style="display:flex;align-items:center;gap:6px;height:18px;font-size:10px;color:#64748b;padding-left:64px;">
+        <span style="color:#475569;">&#x2937;</span>
+        <span style="font-style:italic;flex-shrink:0;">+${c.question_id}</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5a7080;font-size:9px;" title="${gate}">${gate}</span>
+        <span style="width:90px;color:#64748b;font-size:10px;flex-shrink:0;">${c.users} · ${subPct.toFixed(0)}%</span>
+      </div>`;
+    }
+
+    prevMain = step.main.users;
+  }
+
+  // Anchor bottom: Formulario enviado
+  const pctLeads = firstUsers > 0 ? (leads / firstUsers * 100) : 0;
+  const dropLeads = prevMain > 0 ? ((prevMain - leads) / prevMain * 100) : 0;
+  const dropLeadsBadge = dropLeads > 0.5 ? ` <span style="color:#f87171;">-${dropLeads.toFixed(0)}%</span>` : '';
+  html += `<div style="display:flex;align-items:center;gap:6px;height:24px;">
+    <div style="width:200px;font-size:11px;color:#4ade80;text-align:right;flex-shrink:0;font-weight:700;">Formulario enviado</div>
+    <div style="flex:1;background:#1e2d3a;border-radius:3px;height:18px;">
+      <div style="width:${Math.max(pctLeads,4)}%;height:100%;background:#4ade80;border-radius:3px;display:flex;align-items:center;padding-left:6px;">
+        <span style="font-size:10px;color:#fff;font-weight:600;">${leads}</span>
+      </div>
+    </div>
+    <div style="width:90px;font-size:10px;color:#8fa3b0;flex-shrink:0;">${pctLeads.toFixed(0)}%${dropLeadsBadge}</div>
+  </div>`;
+
   html += '</div>';
-
   document.getElementById('quizDropoffChart').innerHTML = html;
 }
 
