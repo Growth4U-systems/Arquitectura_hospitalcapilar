@@ -710,14 +710,18 @@ function paintMasterFunnel() {
 
   document.getElementById('mfRowCount').textContent = `${tree.size} campañas · ${filtered.length} filas base · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
 
-  // Single header with visual column groups
+  // Single header: each % sits between the two counts it compares so the
+  // eye reads left-to-right as a conversion cascade.
   let html = `<thead><tr>
     <th style="width:36px;"></th>
     <th>Campa&ntilde;a / AdSet / Anuncio</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);">Visitas</th>
+    <th class="num">V&rarr;I %</th>
     <th class="num">Iniciados</th>
+    <th class="num">I&rarr;F %</th>
     <th class="num">Finaliz.</th>
-    <th class="num" style="border-left:2px solid var(--hc-card-border);">Leads</th>
+    <th class="num">F&rarr;L %</th>
+    <th class="num">Leads</th>
     <th class="num">L&rarr;C %</th>
     <th class="num">Citas</th>
     <th class="num">C&rarr;P %</th>
@@ -727,18 +731,31 @@ function paintMasterFunnel() {
   </tr></thead><tbody>`;
 
   const renderMetricsCells = (n, isLeaf) => {
-    const lcR = pctNum(n.booked, n.leads);
-    const cpR = pctNum(n.paid, n.booked);
-    const vcR = pctNum(n.booked, n.visits);
+    const viR = pctNum(n.started,   n.visits);    // Visitas → Iniciados
+    const ifR = pctNum(n.completed, n.started);   // Iniciados → Finalizados
+    const flR = pctNum(n.leads,     n.completed); // Finalizados → Leads
+    const lcR = pctNum(n.booked,    n.leads);     // Leads → Citas
+    const cpR = pctNum(n.paid,      n.booked);    // Citas → Pagos
+    const vcR = pctNum(n.booked,    n.visits);    // Visitas → Citas (bottom-line)
     const vcClass = vcR >= 2 ? 'good' : vcR >= 0.5 ? 'warn' : vcR > 0 ? 'bad' : '';
-    const lcCell = n.leads > 0 ? `<td class="num ${convClass(lcR)}">${pct(n.booked, n.leads)}</td>` : `<td class="num" style="color:#666;">&mdash;</td>`;
-    const cpCell = n.booked > 0 ? `<td class="num ${convClass(cpR)}">${pct(n.paid, n.booked)}</td>` : `<td class="num" style="color:#666;">&mdash;</td>`;
-    const vcCell = n.visits > 0 ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>` : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
+
+    const dash = `<td class="num" style="color:#666;">&mdash;</td>`;
+    const viCell = n.visits    > 0 ? `<td class="num ${convClass(viR)}">${pct(n.started, n.visits)}</td>`       : dash;
+    const ifCell = n.started   > 0 ? `<td class="num ${convClass(ifR)}">${pct(n.completed, n.started)}</td>`    : dash;
+    const flCell = n.completed > 0 ? `<td class="num ${convClass(flR)}">${pct(n.leads, n.completed)}</td>`      : dash;
+    const lcCell = n.leads     > 0 ? `<td class="num ${convClass(lcR)}">${pct(n.booked, n.leads)}</td>`         : dash;
+    const cpCell = n.booked    > 0 ? `<td class="num ${convClass(cpR)}">${pct(n.paid, n.booked)}</td>`          : dash;
+    const vcCell = n.visits    > 0
+      ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>`
+      : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
     return `
       <td class="num" style="border-left:2px solid var(--hc-card-border);">${n.visits > 0 ? fmt(n.visits) : '<span style="color:#666;">&mdash;</span>'}</td>
+      ${viCell}
       <td class="num">${n.started > 0 ? fmt(n.started) : '<span style="color:#666;">&mdash;</span>'}</td>
+      ${ifCell}
       <td class="num">${n.completed > 0 ? fmt(n.completed) : '<span style="color:#666;">&mdash;</span>'}</td>
-      <td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:${isLeaf?'500':'700'};">${fmt(n.leads)}</td>
+      ${flCell}
+      <td class="num" style="font-weight:${isLeaf?'500':'700'};">${fmt(n.leads)}</td>
       ${lcCell}
       <td class="num">${fmt(n.booked)}</td>
       ${cpCell}
@@ -819,22 +836,15 @@ function paintMasterFunnel() {
     });
   });
 
-  // Total row
-  const tLc = totalLeads > 0 ? pct(totalBooked, totalLeads) : '-';
-  const tCp = totalBooked > 0 ? pct(totalPaid, totalBooked) : '-';
-  const tVc = totalVisits > 0 ? (totalBooked / totalVisits * 100).toFixed(2) + '%' : '-';
+  // Total row — same cascade order
+  const totalRow = {
+    visits: totalVisits, started: totalStarted, completed: totalCompleted,
+    leads: totalLeads, booked: totalBooked, paid: totalPaid,
+  };
   html += `<tr style="font-weight:800;border-top:2px solid #444;background:rgba(76,169,148,0.08);">
     <td></td>
     <td>Total</td>
-    <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalVisits)}</td>
-    <td class="num">${fmt(totalStarted)}</td>
-    <td class="num">${fmt(totalCompleted)}</td>
-    <td class="num" style="border-left:2px solid var(--hc-card-border);">${fmt(totalLeads)}</td>
-    <td class="num">${tLc}</td>
-    <td class="num">${fmt(totalBooked)}</td>
-    <td class="num">${tCp}</td>
-    <td class="num">${fmt(totalPaid)}</td>
-    <td class="num" style="border-left:2px solid var(--hc-card-border);">${tVc}</td>
+    ${renderMetricsCells(totalRow, false)}
     <td style="border-left:2px solid var(--hc-card-border);">&nbsp;</td>
   </tr></tbody>`;
 
