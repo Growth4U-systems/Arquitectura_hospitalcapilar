@@ -908,12 +908,12 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
   // 24h countdown for "oferta limitada" — session-scoped urgency
   const [countdownSeconds, setCountdownSeconds] = useState(() => {
-    if (typeof window === 'undefined') return 24 * 60 * 60;
-    const stored = window.sessionStorage.getItem('bonoOfferStart');
+    if (typeof window === 'undefined') return 12 * 60 * 60;
+    const stored = window.sessionStorage.getItem('bonoOfferStart_12h');
     const startTime = stored ? parseInt(stored, 10) : Date.now();
-    if (!stored) window.sessionStorage.setItem('bonoOfferStart', String(startTime));
+    if (!stored) window.sessionStorage.setItem('bonoOfferStart_12h', String(startTime));
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    return Math.max(0, 24 * 60 * 60 - elapsed);
+    return Math.max(0, 12 * 60 * 60 - elapsed);
   });
 
   useEffect(() => {
@@ -1618,16 +1618,21 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                 {ctaType === 'pagar_bono' ? 'Lo que incluye tu analítica' : 'Lo que haremos por ti'}
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {includedItems.map((text, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-                    <div className="w-8 h-8 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0">
-                      <Check size={18} className="text-[#4CA994]" />
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5 flex items-center gap-2.5 shadow-sm">
+                    <div className="w-6 h-6 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0">
+                      <Check size={14} className="text-[#4CA994]" />
                     </div>
-                    <span className="text-gray-800 text-sm font-medium">{text}</span>
+                    <span className="text-gray-800 text-[13px] font-medium leading-snug">{text}</span>
                   </div>
                 ))}
               </div>
+              {ctaType === 'pagar_bono' && (
+                <p className="text-center text-xs text-gray-500 mt-3">
+                  <span aria-hidden="true">⚠️</span> <strong className="text-gray-700">Todo en el mismo día</strong> · sin esperas ni vueltas
+                </p>
+              )}
             </div>
           )}
 

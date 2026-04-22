@@ -59,12 +59,12 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
   // 24h countdown for "oferta limitada" — session-scoped urgency
   const [countdownSeconds, setCountdownSeconds] = useState(() => {
-    if (typeof window === 'undefined') return 24 * 60 * 60;
-    const stored = window.sessionStorage.getItem('bonoOfferStart');
+    if (typeof window === 'undefined') return 12 * 60 * 60;
+    const stored = window.sessionStorage.getItem('bonoOfferStart_12h');
     const startTime = stored ? parseInt(stored, 10) : Date.now();
-    if (!stored) window.sessionStorage.setItem('bonoOfferStart', String(startTime));
+    if (!stored) window.sessionStorage.setItem('bonoOfferStart_12h', String(startTime));
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    return Math.max(0, 24 * 60 * 60 - elapsed);
+    return Math.max(0, 12 * 60 * 60 - elapsed);
   });
   useEffect(() => {
     const intv = setInterval(() => setCountdownSeconds(prev => (prev > 0 ? prev - 1 : 0)), 1000);
@@ -151,27 +151,24 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         {/* What's included */}
         <div className="mb-6">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu test capilar</h3>
-          <div className="space-y-2">
-            {/* Highlighted: same-day differentiator */}
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 flex items-center gap-3 shadow-sm">
-              <span className="text-2xl shrink-0" aria-hidden="true">⚠️</span>
-              <span className="text-amber-900 text-sm font-extrabold">Todo en el mismo día · sin esperas ni vueltas</span>
-            </div>
+          <div className="space-y-1.5">
             {[
               'Tricoscopia digital con microscopio de alta resolución',
               'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
-              'Valoración con médico especialista (30 min)',
               'Pauta médica con receta incluida en la primera consulta si fuera necesario',
-              'Informe personalizado con plan de tratamiento',
+              'Valoración con médico especialista + informe personalizado con plan de tratamiento',
             ].map((text, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-                <div className="w-8 h-8 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0">
-                  <Check size={18} className="text-[#4CA994]" />
+              <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5 flex items-center gap-2.5 shadow-sm">
+                <div className="w-6 h-6 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0">
+                  <Check size={14} className="text-[#4CA994]" />
                 </div>
-                <span className="text-gray-800 text-sm font-medium">{text}</span>
+                <span className="text-gray-800 text-[13px] font-medium leading-snug">{text}</span>
               </div>
             ))}
           </div>
+          <p className="text-center text-xs text-gray-500 mt-3">
+            <span aria-hidden="true">⚠️</span> <strong className="text-gray-700">Todo en el mismo día</strong> · sin esperas ni vueltas
+          </p>
         </div>
 
         {/* Price card */}

@@ -42,12 +42,12 @@ export default function AgendarPage() {
 
   // 24h countdown — session-scoped urgency; resets when tab closes.
   const [countdownSeconds, setCountdownSeconds] = useState(() => {
-    if (typeof window === 'undefined') return 24 * 60 * 60;
-    const stored = window.sessionStorage.getItem('bonoOfferStart');
+    if (typeof window === 'undefined') return 12 * 60 * 60;
+    const stored = window.sessionStorage.getItem('bonoOfferStart_12h');
     const startTime = stored ? parseInt(stored, 10) : Date.now();
-    if (!stored) window.sessionStorage.setItem('bonoOfferStart', String(startTime));
+    if (!stored) window.sessionStorage.setItem('bonoOfferStart_12h', String(startTime));
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    return Math.max(0, 24 * 60 * 60 - elapsed);
+    return Math.max(0, 12 * 60 * 60 - elapsed);
   });
 
   useEffect(() => {
@@ -152,11 +152,7 @@ export default function AgendarPage() {
                 <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}% reservando online</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-3 mb-3 flex items-center gap-2">
-                  <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
-                  <span className="text-amber-900 text-sm font-extrabold">Todo en el mismo día · sin esperas ni vueltas</span>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="space-y-1.5 text-[13px] text-gray-700 leading-snug">
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
                     Tricoscopia digital con microscopio de alta resolución
@@ -167,17 +163,16 @@ export default function AgendarPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Valoración con médico especialista
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#4CA994] mt-0.5">✓</span>
                     Pauta médica con receta incluida en la primera consulta si fuera necesario
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Informe personalizado con plan de tratamiento
+                    Valoración con médico especialista + informe personalizado con plan
                   </li>
                 </ul>
+                <p className="text-center text-xs text-gray-500 mt-3">
+                  <span aria-hidden="true">⚠️</span> <strong className="text-gray-700">Todo en el mismo día</strong> · sin esperas
+                </p>
               </div>
             </div>
           </div>
