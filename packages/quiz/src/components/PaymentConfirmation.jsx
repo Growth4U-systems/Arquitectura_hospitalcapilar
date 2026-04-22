@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckCircle, Calendar, Phone } from 'lucide-react';
 import BookingCalendar from './BookingCalendar';
 
-const PaymentConfirmation = ({ nombre, email, telefono, ubicacion, onCallRequest, bonoPrice = 195 }) => {
+const PaymentConfirmation = ({ nombre, email, telefono, ubicacion, onCallRequest, bonoPrice = 125 }) => {
   const firstName = (nombre || 'Paciente').split(' ')[0];
 
   return (
@@ -29,8 +29,8 @@ const PaymentConfirmation = ({ nombre, email, telefono, ubicacion, onCallRequest
         <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
           <div className="flex justify-between items-center">
             <div>
-              <p className="font-bold text-gray-900 text-sm">Bono Diagnóstico Capilar</p>
-              <p className="text-xs text-gray-400">Tricoscopía + Analítica + Valoración + Plan</p>
+              <p className="font-bold text-gray-900 text-sm">Test Capilar con Analítica Hormonal</p>
+              <p className="text-xs text-gray-400">Analítica + Tricoscopia + Valoración + Informe</p>
             </div>
             <span className="text-xl font-extrabold text-[#4CA994]">{bonoPrice}€</span>
           </div>

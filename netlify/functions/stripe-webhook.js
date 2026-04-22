@@ -221,7 +221,7 @@ async function addGHLNote(contactId, apiKey, session) {
 
   try {
     const amount = (session.amount_total / 100).toFixed(2);
-    const noteBody = `💳 PAGO CONFIRMADO — Bono Diagnóstico ${amount}€\nEmail: ${session.customer_email}\nStripe Session: ${session.id}\nFecha: ${new Date().toISOString()}`;
+    const noteBody = `💳 PAGO CONFIRMADO — Test Capilar ${amount}€\nEmail: ${session.customer_email}\nStripe Session: ${session.id}\nFecha: ${new Date().toISOString()}`;
 
     await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
       method: 'POST',
@@ -281,7 +281,7 @@ async function syncPaymentToKoibox(email, koiboxId, session) {
   };
 
   const amount = ((session.amount_total || 0) / 100).toFixed(2);
-  const paymentNote = `✅ BONO DIAGNÓSTICO PAGADO (${amount}€) — Stripe: ${session.id} — ${new Date().toISOString()}`;
+  const paymentNote = `✅ TEST CAPILAR PAGADO (${amount}€) — Stripe: ${session.id} — ${new Date().toISOString()}`;
 
   // 1. Update appointment notes if koibox appointment exists
   if (koiboxId) {

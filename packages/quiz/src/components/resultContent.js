@@ -6,12 +6,12 @@
 // ─── OBJECTIONS (myth → truth) ──────────────────────────────
 export const OBJECTIONS_BY_ECP = {
   '¿Qué Me Pasa?': [
-    { myth: 'Ya probé minoxidil y no me funcionó', truth: 'El 40-60% no responde a minoxidil. Sin un diagnóstico real, cualquier tratamiento es una apuesta a ciegas.' },
-    { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica te da la respuesta en 30 minutos. Sin adivinar.' },
+    { myth: 'Ya probé minoxidil y no me funcionó', truth: 'El 40-60% no responde a minoxidil. Sin un test capilar real, cualquier tratamiento es una apuesta a ciegas.' },
+    { myth: 'No sé si mi caída tiene solución', truth: 'Un test capilar con tricoscopía + analítica te da la respuesta en 30 minutos. Sin adivinar.' },
     { myth: 'Me da cosa ir a una clínica capilar', truth: 'No somos un centro estético. Somos un centro médico. Te decimos la verdad, te guste o no.' },
   ],
   'Es Normal': [
-    { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica hormonal te da la respuesta en 30 minutos.' },
+    { myth: 'No sé si mi caída tiene solución', truth: 'Un test capilar con tricoscopía + analítica hormonal te da la respuesta en 30 minutos.' },
     { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Nuestro equipo médico especializado en salud capilar cruza tu perfil hormonal con un estudio capilar completo. Nadie más los mira juntos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: 'El importe se descuenta íntegro si inicias tratamiento.' },
   ],
@@ -21,7 +21,7 @@ export const OBJECTIONS_BY_ECP = {
     { myth: 'No quiero medicarme de por vida', truth: 'Hay opciones sin fármacos orales. Pero primero necesitas saber qué tienes exactamente.' },
   ],
   'Ya Me Engañaron': [
-    { myth: 'Ya me engañaron una vez, no quiero repetir', truth: 'Entendemos. Por eso nuestra primera consulta es sin compromiso — para que nos conozcas antes de decidir nada.' },
+    { myth: 'Ya me engañaron una vez, no quiero repetir', truth: 'Entendemos. Por eso el test capilar es sin compromiso — para que nos conozcas antes de decidir nada.' },
     { myth: 'Todas las clínicas prometen lo mismo', truth: 'No prometemos resultados. Diagnosticamos con datos objetivos y te damos opciones honestas.' },
     { myth: 'No quiero que me presionen para operarme', truth: 'Nuestros médicos no cobran comisión. Te recomiendan lo que necesitas, no lo más caro.' },
   ],
@@ -36,14 +36,14 @@ export const OBJECTIONS_BY_ECP = {
     { myth: 'Es muy caro para no saber si funciona', truth: 'El importe se descuenta íntegro si inicias tratamiento.' },
   ],
   '¿Qué Me Pasa?': [
-    { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia que avanza. Solo un diagnóstico profesional te saca de dudas.' },
+    { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia que avanza. Solo un test capilar profesional te saca de dudas.' },
     { myth: 'Busqué en Google y me asusté más', truth: 'Internet no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te da la respuesta real — sin adivinar.' },
-    { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado en salud capilar combina microscopio + analítica + médico. Es el diagnóstico más completo que existe para tu caso.' },
+    { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado en salud capilar combina microscopio + analítica + médico. Es el test capilar más completo que existe para tu caso.' },
   ],
   'La Farmacia': [
-    { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin diagnóstico. No es que no funcione — es que puede no ser lo que necesitas.' },
+    { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin un test capilar. No es que no funcione — es que puede no ser lo que necesitas.' },
     { myth: 'Los suplementos anticaída deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin saber la causa de tu caída, es tirar dinero.' },
-    { myth: 'Ya me gasté demasiado, para qué gastar más', truth: 'Un diagnóstico profesional (descontable si inicias tratamiento) puede ahorrarte años de productos que no funcionan. Compáralo con los €500+ que ya llevas.' },
+    { myth: 'Ya me gasté demasiado, para qué gastar más', truth: 'Un test capilar profesional (descontable si inicias tratamiento) puede ahorrarte años de productos que no funcionan. Compáralo con los €500+ que ya llevas.' },
   ],
 };
 
@@ -55,7 +55,7 @@ export const TESTIMONIALS_BY_ECP = {
   ],
   'Es Normal': [
     { name: 'Laura M.', age: 34, text: 'Llevaba 2 años con caída y nadie encontraba la causa. En Hospital Capilar descubrieron que era hormonal. Ahora estoy recuperando densidad.', stars: 5 },
-    { name: 'Patricia G.', age: 41, text: 'Después del embarazo no paraba de caer. Me hicieron una analítica completa cruzada con tricoscopía. Por fin un diagnóstico real.', stars: 5 },
+    { name: 'Patricia G.', age: 41, text: 'Después del embarazo no paraba de caer. Me hicieron una analítica completa cruzada con tricoscopía. Por fin un test capilar real.', stars: 5 },
   ],
   'El Espejo': [
     { name: 'Alejandro P.', age: 23, text: 'Tenía 22 años y ya se me notaban las entradas. En HC me dijeron exactamente qué hacer y en 6 meses recuperé densidad. Actuar pronto fue clave.', stars: 5 },
@@ -71,11 +71,11 @@ export const TESTIMONIALS_BY_ECP = {
   ],
   'Lo Que Vino Con el Bebé': [
     { name: 'Elena R.', age: 32, text: 'Después del parto perdí mucho pelo. Mi ginecóloga decía que era normal. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
-    { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
+    { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El test en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],
   '¿Qué Me Pasa?': [
     { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer. El alivio fue enorme.', stars: 5 },
-    { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y la consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
+    { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y el test capilar me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
   ],
   'La Farmacia': [
     { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. En 6 meses noté la diferencia.', stars: 5 },
@@ -118,12 +118,12 @@ export const INCLUDED_BY_CTA = {
 // ─── FAQs — by CTA type ────────────────────────────────────
 export const FAQS_BY_CTA = {
   pagar_bono: [
-    { q: '¿Qué incluye exactamente el diagnóstico?', a: 'Tricoscopía digital (microscopio capilar de alta resolución), analítica hormonal completa, valoración médica personalizada de 30 minutos y plan de tratamiento detallado.' },
-    { q: '¿El importe se descuenta si hago tratamiento?', a: 'Sí. Si decides iniciar tratamiento en Hospital Capilar, el coste del diagnóstico se descuenta íntegro del tratamiento.' },
+    { q: '¿Qué incluye exactamente el test capilar?', a: 'Tricoscopía digital (microscopio capilar de alta resolución), analítica hormonal completa, valoración médica personalizada de 30 minutos y plan de tratamiento detallado.' },
+    { q: '¿El importe se descuenta si hago tratamiento?', a: 'Sí. Si decides iniciar tratamiento en Hospital Capilar, el coste del test capilar se descuenta íntegro del tratamiento.' },
     { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican con datos objetivos (microscopio + analítica) y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
   ],
   agendar_consulta: [
-    { q: '¿La consulta es realmente gratuita?', a: 'Sí. La valoración inicial es sin coste. Incluye estudio capilar con microscopio y orientación médica personalizada.' },
+    { q: '¿El test capilar es realmente gratuito?', a: 'Sí. La valoración inicial es sin coste. Incluye estudio capilar con microscopio y orientación médica personalizada.' },
     { q: '¿Qué pasa si no necesito tratamiento?', a: 'Te lo decimos. No vamos a recomendarte algo que no necesitas. Nuestros médicos te dan un diagnóstico honesto.' },
     { q: '¿Me van a presionar para operarme?', a: 'No. Solo el 30% de nuestros pacientes necesita cirugía. La mayoría responde a tratamiento médico.' },
   ],

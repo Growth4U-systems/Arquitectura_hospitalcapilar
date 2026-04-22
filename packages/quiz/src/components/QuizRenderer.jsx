@@ -135,7 +135,7 @@ export default function QuizRenderer({ slug }) {
   if (showLoading) {
     // Find loading screen config if exists, otherwise use defaults
     const loadingScreenConfig = screens.find((s) => s.type === 'loading') || {
-      title: 'Procesando tu diagnóstico...',
+      title: 'Analizando tu caso...',
       subtitle: 'Analizando tus respuestas',
       config: {
         duration: 3000,

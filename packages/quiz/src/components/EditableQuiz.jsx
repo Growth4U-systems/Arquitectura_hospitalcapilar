@@ -149,7 +149,7 @@ export default function EditableQuiz() {
 function getDefaultQuizData() {
   return {
     slug: 'hospital-capilar',
-    name: 'Hospital Capilar - Diagnóstico Capilar',
+    name: 'Hospital Capilar - Test Capilar',
     theme: {
       primary: '#4CA994',
       secondary: '#2C3E50',
@@ -169,10 +169,10 @@ function getDefaultQuizData() {
       buttonText: 'Solicitar Estudio Gratuito'
     },
     intro: {
-      badge: 'Diagnóstico Capilar Online IA',
+      badge: 'Test Capilar Online IA',
       title: '¿Eres candidato para un\n*Injerto Capilar?*',
-      subtitle: 'Nuestro algoritmo médico analiza 8 factores clave de tu perfil para ofrecerte un pre-diagnóstico de viabilidad gratuito.',
-      buttonText: 'Comenzar Diagnóstico Gratuito',
+      subtitle: 'Nuestro algoritmo médico analiza 8 factores clave de tu perfil para ofrecerte un pre-análisis de viabilidad gratuito.',
+      buttonText: 'Comenzar Test Gratuito',
       footerText: 'Más de 5.000 pacientes evaluados este año.',
       features: ['Análisis Completo', 'Revisión Médica', '100% Privado']
     },
@@ -272,12 +272,12 @@ function getDefaultQuizData() {
       }
     ],
     leadForm: {
-      resultTitle: 'Diagnóstico Preliminar: APTO',
+      resultTitle: 'Análisis Preliminar: APTO',
       description: 'Hemos analizado tus 8 respuestas. Según tu perfil, eres un candidato potencial para una intervención con alta densidad.',
       formTitle: 'Recibe tu Informe Médico + Presupuesto',
       formSubtitle: 'Nuestro equipo médico te enviará por WhatsApp/Email la valoración detallada de tu caso y una estimación de unidades foliculares necesarias.',
       fields: ['name', 'phone', 'email'],
-      consentText: 'Consiento el tratamiento de mis datos de salud para recibir el pre-diagnóstico médico personalizado.',
+      consentText: 'Consiento el tratamiento de mis datos de salud para recibir el pre-análisis médico personalizado.',
       trustBadges: ['ISHRS', 'WFI', 'FUE Europe']
     },
     result: {
@@ -339,7 +339,7 @@ function getDefaultDecisionTree() {
         result: {
           type: 'info',
           title: 'Información Enviada',
-          description: 'Te enviaremos información detallada sobre el procedimiento. Cuando estés listo, podemos agendar una consulta sin compromiso.',
+          description: 'Te enviaremos información detallada sobre el procedimiento. Cuando estés listo, podemos agendar un test capilar sin compromiso.',
           color: 'blue',
           cta: { type: 'form', text: 'Recibir Información' }
         }
@@ -347,7 +347,7 @@ function getDefaultDecisionTree() {
     ],
     defaultResult: {
       type: 'success',
-      title: 'Diagnóstico Preliminar: APTO',
+      title: 'Análisis Preliminar: APTO',
       description: 'Hemos analizado tus respuestas. Según tu perfil, eres un candidato potencial para una intervención. Completa tus datos para recibir una valoración personalizada.',
       color: 'green',
       cta: { type: 'form', text: 'Solicitar Estudio Gratuito' }

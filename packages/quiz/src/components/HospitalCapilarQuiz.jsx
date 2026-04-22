@@ -22,7 +22,7 @@ const WhatsAppIcon = ({ size = 24, className = '' }) => (
 // ============================================
 // GENERATE AGENT MESSAGE
 // ============================================
-function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
+function generateAgentMessage(answers, result, labels, bonoPrice = 125) {
   const { ecp, score, frame } = result;
   const nombre = (answers.nombre || 'Paciente').split(' ')[0];
   const sexo = answers.sexo === 'hombre' ? 'el paciente' : 'la paciente';
@@ -71,7 +71,7 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
   let objeciones = '';
   if (ecp === '¿Qué Me Pasa?') {
     objeciones = `- "Ya probé minoxidil y no funcionó" → El 40-60% no responde a minoxidil sin saber la causa. Sin diagnóstico, es como tomar pastillas a ciegas. Nosotros primero diagnosticamos y luego tratamos.
-- "Es muy caro" → La consulta de ${bonoPrice}€ incluye tricoscopia digital + análisis hormonal + plan personalizado. En farmacias gastarás más sin resultado.
+- "Es muy caro" → El test de ${bonoPrice}€ incluye analítica hormonal + tricoscopia digital + valoración médica + plan personalizado. En farmacias gastarás más sin resultado.
 - "No sé si es el momento" → Cuanto más esperas, más folículos se pierden. Los que se van no vuelven. Hoy tienes más pelo que mañana.`;
   } else if (ecp === 'Es Normal') {
     objeciones = `- "Mi médico dice que es estrés" → El 70% de alopecias femeninas tienen componente hormonal. Nuestro equipo médico especializado en salud capilar cruza tu perfil hormonal con un estudio capilar completo — algo que nadie más hace.
@@ -80,18 +80,18 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
   } else if (ecp === 'El Espejo') {
     objeciones = `- "Todavía no es tan grave" → Exacto, y por eso es el MEJOR momento. Tratar alopecia temprana tiene un 90% de éxito vs 40% cuando ya es avanzada.
 - "Soy muy joven para esto" → La alopecia androgenética puede empezar a los 18. No es cuestión de edad, es genética. Actuar ahora = mantener tu pelo.
-- "Mis amigos me dicen que es normal" → Perder pelo NO es normal a tu edad. Una consulta te saca de dudas en 30 minutos.`;
+- "Mis amigos me dicen que es normal" → Perder pelo NO es normal a tu edad. Un test capilar te saca de dudas en 30 minutos.`;
   } else if (ecp === 'Ya Me Engañaron') {
     objeciones = `- "Ya me gastó dinero en otra clínica y no funcionó" → Entiendo perfectamente. Por eso nosotros NO vendemos tratamientos en la primera cita. Primero diagnóstico, luego opciones. Sin presión.
 - "¿Cómo sé que ustedes son diferentes?" → Somos un centro con un equipo médico profesional experto en salud capilar. Te damos un diagnóstico completo, no solo un presupuesto.
-- "No quiero que me vendan nada" → En la consulta diagnóstica te explicamos qué tienes y qué opciones existen. Tú decides si y cuándo actuar.`;
+- "No quiero que me vendan nada" → En el test capilar te explicamos qué tienes y qué opciones existen. Tú decides si y cuándo actuar.`;
   } else if (ecp === 'La Inversión') {
     objeciones = `- "Ya me hice el trasplante, ¿necesito más?" → El trasplante mueve pelo, pero no frena la caída del pelo nativo. Sin mantenimiento, en 3-5 años puedes perder más de lo que ganaste.
 - "En la clínica donde me operé no me dijeron nada de esto" → Muchas clínicas solo hacen la cirugía. Nosotros protegemos tu inversión con un plan de mantenimiento personalizado.
-- "¿Cuánto cuesta el mantenimiento?" → Depende de tu caso, pero es una fracción de lo que costó el trasplante. La consulta diagnóstica de ${bonoPrice}€ incluye el plan completo.`;
+- "¿Cuánto cuesta el mantenimiento?" → Depende de tu caso, pero es una fracción de lo que costó el trasplante. El test capilar de ${bonoPrice}€ incluye el plan completo.`;
   } else if (ecp === 'Lo Que Vino Con el Bebé') {
     objeciones = `- "Me dicen que es normal después del parto" → Sí, es común. El 50% de madres lo sufren. Pero si pasan más de 6 meses y no se recupera, puede haber una alopecia subyacente que el embarazo activó.
-- "Estoy dando el pecho, ¿puedo tratarme?" → Sí, hay tratamientos compatibles con la lactancia. En la consulta evaluamos opciones seguras para ti y tu bebé.
+- "Estoy dando el pecho, ¿puedo tratarme?" → Sí, hay tratamientos compatibles con la lactancia. En el test evaluamos opciones seguras para ti y tu bebé.
 - "Ya se me pasará sola" → Ojalá, pero mejor descartarlo con un diagnóstico. Si hay AGA de fondo, cada mes sin tratar cuenta.`;
   } else if (ecp === 'La Farmacia') {
     objeciones = `- "Ya gasté €500+ en productos y nada funciona" → El problema no son los productos — es que nunca te diagnosticaron. Sin saber la causa, todo es una apuesta.
@@ -112,15 +112,15 @@ function generateAgentMessage(answers, result, labels, bonoPrice = 195) {
   // Guión de apertura personalizado
   let apertura = '';
   if (frame === 'FRAME_A') {
-    apertura = `"Hola ${nombre}, te llamo de Hospital Capilar. Hiciste nuestro diagnóstico online y vi que llevas tiempo con ${problemaNatural}. Quería confirmar tu cita para el diagnóstico presencial — es la forma más rápida de tener un plan claro. ¿Te viene mejor por la mañana o por la tarde?"`;
+    apertura = `"Hola ${nombre}, te llamo de Hospital Capilar. Hiciste nuestro test capilar online y vi que llevas tiempo con ${problemaNatural}. Quería confirmar tu cita para el test presencial — es la forma más rápida de tener un plan claro. ¿Te viene mejor por la mañana o por la tarde?"`;
   } else if (frame === 'FRAME_C') {
     apertura = `"Hola ${nombre}, te llamo de Hospital Capilar. Vi que completaste nuestro test capilar sobre ${problemaNatural} y quería llamarte personalmente. ¿Tienes un par de minutos para que te cuente qué vimos en tus respuestas y qué opciones tienes?"`;
   } else if (frame === 'FRAME_D') {
-    apertura = `Enviar WhatsApp/email: "Hola ${nombre}, gracias por completar el diagnóstico online de Hospital Capilar. Hemos analizado tus respuestas sobre ${problemaNatural} y te adjunto una guía personalizada. Si tienes alguna duda, puedes responder a este mensaje. Sin compromiso."`;
+    apertura = `Enviar WhatsApp/email: "Hola ${nombre}, gracias por completar el test capilar online de Hospital Capilar. Hemos analizado tus respuestas sobre ${problemaNatural} y te adjunto una guía personalizada. Si tienes alguna duda, puedes responder a este mensaje. Sin compromiso."`;
   } else if (frame === 'WAITLIST') {
-    apertura = `"Hola ${nombre}, gracias por hacer el diagnóstico online. Ahora mismo no tenemos consulta cerca de ${ubicacionLabel}, pero estamos abriendo nuevas sedes. Te apunto en la lista prioritaria para que seas de los primeros en enterarte. ¿Te parece bien?"`;
+    apertura = `"Hola ${nombre}, gracias por hacer el test capilar online. Ahora mismo no tenemos clínica cerca de ${ubicacionLabel}, pero estamos abriendo nuevas sedes. Te apunto en la lista prioritaria para que seas de los primeros en enterarte. ¿Te parece bien?"`;
   } else if (frame === 'DERIVACION') {
-    apertura = `Enviar email informativo: "Hola ${nombre}, gracias por usar nuestra herramienta de diagnóstico. Según tus respuestas, te recomendamos consultar con un especialista para una evaluación completa del cuero cabelludo. Te adjuntamos información útil."`;
+    apertura = `Enviar email informativo: "Hola ${nombre}, gracias por usar nuestra herramienta de evaluación capilar. Según tus respuestas, te recomendamos consultar con un especialista para una evaluación completa del cuero cabelludo. Te adjuntamos información útil."`;
   }
 
   const message = `GUION DE APERTURA
@@ -132,11 +132,11 @@ ${objeciones}
 ESTRATEGIA DE CIERRE
 ${frame === 'FRAME_A' ? `CIERRE DIRECTO: Este lead quiere actuar YA. No divagar — ir directo a agendar cita.
 - "Tenemos disponibilidad esta semana en ${ubicacionLabel}. ¿Prefieres martes o jueves?"
-- Si duda: "La consulta incluye tricoscopia + análisis completo. Los ${bonoPrice}€ se descuentan si inicias tratamiento."
+- Si duda: "El test incluye tricoscopia + análisis completo. Los ${bonoPrice}€ se descuentan si inicias tratamiento."
 - Urgencia: "Las plazas de esta semana se están llenando, te reservo una ahora mismo."` : ''}${frame === 'FRAME_C' ? `CIERRE CONSULTIVO: Este lead necesita confianza antes de decidir.
 - Primero escuchar, luego proponer. No mencionar precio hasta que pregunte.
 - "¿Qué es lo que más te preocupa de tu situación actual?"
-- Cuando esté listo: "¿Te gustaría que te reserve una consulta para tener un diagnóstico profesional? Así sales de dudas."
+- Cuando esté listo: "¿Te gustaría que te reserve un test capilar? En 30 minutos sales de dudas con datos objetivos."
 - Si duda del precio: "Los ${bonoPrice}€ incluyen TODO el estudio. Y si inicias tratamiento, se descuentan."` : ''}${frame === 'FRAME_D' ? `CIERRE NURTURING: Este lead necesita tiempo. NO presionar.
 - Enviar guía PDF + caso de éxito similar a su perfil
 - Follow-up en 3-5 días: "Hola ${nombre}, ¿pudiste leer la información? ¿Tienes alguna duda?"
@@ -177,7 +177,7 @@ const NICHO_WELCOME = {
     badge: 'Alopecia Temprana: Actúa Antes',
     headline: '¿Notas que tus entradas',
     headlineAccent: 'retroceden antes de tiempo?',
-    subheadline: 'La alopecia a los 18-28 años es más común de lo que piensas. Y cuanto antes actúes, más pelo conservas. No esperes a que sea tarde — un diagnóstico a tiempo cambia todo.',
+    subheadline: 'La alopecia a los 18-28 años es más común de lo que piensas. Y cuanto antes actúes, más pelo conservas. No esperes a que sea tarde — un test capilar a tiempo cambia todo.',
     cta: 'Evalúa tu caso en 3 minutos',
   },
   'es-normal': {
@@ -191,7 +191,7 @@ const NICHO_WELCOME = {
     badge: 'Caída Capilar Postparto',
     headline: '¿Se te cae el pelo',
     headlineAccent: 'desde el embarazo o el parto?',
-    subheadline: 'El efluvio postparto afecta al 50% de madres. En la mayoría de casos es temporal, pero en algunas mujeres revela una alopecia subyacente que necesita tratamiento. La única forma de saberlo es con un diagnóstico.',
+    subheadline: 'El efluvio postparto afecta al 50% de madres. En la mayoría de casos es temporal, pero en algunas mujeres revela una alopecia subyacente que necesita tratamiento. La única forma de saberlo es con un test capilar.',
     cta: 'Descubre si es temporal o algo más',
   },
   'que-me-pasa': {
@@ -307,7 +307,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     {
       id: 'sexo', block: 1,
       title: 'Empecemos. ¿Cuál es tu sexo biológico?',
-      subtitle: 'La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para darte un diagnóstico preciso.',
+      subtitle: 'La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para darte un análisis preciso.',
       type: 'single',
       options: [
         { label: 'Hombre', value: 'hombre', icon: '👨' },
@@ -480,7 +480,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
         ],
         image: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/mejores_cirujanos_de_injerto_capilar_w5ppmh.jpg',
         imageAlt: 'Equipo médico Hospital Capilar',
-        cta: 'Seguir con mi diagnóstico',
+        cta: 'Seguir con mi test capilar',
       }),
     },
     {
@@ -503,11 +503,11 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       infoContent: {
         icon: 'sparkles',
         headline: 'Resultados reales de pacientes reales',
-        body: 'Cada caso es único. Por eso el primer paso siempre es un diagnóstico profesional con tricoscopía y analítica — no una consulta comercial.',
+        body: 'Cada caso es único. Por eso el primer paso siempre es un test capilar profesional con tricoscopía y analítica — no una consulta comercial.',
         gallery: [
           { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/Recepcion_ywqbi8.jpg', alt: 'Recepción Hospital Capilar' },
           { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/hrt_d1vm3u.jpg', alt: 'Tratamiento capilar avanzado' },
-          { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/tratamientos_mujer_crt_gpxgxm.jpg', alt: 'Consulta capilar personalizada' },
+          { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/tratamientos_mujer_crt_gpxgxm.jpg', alt: 'Test capilar personalizado' },
         ],
         cta: 'Continuar',
       },
@@ -516,7 +516,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       id: 'motivacion', block: 2,
       title: '¿Qué necesitarías para dar el siguiente paso?',
       type: 'single',
-      microTip: 'En Hospital Capilar, la primera consulta incluye tricoscopía + analítica hormonal + 30 minutos con tu médico. Un diagnóstico real, no una consulta comercial.',
+      microTip: 'En Hospital Capilar, el test capilar incluye tricoscopía + analítica hormonal + 30 minutos con tu médico. Un análisis real, no una consulta comercial.',
       options: [
         { label: 'Saber exactamente qué tengo y qué opciones hay', value: 'diagnostico' },
         { label: 'Ver resultados de personas como yo', value: 'prueba-social' },
@@ -568,7 +568,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       id: 'inversion', block: 3,
       title: '¿Cuánto estarías dispuesto/a a invertir al mes en el cuidado de tu pelo si vieras resultados?',
       type: 'single',
-      microTip: 'La mayoría de personas que buscan solución para su caída han gastado entre 200€ y 1.000€ en productos sin diagnóstico previo. Un diagnóstico correcto es lo primero — todo lo demás viene después.',
+      microTip: 'La mayoría de personas que buscan solución para su caída han gastado entre 200€ y 1.000€ en productos sin un test capilar previo. Un test capilar correcto es lo primero — todo lo demás viene después.',
       options: [
         { label: 'Menos de 50€/mes', value: '<50' },
         { label: '50€ - 150€/mes', value: '50-150' },
@@ -581,7 +581,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       title: '¿Cómo te gustaría dar el siguiente paso?',
       type: 'single',
       options: [
-        { label: 'Quiero reservar una consulta presencial', value: 'presencial' },
+        { label: 'Quiero reservar un test capilar presencial', value: 'presencial' },
         { label: 'Prefiero que me llamen para explicarme', value: 'llamada' },
         { label: 'Quiero empezar ya — si hay un plan, lo quiero', value: 'directo' },
         { label: 'Necesito más información antes de decidir', value: 'info' }
@@ -591,7 +591,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     {
       id: 'captura', block: 4,
       title: '¡Ya casi está!',
-      subtitle: 'Para preparar tu diagnóstico personalizado, necesitamos tus datos:',
+      subtitle: 'Para preparar tu test capilar personalizado, necesitamos tus datos:',
       type: 'form',
       options: []
     }
@@ -726,7 +726,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     setFinalResult(result);
 
     // Track ECP classification for PostHog dashboard
-    analytics.trackEvent('lead_classified', { ecp, frame, traffic_source: trafficSource, funnel_type: funnelType, nicho });
+    analytics.trackEvent('lead_classified', { ecp, frame, traffic_source: trafficSource, funnel_type: funnelType, nicho, sexo: finalAnswers.sexo || null });
 
     // Generate labels and agent message FIRST (needed by GHL and Firestore)
     let agentMessage = '';
@@ -900,19 +900,10 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     'Lo Que Vino Con el Bebé',
   ];
 
-  // A/B test bono pricing — 50/50 split, persisted in sessionStorage
-  const STRIPE_LINKS = {
-    195: 'https://buy.stripe.com/8x2fZh6Qx6wxeES75tbAs04',
-    125: 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06',
-  };
-  const [bonoPrice] = useState(() => {
-    const stored = sessionStorage.getItem('hc_bono_price');
-    if (stored === '125' || stored === '195') return Number(stored);
-    const price = Math.random() < 0.5 ? 125 : 195;
-    sessionStorage.setItem('hc_bono_price', String(price));
-    return price;
-  });
-  const STRIPE_CHECKOUT_URL = STRIPE_LINKS[bonoPrice];
+  // Launch pricing — 195€ anchor tachado, 125€ oferta limitada (single funnel price)
+  const ORIGINAL_PRICE = 195;
+  const bonoPrice = 125;
+  const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06';
 
   const getCTAConfig = (ecp, perfil, frame) => {
     // DERIVACION — artículo educativo
@@ -959,8 +950,8 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       return {
         primary: { type: 'whatsapp', label: 'Agendar cita por WhatsApp', icon: 'WhatsApp', style: 'primary', badge: 'PASO RECOMENDADO' },
         secondary: null,
-        heading: 'Reserva tu diagnóstico presencial',
-        description: 'El siguiente paso es confirmar el pre-diagnóstico con un médico en clínica. Escríbenos por WhatsApp y te agendamos.',
+        heading: 'Reserva tu test capilar presencial',
+        description: 'El siguiente paso es confirmar el pre-análisis con un médico en clínica. Escríbenos por WhatsApp y te agendamos.',
       };
     }
 
@@ -974,12 +965,12 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           description: 'Un asesor médico te llamará para entender tu situación concreta y orientarte. Sin compromiso.',
         };
       }
-      // Perfil A o B → cobrar bono (A/B test 125€/195€)
+      // Perfil A o B → cobrar bono (oferta 195€ → 125€)
       return {
-        primary: { type: 'pagar_bono', label: `Reserva tu Diagnóstico — ${bonoPrice}€`, icon: 'Calendar', style: 'primary', badge: 'DIAGNÓSTICO COMPLETO' },
+        primary: { type: 'pagar_bono', label: `Reservar mi test — ${bonoPrice}€`, icon: 'Calendar', style: 'primary', badge: 'OFERTA LIMITADA' },
         secondary: null,
-        heading: 'Tu caso necesita un diagnóstico especializado',
-        description: 'La consulta incluye tricoscopía digital + analítica hormonal completa + plan de tratamiento personalizado. En 30 minutos tendrás respuestas.',
+        heading: 'Tu caso necesita un test capilar especializado',
+        description: 'El test incluye analítica hormonal completa + tricoscopia digital + valoración con médico especialista + informe personalizado. En 30 minutos tendrás respuestas.',
       };
     }
 
@@ -1311,7 +1302,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
             ¡Hola de nuevo, {returningLead.nombre.split(' ')[0]}!
           </h1>
           <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-            Ya completaste tu diagnóstico capilar. ¿Qué te gustaría hacer?
+            Ya completaste tu test capilar. ¿Qué te gustaría hacer?
           </p>
           <div className="space-y-3">
             <button
@@ -1319,7 +1310,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
               className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg hover:-translate-y-1 transition-transform"
               style={{ backgroundColor: theme.primary }}
             >
-              Repetir el diagnóstico
+              Repetir el test capilar
             </button>
             <button
               onClick={() => { handleCTAClick('returning_contact'); }}
@@ -1371,11 +1362,11 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
   // PANTALLA INTRO
   if (stepIndex === -1) {
     const nichoWelcome = nicho ? NICHO_WELCOME[nicho] : null;
-    const badgeText = nichoWelcome?.badge || 'Experiencia Diagnóstica Online';
+    const badgeText = nichoWelcome?.badge || 'Test Capilar Online';
     const headlineMain = nichoWelcome?.headline || 'Descubre si tu caso es';
     const headlineAccent = nichoWelcome?.headlineAccent || 'tratable o quirúrgico';
-    const subText = nichoWelcome?.subheadline || 'Responde a este diagnóstico interactivo (3-4 min). Nuestro sistema evaluará tu nivel de caída y definirá un pre-diagnóstico preciso.';
-    const ctaText = nichoWelcome?.cta || 'Iniciar Pre-Diagnóstico';
+    const subText = nichoWelcome?.subheadline || 'Responde a este test capilar interactivo (3-4 min). Nuestro sistema evaluará tu nivel de caída y definirá un pre-análisis preciso.';
+    const ctaText = nichoWelcome?.cta || 'Iniciar Pre-Análisis';
 
     return (
       <div className="min-h-screen bg-white font-sans text-gray-800 flex flex-col items-center justify-center p-6 relative">
@@ -1495,7 +1486,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
     const WA_PHONE = '34623457218';
     const refCode = (analytics.sessionId || '').slice(-6).toUpperCase();
     const waText = encodeURIComponent(
-      `Hola, soy ${firstName}. Acabo de completar el diagnóstico online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
+      `Hola, soy ${firstName}. Acabo de completar el test capilar online en Hospital Capilar (ref: ${refCode}). Me gustaría recibir más información sobre mi caso.`
     );
     const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
 
@@ -1523,14 +1514,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
 
     // ECP-specific subtitle for the header
     const ecpSubtitles = {
-      '¿Qué Me Pasa?': 'Tu caída necesita un diagnóstico real — no más productos a ciegas.',
-      'Es Normal': 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.',
+      '¿Qué Me Pasa?': 'Tu caída necesita un test capilar real — no más productos a ciegas.',
+      'Es Normal': 'Tu caída puede tener causa hormonal. Solo un test capilar especializado puede confirmarlo.',
       'El Espejo': 'Actuar temprano es la mejor decisión. Necesitas saber exactamente qué tienes.',
       'Ya Me Engañaron': 'Entendemos tus dudas. Hospital Capilar es un centro médico, no un centro estético.',
       'La Inversión': 'Tu trasplante necesita un plan de mantenimiento para proteger los resultados.',
-      'Lo Que Vino Con el Bebé': 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal con un estudio capilar completo.',
-      '¿Qué Me Pasa?': 'Google no puede diagnosticarte. Un diagnóstico profesional te dice exactamente qué ocurre.',
-      'La Farmacia': 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
+      'Lo Que Vino Con el Bebé': 'Tu caso necesita un test capilar que cruce tu perfil hormonal con un estudio capilar completo.',
+      '¿Qué Me Pasa?': 'Google no puede diagnosticarte. Un test capilar profesional te dice exactamente qué ocurre.',
+      'La Farmacia': 'Sin un test capilar, cualquier producto es una apuesta. Descubre qué necesitas realmente.',
     };
 
     return (
@@ -1546,7 +1537,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
       <div className="min-h-screen bg-[#F7F8FA] font-sans">
         {/* Top banner */}
         <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
-          Tu diagnóstico personalizado está listo
+          Tu pre-análisis personalizado está listo
         </div>
 
         <div className="max-w-lg mx-auto px-4 pb-40">
@@ -1589,7 +1580,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           {!isDerivacion && (
             <div className="mb-6">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                {ctaType === 'pagar_bono' ? 'Lo que incluye tu diagnóstico' : 'Lo que haremos por ti'}
+                {ctaType === 'pagar_bono' ? 'Lo que incluye tu test capilar' : 'Lo que haremos por ti'}
               </h3>
               <div className="space-y-2">
                 {includedItems.map((text, i) => (
@@ -1623,11 +1614,14 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
           {/* Price card (only for payment CTA) */}
           {ctaType === 'pagar_bono' && (
             <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#4CA994] text-white text-xs font-bold px-4 py-1 rounded-full">
-                DIAGNÓSTICO COMPLETO
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+                Oferta limitada
               </div>
               <div className="text-center pt-2">
-                <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
+                <div className="flex items-baseline justify-center gap-3">
+                  <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
+                  <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
+                </div>
                 <p className="text-sm text-gray-500 mt-1">Pago único · Se descuenta si inicias tratamiento</p>
               </div>
             </div>
@@ -1976,6 +1970,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
                     has_email: !!answers.email,
                     has_phone: !!answers.telefono,
                     ubicacion: answers.ubicacion,
+                    sexo: answers.sexo || null,
                   });
                   if (answers.email) {
                     analytics.trackEvent('$identify', { email: answers.email, name: answers.nombre });
@@ -1986,7 +1981,7 @@ const HospitalCapilarQuiz = ({ nicho = null, skipIntro = false }) => {
                 className="w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 style={{ backgroundColor: theme.primary }}
               >
-                Ver mi diagnóstico <ChevronRight size={18} />
+                Ver mi test capilar <ChevronRight size={18} />
               </button>
             </div>
           </div>

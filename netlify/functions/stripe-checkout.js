@@ -34,8 +34,8 @@ exports.handler = async (event) => {
     params.append('customer_email', email);
     params.append('line_items[0][price_data][currency]', 'eur');
     params.append('line_items[0][price_data][unit_amount]', amount.toString());
-    params.append('line_items[0][price_data][product_data][name]', 'Bono Diagnóstico Capilar');
-    params.append('line_items[0][price_data][product_data][description]', 'Tricoscopía digital + Analítica hormonal completa + Valoración médica personalizada + Plan de tratamiento');
+    params.append('line_items[0][price_data][product_data][name]', 'Test Capilar con Analítica Hormonal');
+    params.append('line_items[0][price_data][product_data][description]', 'Analítica hormonal completa + Tricoscopia digital + Valoración con médico especialista + Informe personalizado con plan de tratamiento');
 
     // Metadata at session level (for webhook) and payment_intent level
     params.append('metadata[contactId]', contactId || '');

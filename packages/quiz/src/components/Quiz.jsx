@@ -93,10 +93,10 @@ const DEFAULT_QUIZ_DATA = {
     white: '#FFFFFF'
   },
   intro: {
-    badge: 'Diagnóstico Capilar Online IA',
+    badge: 'Test Capilar Online IA',
     title: '¿Eres candidato para un\n*Injerto Capilar?*',
-    subtitle: 'Nuestro algoritmo médico analiza 8 factores clave de tu perfil para ofrecerte un pre-diagnóstico de viabilidad gratuito.',
-    buttonText: 'Comenzar Diagnóstico Gratuito',
+    subtitle: 'Nuestro algoritmo médico analiza 8 factores clave de tu perfil para ofrecerte un pre-análisis de viabilidad gratuito.',
+    buttonText: 'Comenzar Test Gratuito',
     footerText: 'Más de 5.000 pacientes evaluados este año.',
     features: ['Análisis Completo', 'Revisión Médica', '100% Privado']
   },
@@ -198,7 +198,7 @@ const DEFAULT_QUIZ_DATA = {
   leadForm: {
     formTitle: 'Recibe tu Informe Médico + Presupuesto',
     formSubtitle: 'Nuestro equipo médico te enviará por WhatsApp/Email la valoración detallada de tu caso y una estimación de unidades foliculares necesarias.',
-    consentText: 'Consiento el tratamiento de mis datos de salud para recibir el pre-diagnóstico médico personalizado.',
+    consentText: 'Consiento el tratamiento de mis datos de salud para recibir el pre-análisis médico personalizado.',
     trustBadges: ['ISHRS', 'WFI', 'FUE Europe']
   },
   // Árbol de decisión para resultados condicionales
@@ -247,7 +247,7 @@ const DEFAULT_QUIZ_DATA = {
           title: 'Recomendamos Esperar',
           description: 'Dado tu perfil joven y la reciente aparición de la caída, nuestros médicos recomiendan un seguimiento antes de considerar un injerto.',
           color: 'amber',
-          cta: { type: 'consultation', text: 'Solicitar Consulta de Seguimiento' }
+          cta: { type: 'consultation', text: 'Reservar Test Capilar' }
         }
       },
       {
@@ -282,7 +282,7 @@ const DEFAULT_QUIZ_DATA = {
         },
         result: {
           type: 'success',
-          title: 'Diagnóstico Preliminar: APTO',
+          title: 'Análisis Preliminar: APTO',
           description: 'Hemos analizado tus 8 respuestas. Según tu perfil, eres un candidato potencial para una intervención con alta densidad.',
           color: 'green',
           cta: { type: 'form', text: 'Recibir Informe Personalizado' }
@@ -569,7 +569,7 @@ const Quiz = ({ editableData, decisionTree: propDecisionTree, onStepChange, isEd
             <Dna className="absolute inset-0 m-auto text-gray-400" size={32} />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Procesando diagnóstico...</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Analizando tu caso...</h2>
           <p className="text-gray-500 mb-8">Analizando viabilidad de zona donante vs receptora</p>
 
           <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
@@ -612,7 +612,7 @@ const Quiz = ({ editableData, decisionTree: propDecisionTree, onStepChange, isEd
       info: { bg: 'bg-blue-50', border: 'border-blue-100', icon: 'bg-blue-100', iconText: 'text-blue-600', title: 'text-blue-800', text: 'text-blue-700' },
     };
     const colors = resultColors[computedResult?.type] || resultColors.success;
-    const displayResult = computedResult || { title: 'Diagnóstico Preliminar: APTO', description: 'Eres un candidato potencial.' };
+    const displayResult = computedResult || { title: 'Análisis Preliminar: APTO', description: 'Eres un candidato potencial.' };
 
     return (
       <div className="min-h-screen bg-white font-sans">

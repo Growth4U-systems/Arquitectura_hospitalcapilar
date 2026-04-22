@@ -50,7 +50,7 @@ export const SolutionSection = ({ solution }) => (
       <div className="grid md:grid-cols-3 gap-6 text-left">
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <Stethoscope size={28} className="text-[#4CA994] mb-3" />
-          <h3 className="font-bold text-gray-900 mb-2">Diagnóstico real</h3>
+          <h3 className="font-bold text-gray-900 mb-2">Test capilar real</h3>
           <p className="text-sm text-gray-500">Tricoscopía + analítica hormonal + valoración médica en 30 minutos.</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm">
@@ -126,7 +126,7 @@ const CLINIC_IMAGES = [
   { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/Recepcion_ywqbi8.jpg', alt: 'Recepción Hospital Capilar' },
   { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/hrt_d1vm3u.jpg', alt: 'Tratamiento capilar avanzado' },
   { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/mejores_cirujanos_de_injerto_capilar_w5ppmh.jpg', alt: 'Equipo médico Hospital Capilar' },
-  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/tratamientos_mujer_crt_gpxgxm.jpg', alt: 'Consulta capilar personalizada' },
+  { src: 'https://res.cloudinary.com/dsc0jsbkz/image/upload/f_auto,q_auto,w_800/v1773931166/tratamientos_mujer_crt_gpxgxm.jpg', alt: 'Test capilar personalizado' },
 ];
 
 export const ClinicGallerySection = () => (

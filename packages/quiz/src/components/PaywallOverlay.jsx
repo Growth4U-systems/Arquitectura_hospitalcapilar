@@ -8,11 +8,11 @@ const TESTIMONIALS_BY_ECP = {
   ],
   'Lo Que Vino Con el Bebé': [
     { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
-    { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
+    { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El test en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
   ],
   '¿Qué Me Pasa?': [
     { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer.', stars: 5 },
-    { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. La consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
+    { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El test me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
   ],
   'La Farmacia': [
     { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. En 6 meses noté la diferencia.', stars: 5 },
@@ -22,7 +22,7 @@ const TESTIMONIALS_BY_ECP = {
 
 const OBJECTIONS = {
   'Es Normal': [
-    { myth: 'No sé si mi caída tiene solución', truth: 'Un diagnóstico con tricoscopía + analítica hormonal te da la respuesta en 30 minutos.' },
+    { myth: 'No sé si mi caída tiene solución', truth: 'Un test capilar con tricoscopia + analítica hormonal te da la respuesta en 30 minutos.' },
     { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Nuestro equipo médico especializado en salud capilar cruza tu perfil hormonal con un estudio capilar completo. Nadie más los mira juntos.' },
     { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
   ],
@@ -32,28 +32,32 @@ const OBJECTIONS = {
     { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
   ],
   '¿Qué Me Pasa?': [
-    { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia. Solo un diagnóstico profesional te saca de dudas.' },
-    { myth: 'Busqué en Google y me asusté más', truth: 'Internet no puede diagnosticarte. Una tricoscopía + analítica en 30 minutos te da la respuesta real.' },
-    { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado combina microscopio + analítica + médico. Es el diagnóstico más completo para caída capilar.' },
+    { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia. Solo un test capilar profesional te saca de dudas.' },
+    { myth: 'Busqué en Google y me asusté más', truth: 'Internet no puede diagnosticarte. Una tricoscopia + analítica en 30 minutos te da la respuesta real.' },
+    { myth: 'No sé si ir al dermatólogo o a una clínica capilar', truth: 'Un centro especializado combina microscopio + analítica + médico. Es el test más completo para caída capilar.' },
   ],
   'La Farmacia': [
-    { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin diagnóstico. No es que no funcione — es que puede no ser lo que necesitas.' },
-    { myth: 'Los suplementos deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin diagnóstico es tirar dinero.' },
+    { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin saber la causa. No es que no funcione — es que puede no ser lo que necesitas.' },
+    { myth: 'Los suplementos deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin saber la causa es tirar dinero.' },
     { myth: 'Ya me gasté demasiado, para qué gastar más', truth: null }, // dynamic — uses bonoPrice
   ],
 };
 
 const getfaqs = (price) => [
-  { q: '¿Qué incluye exactamente el diagnóstico?', a: 'Tricoscopía digital (microscopio capilar de alta resolución), analítica hormonal completa, valoración médica personalizada de 30 minutos y plan de tratamiento detallado.' },
-  { q: `¿Los ${price}€ se descuentan si hago tratamiento?`, a: `Sí. Si decides iniciar tratamiento en Hospital Capilar, los ${price}€ del diagnóstico se descuentan íntegros del coste.` },
-  { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican con datos objetivos (microscopio + analítica) y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
+  { q: '¿Qué incluye exactamente el test capilar?', a: 'Analítica hormonal completa, tricoscopia digital (microscopio capilar de alta resolución), valoración con médico especialista (30 min) e informe personalizado con plan de tratamiento.' },
+  { q: `¿Por qué se paga por adelantado?`, a: `Reservamos 30 minutos de tiempo médico exclusivo y una analítica de laboratorio a tu nombre. El pago por adelantado garantiza tu plaza y nos permite preparar tu caso antes de la cita.` },
+  { q: `¿Los ${price}€ se descuentan si hago tratamiento?`, a: `Sí. Si decides iniciar tratamiento en Hospital Capilar, los ${price}€ del test se descuentan íntegros del coste.` },
+  { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te dan un informe objetivo (microscopio + analítica) y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
 ];
 
-const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 195 }) => {
+const ORIGINAL_PRICE = 195;
+
+const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 125 }) => {
   const [openFaq, setOpenFaq] = useState(null);
   const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
+  const discountPct = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
   const dynamicTruth = `Los ${bonoPrice}€ se descuentan íntegros si inicias tratamiento.`;
-  const dynamicOtcTruth = `Un diagnóstico de ${bonoPrice}€ (descontable) puede ahorrarte años de productos que no funcionan.`;
+  const dynamicOtcTruth = `Un test capilar de ${bonoPrice}€ (descontable) puede ahorrarte años de productos que no funcionan.`;
   const rawObjections = OBJECTIONS[ecp] || OBJECTIONS['Es Normal'];
   const objections = rawObjections.map(obj => ({
     ...obj,
@@ -66,7 +70,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
     <div className="fixed inset-0 z-50 bg-[#F7F8FA] overflow-y-auto">
       {/* Top banner */}
       <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
-        Tu diagnóstico personalizado está listo
+        Tu pre-análisis personalizado está listo
       </div>
 
       <div className="max-w-lg mx-auto px-4 pb-40">
@@ -84,12 +88,12 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           </h2>
           <p className="text-gray-500 text-sm">
             {ecp === 'Lo Que Vino Con el Bebé'
-              ? 'Tu caso necesita un diagnóstico que cruce tu perfil hormonal postparto con un estudio capilar completo.'
+              ? 'Tu caso necesita un test capilar que cruce tu perfil hormonal postparto con un estudio capilar completo.'
               : ecp === '¿Qué Me Pasa?'
-              ? 'Google no puede diagnosticarte. Solo una tricoscopía + analítica te dice exactamente qué ocurre.'
+              ? 'Google no puede diagnosticarte. Solo una tricoscopia + analítica hormonal te dice exactamente qué ocurre.'
               : ecp === 'La Farmacia'
-              ? 'Sin diagnóstico, cualquier producto es una apuesta. Descubre qué necesitas realmente.'
-              : 'Tu caída puede tener causa hormonal. Solo un diagnóstico especializado puede confirmarlo.'}
+              ? 'Sin saber la causa, cualquier producto es una apuesta. Descubre qué necesitas realmente.'
+              : 'Tu caída puede tener causa hormonal. Solo un test capilar especializado puede confirmarlo.'}
           </p>
         </div>
 
@@ -115,13 +119,13 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
         {/* What's included */}
         <div className="mb-6">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu diagnóstico</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu test capilar</h3>
           <div className="space-y-2">
             {[
-              'Tricoscopía digital con microscopio de alta resolución',
               'Analítica hormonal completa',
-              'Valoración médica personalizada (30 min)',
-              'Plan de tratamiento detallado',
+              'Tricoscopia digital con microscopio de alta resolución',
+              'Valoración con médico especialista (30 min)',
+              'Informe personalizado con plan de tratamiento',
             ].map((text, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
                 <div className="w-8 h-8 bg-[#F0F7F6] rounded-lg flex items-center justify-center shrink-0">
@@ -135,12 +139,16 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
         {/* Price card */}
         <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 mb-6 shadow-sm relative">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#4CA994] text-white text-xs font-bold px-4 py-1 rounded-full">
-            DIAGNÓSTICO COMPLETO
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+            Oferta limitada
           </div>
           <div className="text-center pt-2">
-            <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
-            <p className="text-sm text-gray-500 mt-1">Pago único · Se descuenta si inicias tratamiento</p>
+            <div className="flex items-baseline justify-center gap-3 flex-wrap">
+              <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}%</span>
+              <span className="text-gray-400 text-lg line-through">{ORIGINAL_PRICE}€</span>
+              <span className="text-4xl font-extrabold text-gray-900">{bonoPrice}€</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Pago único · Se descuenta si inicias tratamiento</p>
           </div>
         </div>
 
@@ -203,7 +211,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
             onClick={onPay}
             className="w-full bg-[#4CA994] hover:bg-[#3d9480] text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors"
           >
-            Reserva tu Diagnóstico — {bonoPrice}€
+            Reservar mi test — {bonoPrice}€
           </button>
           <button
             onClick={onCallRequest}

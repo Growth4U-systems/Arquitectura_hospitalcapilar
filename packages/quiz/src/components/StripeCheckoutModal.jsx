@@ -12,7 +12,7 @@ const getStripe = () => {
   return stripePromise;
 };
 
-const StripeCheckoutModal = ({ clientSecret, onComplete, onCancel, bonoPrice = 195 }) => {
+const StripeCheckoutModal = ({ clientSecret, onComplete, onCancel, bonoPrice = 125 }) => {
   const containerRef = useRef(null);
   const checkoutRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ const StripeCheckoutModal = ({ clientSecret, onComplete, onCancel, bonoPrice = 1
       <div className="w-full max-w-lg mx-4 my-8 bg-white rounded-2xl shadow-2xl overflow-hidden relative">
         {/* Header */}
         <div className="bg-[#4CA994] text-white px-5 py-3 flex items-center justify-between">
-          <span className="font-bold text-sm">Pago seguro — Bono Diagnóstico {bonoPrice}€</span>
+          <span className="font-bold text-sm">Pago seguro — Test Capilar {bonoPrice}€</span>
           <button onClick={onCancel} className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
             <X size={16} />
           </button>

@@ -26,7 +26,7 @@ const DIAGNOSTICO = {
   service: SERVICES.primera_consulta_diagnostico,
   hours: { madrid: { open: '09:00', close: '16:00' }, pontevedra: { open: '09:00', close: '16:00' }, murcia: { open: '09:00', close: '16:00' } },
   maxDaily: { madrid: 6, pontevedra: 6, murcia: 6 },
-  titulo: 'Diagnóstico Capilar',
+  titulo: 'Test Capilar con Analítica Hormonal',
 };
 
 // ── Flow B: Asesores (consulta de asesoría, sin bono) ──
@@ -432,7 +432,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     return {
       statusCode: 403,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'bono_required', message: 'Para agendar necesitas completar el pago del bono diagnóstico.' }),
+      body: JSON.stringify({ error: 'bono_required', message: 'Para reservar tu test capilar, primero completa el pago de la reserva.' }),
     };
   }
 
@@ -440,7 +440,7 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
   let clientId = body.koibox_client_id;
   if (!clientId && (email || movil)) {
     const syncResult = await syncLead(
-      { nombre, email, movil, ciudad: clinica, notas: notas || (isAsesoria ? 'Consulta Asesoría' : 'Bono Diagnóstico 195€'), sexo: body.sexo },
+      { nombre, email, movil, ciudad: clinica, notas: notas || (isAsesoria ? 'Consulta Asesoría' : 'Test Capilar 125€'), sexo: body.sexo },
       koiboxHeaders,
       corsHeaders,
     );
@@ -496,8 +496,8 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     notas: notas || (isAsesoria
       ? 'Reserva desde quiz online — Consulta de Asesoría'
       : bonoPaid
-        ? 'Reserva desde quiz online — ✅ BONO DIAGNÓSTICO PAGADO'
-        : 'Reserva desde quiz online — Diagnóstico Capilar'),
+        ? 'Reserva desde quiz online — ✅ TEST CAPILAR PAGADO'
+        : 'Reserva desde quiz online — Test Capilar'),
   };
   if (clientId) {
     appointmentPayload.cliente = clientId;

@@ -27,12 +27,12 @@ export const NICHOS = {
     ],
     testimonials: [
       { name: 'Alejandro R.', age: 22, text: 'Tenía 20 años y cada mañana veía las entradas peor. Mi padre es calvo. En HC me explicaron todas las opciones reales sin presión.', stars: 5 },
-      { name: 'Daniel P.', age: 26, text: 'No quería acabar como mi padre. Fui a tiempo, me hicieron un diagnóstico completo y ahora tengo un plan que funciona.', stars: 5 },
+      { name: 'Daniel P.', age: 26, text: 'No quería acabar como mi padre. Fui a tiempo, me hicieron un test capilar completo y ahora tengo un plan que funciona.', stars: 5 },
     ],
-    solution: 'No vendemos cirugías a jóvenes que no las necesitan. Primero diagnosticamos con microscopio + analítica. Después te explicamos todas las opciones reales — sin presión.',
+    solution: 'No vendemos cirugías a jóvenes que no las necesitan. Primero el test capilar con microscopio + analítica. Después te explicamos todas las opciones reales — sin presión.',
     faqs: [
       { q: '¿A los 20 ya puedo perder el pelo?', a: 'Sí. El 25% de los hombres empiezan a notar caída antes de los 25. La genética, las hormonas y el estrés pueden acelerar el proceso.' },
-      { q: '¿Si mi padre es calvo, yo también lo seré?', a: 'No necesariamente. La genética influye, pero no determina al 100%. Un diagnóstico temprano permite frenar o retrasar la caída significativamente.' },
+      { q: '¿Si mi padre es calvo, yo también lo seré?', a: 'No necesariamente. La genética influye, pero no determina al 100%. Un test capilar temprano permite frenar o retrasar la caída significativamente.' },
       { q: '¿Es muy pronto para un trasplante?', a: 'Depende. En muchos casos, a los 20-25 es mejor estabilizar la caída con tratamiento médico antes de plantearse una cirugía. Te lo explicamos sin presión.' },
       { q: '¿Los tratamientos tienen efectos secundarios?', a: 'Existen opciones con y sin efectos secundarios. Nuestros médicos te explican cada opción, sus pros y contras, para que tomes una decisión informada.' },
     ],
@@ -52,7 +52,7 @@ export const NICHOS = {
     stats: [
       { value: '40%', label: 'de mujeres sufren caída capilar' },
       { value: '80%', label: 'mal diagnosticadas la primera vez' },
-      { value: '30 min', label: 'diagnóstico integral completo' },
+      { value: '30 min', label: 'test capilar integral completo' },
     ],
     painPoints: [
       '¿Notas que se te ve el cuero cabelludo?',
@@ -66,7 +66,7 @@ export const NICHOS = {
     ],
     solution: 'Tu pelo y tus hormonas están conectados — y nuestro equipo los analiza juntos. Cruzamos tu perfil hormonal (menopausia, SOP, Hashimoto) con un estudio capilar completo.',
     faqs: [
-      { q: '¿Es normal que se me caiga el pelo en la menopausia?', a: 'Es frecuente, pero NO es "normal" y no tienes que aceptarlo. Un diagnóstico con analítica hormonal + tricoscopía identifica la causa exacta y las opciones de tratamiento.' },
+      { q: '¿Es normal que se me caiga el pelo en la menopausia?', a: 'Es frecuente, pero NO es "normal" y no tienes que aceptarlo. Un test capilar con analítica hormonal + tricoscopía identifica la causa exacta y las opciones de tratamiento.' },
       { q: '¿La caída por hormonas tiene solución?', a: 'En la mayoría de casos, sí. Pero necesitamos una analítica hormonal cruzada con un estudio capilar para identificar la causa exacta y diseñar el tratamiento correcto.' },
       { q: '¿Qué incluye la valoración?', a: 'Tricoscopía digital (microscopio capilar), revisión de tu historial hormonal, valoración médica personalizada y plan de acción. Todo en 30 minutos.' },
       { q: '¿Me van a intentar vender algo?', a: 'No. Nuestros médicos te diagnostican y te explican tus opciones. Si no necesitas tratamiento, te lo decimos. Sin presión comercial.' },
@@ -97,12 +97,12 @@ export const NICHOS = {
     ],
     testimonials: [
       { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron que tenía AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
-      { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El diagnóstico en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
+      { name: 'Sofía T.', age: 29, text: 'Creía que nunca iba a volver a tener mi pelo de antes. El test en HC me tranquilizó: era efluvio temporal. Me dieron un plan y en 4 meses estaba como antes.', stars: 5 },
     ],
     solution: 'Cruzamos tu perfil hormonal postparto con un estudio capilar completo. Si es efluvio temporal, te lo decimos. Si hay una alopecia subyacente, actuamos a tiempo.',
     faqs: [
       { q: '¿Es normal perder pelo después del parto?', a: 'Sí, el efluvio postparto es muy común. Pero si la caída persiste más de 6 meses, puede haber una alopecia subyacente que necesita tratamiento.' },
-      { q: '¿Cuándo debería preocuparme?', a: 'Si llevas más de 4-6 meses con caída intensa, si notas zonas con menos densidad, o si el pelo no vuelve a crecer, es momento de hacer un diagnóstico.' },
+      { q: '¿Cuándo debería preocuparme?', a: 'Si llevas más de 4-6 meses con caída intensa, si notas zonas con menos densidad, o si el pelo no vuelve a crecer, es momento de hacer un test capilar.' },
       { q: '¿Los tratamientos son compatibles con la lactancia?', a: 'Sí. Existen tratamientos seguros durante la lactancia. Nuestros médicos te indican opciones que no afectan al bebé.' },
       { q: '¿Mi pelo volverá a ser como antes?', a: 'En la mayoría de casos, sí. Si es efluvio temporal, se recupera solo o con ayuda. Si hay AGA, el tratamiento temprano frena la caída y recupera densidad.' },
     ],
@@ -132,14 +132,14 @@ export const NICHOS = {
     ],
     testimonials: [
       { name: 'María J.', age: 35, text: 'No sabía si era estrés o algo peor. Google me asustaba. En HC en 30 minutos supe exactamente qué tenía y qué hacer. El alivio fue enorme.', stars: 5 },
-      { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y la consulta me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
+      { name: 'Pablo R.', age: 31, text: 'Llevaba meses preocupado sin saber a quién ir. El quiz me orientó y el test capilar me quitó todas las dudas. Era mucho menos grave de lo que pensaba.', stars: 5 },
     ],
-    solution: 'No necesitas buscar más en Google. Un diagnóstico profesional con tricoscopía + analítica en 30 minutos te dice exactamente qué tienes y qué opciones hay.',
+    solution: 'No necesitas buscar más en Google. Un test capilar profesional con tricoscopía + analítica en 30 minutos te dice exactamente qué tienes y qué opciones hay.',
     faqs: [
-      { q: '¿Cómo sé si mi caída es normal o grave?', a: 'Perder 50-100 cabellos al día es fisiológico. Si notas más caída de lo habitual, claros, o menos densidad, un diagnóstico profesional te saca de dudas en 30 minutos.' },
-      { q: '¿Puede ser estrés?', a: 'Sí, el estrés puede causar efluvio telógeno. Pero también puede coincidir con alopecia genética u hormonal. Solo un diagnóstico diferencia una cosa de otra.' },
-      { q: '¿Necesito ir al dermatólogo o a una clínica capilar?', a: 'Un centro especializado en salud capilar combina tricoscopía + analítica + valoración médica. Es el diagnóstico más completo que existe para caída capilar.' },
-      { q: '¿El diagnóstico duele?', a: 'No. La tricoscopía es un microscopio que se apoya en el cuero cabelludo. Es completamente indoloro y dura 15-20 minutos.' },
+      { q: '¿Cómo sé si mi caída es normal o grave?', a: 'Perder 50-100 cabellos al día es fisiológico. Si notas más caída de lo habitual, claros, o menos densidad, un test capilar profesional te saca de dudas en 30 minutos.' },
+      { q: '¿Puede ser estrés?', a: 'Sí, el estrés puede causar efluvio telógeno. Pero también puede coincidir con alopecia genética u hormonal. Solo un test capilar diferencia una cosa de otra.' },
+      { q: '¿Necesito ir al dermatólogo o a una clínica capilar?', a: 'Un centro especializado en salud capilar combina tricoscopía + analítica + valoración médica. Es el test capilar más completo que existe para caída capilar.' },
+      { q: '¿El test capilar duele?', a: 'No. La tricoscopía es un microscopio que se apoya en el cuero cabelludo. Es completamente indoloro y dura 15-20 minutos.' },
     ],
     tags: ['nicho-que-me-pasa'],
   },
@@ -156,8 +156,8 @@ export const NICHOS = {
     ecp: 'Ya Me Engañaron',
     stats: [
       { value: '35%', label: 'de pacientes vienen de otra clínica' },
-      { value: '0', label: 'presión comercial en la consulta' },
-      { value: '100%', label: 'transparencia con tu diagnóstico' },
+      { value: '0', label: 'presión comercial en el test capilar' },
+      { value: '100%', label: 'transparencia con tu test capilar' },
     ],
     painPoints: [
       '¿Te prometieron resultados que nunca llegaron?',
@@ -174,7 +174,7 @@ export const NICHOS = {
       { q: '¿Puedo arreglar un trasplante mal hecho?', a: 'En muchos casos sí. Primero evaluamos el estado actual con tricoscopía y determinamos qué opciones hay. Cada caso es diferente.' },
       { q: '¿Me van a intentar vender otra cirugía?', a: 'No. Nuestros médicos te explican qué se puede y qué no se puede hacer. Si la mejor opción es no intervenir, te lo decimos.' },
       { q: '¿Es confidencial?', a: 'Absolutamente. Todo lo que compartas con nuestro equipo médico es confidencial. No necesitas decirnos dónde te operaste si no quieres.' },
-      { q: '¿Cuánto cuesta la segunda opinión?', a: 'Te llamamos sin compromiso para entender tu caso. La consulta presencial incluye un diagnóstico completo con datos objetivos.' },
+      { q: '¿Cuánto cuesta la segunda opinión?', a: 'Te llamamos sin compromiso para entender tu caso. El test capilar presencial incluye un análisis completo con datos objetivos.' },
     ],
     tags: ['nicho-ya-me-engañaron'],
   },
@@ -190,8 +190,8 @@ export const NICHOS = {
     ctaForm: 'SOLICITAR VALORACIÓN',
     ecp: 'La Farmacia',
     stats: [
-      { value: '60%', label: 'no responden a minoxidil sin diagnóstico' },
-      { value: '€500+', label: 'gasto medio antes del diagnóstico' },
+      { value: '60%', label: 'no responden a minoxidil sin test capilar' },
+      { value: '€500+', label: 'gasto medio antes del test capilar' },
       { value: '30 min', label: 'para saber qué necesitas realmente' },
     ],
     painPoints: [
@@ -204,12 +204,12 @@ export const NICHOS = {
       { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. Cambiaron el tratamiento y en 6 meses noté la diferencia.', stars: 5 },
       { name: 'Andrea L.', age: 33, text: 'Probé todo lo de la farmacia durante 2 años. Nada. En Hospital Capilar me dijeron exactamente por qué no funcionaba y qué sí iba a funcionar.', stars: 5 },
     ],
-    solution: 'Sin diagnóstico, cualquier producto es una apuesta. Hacemos tricoscopía + analítica para identificar tu tipo exacto de alopecia y diseñar un tratamiento que funcione de verdad.',
+    solution: 'Sin un test capilar, cualquier producto es una apuesta. Hacemos tricoscopía + analítica para identificar tu tipo exacto de alopecia y diseñar un tratamiento que funcione de verdad.',
     faqs: [
-      { q: '¿Por qué el minoxidil no me funciona?', a: 'Hay más de 20 tipos de alopecia. Si no sabes cuál tienes, el tratamiento puede no ser el adecuado. Un diagnóstico preciso es el primer paso.' },
-      { q: '¿Los suplementos anticaída sirven para algo?', a: 'Algunos pueden complementar un tratamiento médico, pero por sí solos no resuelven una alopecia androgenética ni hormonal. Primero diagnóstico, después tratamiento.' },
-      { q: '¿Necesito trasplante o tratamiento médico?', a: 'Depende de tu tipo de alopecia, tu edad y el grado de pérdida. Nuestros médicos te lo explican con datos reales después del diagnóstico.' },
-      { q: '¿Cuánto cuesta dejar de adivinar?', a: 'El diagnóstico completo se descuenta íntegro si inicias tratamiento. Compáralo con los €500+ que ya has gastado sin resultado.' },
+      { q: '¿Por qué el minoxidil no me funciona?', a: 'Hay más de 20 tipos de alopecia. Si no sabes cuál tienes, el tratamiento puede no ser el adecuado. Un test capilar preciso es el primer paso.' },
+      { q: '¿Los suplementos anticaída sirven para algo?', a: 'Algunos pueden complementar un tratamiento médico, pero por sí solos no resuelven una alopecia androgenética ni hormonal. Primero el test, después tratamiento.' },
+      { q: '¿Necesito trasplante o tratamiento médico?', a: 'Depende de tu tipo de alopecia, tu edad y el grado de pérdida. Nuestros médicos te lo explican con datos reales después del test capilar.' },
+      { q: '¿Cuánto cuesta dejar de adivinar?', a: 'El test capilar completo se descuenta íntegro si inicias tratamiento. Compáralo con los €500+ que ya has gastado sin resultado.' },
     ],
     tags: ['nicho-farmacia-sin-salida'],
   },

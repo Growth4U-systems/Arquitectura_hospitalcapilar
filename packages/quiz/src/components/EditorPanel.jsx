@@ -191,12 +191,12 @@ function ContentTab({ quiz, currentStep, expandedSection, setExpandedSection, on
           />
           <InputField
             label="Texto del Botón"
-            value={quiz.intro?.buttonText || 'Comenzar Diagnóstico Gratuito'}
+            value={quiz.intro?.buttonText || 'Comenzar Test Gratuito'}
             onChange={(val) => onUpdateQuiz({ intro: { ...quiz.intro, buttonText: val }})}
           />
           <InputField
             label="Badge Superior"
-            value={quiz.intro?.badge || 'Diagnóstico Capilar Online IA'}
+            value={quiz.intro?.badge || 'Test Capilar Online IA'}
             onChange={(val) => onUpdateQuiz({ intro: { ...quiz.intro, badge: val }})}
           />
         </div>
@@ -268,7 +268,7 @@ function ContentTab({ quiz, currentStep, expandedSection, setExpandedSection, on
         <div className="space-y-3">
           <InputField
             label="Título del Resultado"
-            value={quiz.leadForm?.resultTitle || 'Diagnóstico Preliminar: APTO'}
+            value={quiz.leadForm?.resultTitle || 'Análisis Preliminar: APTO'}
             onChange={(val) => onUpdateQuiz({ leadForm: { ...quiz.leadForm, resultTitle: val }})}
           />
           <InputField
@@ -494,7 +494,7 @@ function SettingsTab({ quiz, onUpdateQuiz }) {
                   <textarea
                     value={quiz.cta?.whatsappMessage || ''}
                     onChange={(e) => onUpdateQuiz({ cta: { ...quiz.cta, whatsappMessage: e.target.value }})}
-                    placeholder="Hola, acabo de completar el diagnóstico..."
+                    placeholder="Hola, acabo de completar el test capilar..."
                     rows={2}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm resize-none"
                   />

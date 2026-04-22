@@ -86,7 +86,7 @@ function buildWelcomeHTML({ nombre, ecp }) {
               <p style="margin: 0 0 16px;">
                 Muy pronto, uno de nuestros especialistas capilares se pondrá
                 en contacto contigo para resolver todas tus dudas y proceder
-                con tu <strong>diagnóstico médico gratuito</strong>.
+                con tu <strong>pre-análisis médico gratuito</strong>.
               </p>
               <p style="margin: 0;">
                 Si lo prefieres, puedes contactar directamente llamando o

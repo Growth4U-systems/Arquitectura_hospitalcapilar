@@ -69,7 +69,7 @@ const NichoLanding = ({ nicho, onStartQuiz }) => {
             El primer paso es saber dónde estás
           </h2>
           <p className="text-lg text-gray-300 mb-8">
-            Responde nuestro diagnóstico interactivo y recibe un pre-diagnóstico personalizado en minutos.
+            Responde nuestro test capilar interactivo y recibe un pre-análisis personalizado en minutos.
           </p>
           <button
             onClick={handleStart}

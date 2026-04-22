@@ -105,7 +105,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
         });
         if (onBooked) onBooked(data);
       } else if (data.error === 'bono_required') {
-        alert('Para poder agendar tu cita, primero necesitas completar el pago del bono diagnóstico.');
+        alert('Para poder agendar tu cita, primero necesitas completar el pago del test capilar.');
       } else if (data.error === 'daily_limit_reached') {
         alert('No quedan huecos disponibles para este día. Por favor selecciona otra fecha.');
         setSelectedSlot(null);
@@ -188,8 +188,8 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
 
         <p className="text-xs text-gray-400 mt-6">
           {tipoConsulta === 'asesoria'
-            ? 'Asesoría Capilar · Consulta personalizada 60 min'
-            : 'Diagnóstico Capilar Completo · Tricoscopía + Analítica + Valoración 30 min'}
+            ? 'Asesoría Capilar · Sesión personalizada 60 min'
+            : 'Test Capilar Completo · Analítica + Tricoscopia + Valoración 30 min'}
         </p>
       </div>
     );
@@ -200,7 +200,7 @@ const BookingCalendar = ({ ubicacion, nombre, email, telefono, contactId, onBook
     return (
       <div>
         <h3 className="font-bold text-gray-900 mb-1">Elige tu clínica</h3>
-        <p className="text-sm text-gray-500 mb-4">Selecciona dónde quieres tu {tipoConsulta === 'asesoria' ? 'asesoría' : 'diagnóstico'} presencial.</p>
+        <p className="text-sm text-gray-500 mb-4">Selecciona dónde quieres tu {tipoConsulta === 'asesoria' ? 'asesoría' : 'test capilar'} presencial.</p>
         <div className="space-y-2">
           {Object.entries(CLINICS).map(([key, clinic]) => (
             <button

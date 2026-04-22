@@ -62,12 +62,12 @@ const SITUACION_ECP = {
 // ECP result messages (short version)
 const ECP_MESSAGES = {
   '¿Qué Me Pasa?': {
-    title: 'Tu caída necesita un diagnóstico profesional',
+    title: 'Tu caída necesita un test capilar profesional',
     body: 'Sin una tricoscopía y analítica, cualquier tratamiento es una apuesta. En 30 minutos sabrás exactamente qué tienes.',
   },
   'El Espejo': {
     title: 'Actuar temprano es la mejor decisión',
-    body: 'Cuanto antes se diagnostica, más opciones tienes. La caída no se frena sola — pero con diagnóstico a tiempo, los resultados son excelentes.',
+    body: 'Cuanto antes se diagnostica, más opciones tienes. La caída no se frena sola — pero con un test capilar a tiempo, los resultados son excelentes.',
   },
   'Es Normal': {
     title: 'Tu caída puede estar conectada a un desbalance hormonal',
@@ -75,19 +75,19 @@ const ECP_MESSAGES = {
   },
   'Lo Que Vino Con el Bebé': {
     title: 'Necesitas saber si es temporal o algo más',
-    body: 'El efluvio postparto es temporal en la mayoría de casos. Pero a veces revela una alopecia subyacente. Un diagnóstico te saca de dudas.',
+    body: 'El efluvio postparto es temporal en la mayoría de casos. Pero a veces revela una alopecia subyacente. Un test capilar te saca de dudas.',
   },
   'La Inversión': {
     title: 'Tu trasplante necesita un plan de mantenimiento',
-    body: 'El pelo trasplantado no se cae, pero el nativo sí. Un diagnóstico evalúa tu situación actual y protege tu inversión.',
+    body: 'El pelo trasplantado no se cae, pero el nativo sí. Un test capilar evalúa tu situación actual y protege tu inversión.',
   },
   'Ya Me Engañaron': {
     title: 'Entendemos que tengas dudas',
     body: 'Hospital Capilar es un centro médico, no estético. Médicos que diagnostican con datos y te dicen la verdad. Sin presión.',
   },
   'La Farmacia': {
-    title: 'No es que los productos no sirvan — es que necesitas un diagnóstico',
-    body: 'El 60% de personas no responden a minoxidil porque nunca les diagnosticaron correctamente. Un diagnóstico cambia todo.',
+    title: 'No es que los productos no sirvan — es que necesitas un test capilar',
+    body: 'El 60% de personas no responden a minoxidil porque nunca les diagnosticaron correctamente. Un test capilar cambia todo.',
   },
   'No candidato': {
     title: 'Tu caso requiere atención especializada',
@@ -302,8 +302,8 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
 
     analytics.trackQuizCompleted(answers);
     analytics.trackFormSubmitted({ name: form.nombre, email: form.email, phone: form.telefono }, answers);
-    analytics.trackEvent('short_quiz_completed', { nicho, ecp, contactScore });
-    analytics.trackEvent('lead_classified', { ecp, traffic_source: classifyTrafficSource(utmParams), funnel_type: 'quiz_corto', nicho });
+    analytics.trackEvent('short_quiz_completed', { nicho, ecp, contactScore, sexo: answers.sexo || null });
+    analytics.trackEvent('lead_classified', { ecp, traffic_source: classifyTrafficSource(utmParams), funnel_type: 'quiz_corto', nicho, sexo: answers.sexo || null });
 
     // Fake analysis delay
     setTimeout(() => {
@@ -321,7 +321,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
         <div className="text-center px-6">
           <Loader2 size={48} className="text-[#4CA994] animate-spin mx-auto mb-6" />
           <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Analizando tus respuestas...</h2>
-          <p className="text-gray-500">Nuestro sistema está preparando tu pre-diagnóstico.</p>
+          <p className="text-gray-500">Nuestro sistema está preparando tu pre-análisis.</p>
         </div>
       </div>
     );
@@ -336,7 +336,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
     const isDerivacion = ecp === 'No candidato';
     const WA_PHONE = '34623457218';
     const waText = encodeURIComponent(
-      `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de completar el diagnóstico rápido en Hospital Capilar. Me gustaría recibir más información.`
+      `Hola, soy ${form.nombre.split(' ')[0]}. Acabo de completar el test capilar rápido en Hospital Capilar. Me gustaría recibir más información.`
     );
     const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
 
@@ -360,25 +360,25 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
     const getRecommendation = () => {
       if (isDerivacion) return null;
       if (answers.urgencia === 'alta' && (answers.tiempo === '1-3a' || answers.tiempo === '3a+')) {
-        return 'Llevas tiempo con este problema y estás listo para actuar. Es el momento perfecto para un diagnóstico profesional que te dé respuestas concretas.';
+        return 'Llevas tiempo con este problema y estás listo para actuar. Es el momento perfecto para un test capilar profesional que te dé respuestas concretas.';
       }
       if (answers.urgencia === 'alta') {
-        return 'Tu disposición a actuar es clave. Un diagnóstico profesional ahora puede ahorrarte meses de tratamientos que no funcionan.';
+        return 'Tu disposición a actuar es clave. Un test capilar profesional ahora puede ahorrarte meses de tratamientos que no funcionan.';
       }
       if (answers.tiempo === '3a+') {
-        return 'Llevas más de 3 años con este problema. Cuanto más tiempo pasa, menos opciones hay. Un diagnóstico a tiempo marca la diferencia.';
+        return 'Llevas más de 3 años con este problema. Cuanto más tiempo pasa, menos opciones hay. Un test capilar a tiempo marca la diferencia.';
       }
       if (answers.tiempo === '1-3a') {
-        return 'Con 1-3 años de evolución, estás a tiempo de frenar la progresión. Un diagnóstico profesional es el primer paso.';
+        return 'Con 1-3 años de evolución, estás a tiempo de frenar la progresión. Un test capilar profesional es el primer paso.';
       }
-      return 'Un diagnóstico profesional es el mejor primer paso. Te permite entender exactamente qué ocurre y qué opciones tienes.';
+      return 'Un test capilar profesional es el mejor primer paso. Te permite entender exactamente qué ocurre y qué opciones tienes.';
     };
 
     return (
       <div className="min-h-screen bg-[#F7F8FA] font-sans">
         {/* Top banner */}
         <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
-          Tu diagnóstico personalizado está listo
+          Tu pre-análisis personalizado está listo
         </div>
 
         <div className="max-w-lg mx-auto px-4 pb-40">
@@ -415,7 +415,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
               </div>
               <div>
                 <h3 className="text-gray-900 font-bold text-sm">Tu Perfil Capilar</h3>
-                <p className="text-gray-400 text-xs">{situacionLabels[answers.situacion] || 'Pre-diagnóstico'}</p>
+                <p className="text-gray-400 text-xs">{situacionLabels[answers.situacion] || 'Pre-análisis'}</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
@@ -609,7 +609,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
               <div className="mb-5">
                 <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 1 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¿Cuál es tu sexo biológico?</h2>
-                <p className="text-gray-500 text-sm">La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para un diagnóstico preciso.</p>
+                <p className="text-gray-500 text-sm">La caída capilar tiene causas hormonales distintas en hombres y mujeres. Necesitamos saberlo para un test capilar preciso.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -754,7 +754,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
               <div className="mb-5">
                 <span className="text-xs font-bold tracking-wider text-[#4CA994] uppercase mb-1.5 block">Paso 5 de {totalSteps}</span>
                 <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">¡Ya casi está!</h2>
-                <p className="text-gray-500 text-sm">Para preparar tu pre-diagnóstico, necesitamos tus datos:</p>
+                <p className="text-gray-500 text-sm">Para preparar tu pre-análisis, necesitamos tus datos:</p>
               </div>
               <div className="space-y-3">
                 <div>
@@ -802,7 +802,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
                   disabled={!form.nombre || !form.email || !form.telefono || !form.provincia || !form.consentPrivacidad || submitting}
                   className="w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-[#4CA994] hover:-translate-y-0.5"
                 >
-                  {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Ver mi pre-diagnóstico <ArrowRight size={18} /></>}
+                  {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Ver mi pre-análisis <ArrowRight size={18} /></>}
                 </button>
               </div>
             </div>
@@ -838,7 +838,7 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
             onClick={handleStartQuiz}
             className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-bold text-lg shadow-xl hover:-translate-y-1 hover:shadow-2xl transition-all bg-[#4CA994]"
           >
-            Diagnóstico rápido (1 min)
+            Test capilar rápido (1 min)
             <ArrowRight size={22} />
           </button>
           <p className="text-sm text-gray-400 mt-4">5 preguntas | 100% confidencial | Sin compromiso</p>
@@ -860,13 +860,13 @@ const ShortQuizLanding = ({ nicho = 'que-me-pasa' }) => {
             El primer paso es saber dónde estás
           </h2>
           <p className="text-lg text-gray-300 mb-8">
-            Responde 4 preguntas y recibe un pre-diagnóstico personalizado en 1 minuto.
+            Responde 4 preguntas y recibe un pre-análisis personalizado en 1 minuto.
           </p>
           <button
             onClick={handleStartQuiz}
             className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-bold text-lg shadow-xl hover:-translate-y-1 hover:shadow-2xl transition-all bg-[#4CA994]"
           >
-            Diagnóstico rápido (1 min)
+            Test capilar rápido (1 min)
             <ArrowRight size={22} />
           </button>
         </div>
