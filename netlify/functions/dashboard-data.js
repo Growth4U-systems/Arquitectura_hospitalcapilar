@@ -283,19 +283,16 @@ exports.handler = async (event) => {
         ORDER BY q_idx ASC NULLS LAST
       `),
 
-      // By sexo — same columns as by_funnel_type. Sexo arrives from:
-      // - event property (set by the quiz/form on quiz_completed / form_submitted)
-      // - person property (set via $identify at form submit, and by the GHL sync
-      //   that writes GHL custom field sexo into the person). The person fallback
-      //   lets us attribute pageviews & quiz_starteds to the same sexo retroactively
-      //   once the user identifies later in the funnel.
+      // By sexo — resolve sexo at the PERSON level only (not the event level).
+      // A single opportunity can have multiple appointment_booked events across
+      // sync re-runs; some may have properties.sexo=null while others have it
+      // populated. Grouping by the event-level field would split the same opp
+      // across buckets. Person.properties.sexo is consistent across ALL events
+      // of the same person (set once by GHL sync $set / $identify), so it gives
+      // a stable per-opportunity bucket.
       hogqlQuery(apiKey, `
         SELECT
-          coalesce(
-            nullIf(lower(toString(properties.sexo)), ''),
-            nullIf(lower(toString(person.properties.sexo)), ''),
-            'sin-dato'
-          ) as sexo,
+          coalesce(nullIf(lower(toString(person.properties.sexo)), ''), 'sin-dato') as sexo,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
           countIf(
             event = 'short_quiz_started'
