@@ -549,11 +549,13 @@ function renderDashboard(data) {
 
 // ─── Master funnel table ──────────────────────────────────────────
 let _masterFunnelRows = [];
+let _lastDashboardData = null;
 const PAGO_COLORS = { '195': '#f87171', '125': '#facc15', '0': '#94a3b8', clinica: '#5fbfa8', unknown: '#78716c' };
 const CHANNEL_COLORS = { Meta: '#1877f2', Google: '#34a853', SEO: '#a855f7', TikTok: '#ff0050', Directo: '#6b7280', 'Sin dato': '#78716c' };
 const MASTER_LANDING_LABELS = { quiz_largo: 'Quiz Largo', quiz_corto: 'Quiz Corto', formulario_directo: 'Form Directo', form_directo: 'Form Directo', form: 'Form Directo', 'sin-dato': 'Sin dato' };
 
 function renderMasterFunnel(data) {
+  _lastDashboardData = data;
   _masterFunnelRows = (data.by_master_funnel || []).slice();
   if (_masterFunnelRows.length === 0) {
     document.getElementById('masterFunnelTable').innerHTML = '<tbody><tr><td style="padding:20px;text-align:center;color:#666;">Sin datos de GHL</td></tr></tbody>';
@@ -648,6 +650,20 @@ function paintMasterFunnel() {
   const fCampaign = document.getElementById('mfFilterCampaign').value;
   const fMinLeads = parseInt(document.getElementById('mfFilterMinLeads').value) || 0;
 
+  // Build spend lookup keyed by Meta campaign_name. We use this to attach
+  // total spend to each campaign row in the tree — spend is only available
+  // at campaign level (sync-ad-spend.js queries Meta with level='campaign'),
+  // so adset / ad rows don't get per-row spend.
+  const spendByCampaign = {};
+  (_lastDashboardData?.ad_spend_by_campaign || []).forEach(r => {
+    const key = (r.campaign_name || '').trim();
+    if (!key) return;
+    if (!spendByCampaign[key]) spendByCampaign[key] = { spend: 0, clicks: 0, impressions: 0, source: r.source };
+    spendByCampaign[key].spend       += Number(r.spend) || 0;
+    spendByCampaign[key].clicks      += Number(r.clicks) || 0;
+    spendByCampaign[key].impressions += Number(r.impressions) || 0;
+  });
+
   const filtered = _masterFunnelRows.filter(r =>
     (!fChannel  || r.channel === fChannel) &&
     (!fLanding  || r.landing === fLanding) &&
@@ -701,6 +717,16 @@ function paintMasterFunnel() {
     addTo(ad, r);
   }
 
+  // Attach spend to each campaign node based on its canonical name
+  let totalSpend = 0;
+  for (const camp of tree.values()) {
+    const info = spendByCampaign[camp.key];
+    if (info) {
+      camp.spend = info.spend;
+      totalSpend += info.spend;
+    }
+  }
+
   const totalLeads = filtered.reduce((s, r) => s + r.leads, 0);
   const totalBooked = filtered.reduce((s, r) => s + r.booked, 0);
   const totalPaid = filtered.reduce((s, r) => s + r.paid, 0);
@@ -710,11 +736,13 @@ function paintMasterFunnel() {
 
   document.getElementById('mfRowCount').textContent = `${tree.size} campañas · ${filtered.length} filas base · ${totalLeads} leads · ${totalBooked} citas · ${totalPaid} pagos`;
 
-  // Single header: each % sits between the two counts it compares so the
-  // eye reads left-to-right as a conversion cascade.
+  // Single header: cascade order. Gasto sits at the start (money in),
+  // CPL/CPA at the end (cost per outcome) — aggregated at campaign level
+  // only (ad_spend is campaign-granular until Miguel applies ad.id tracking).
   let html = `<thead><tr>
     <th style="width:36px;"></th>
     <th>Campa&ntilde;a / AdSet / Anuncio</th>
+    <th class="num" style="border-left:2px solid var(--hc-card-border);">Gasto</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);">Visitas</th>
     <th class="num">V&rarr;I %</th>
     <th class="num">Iniciados</th>
@@ -727,8 +755,12 @@ function paintMasterFunnel() {
     <th class="num">C&rarr;P %</th>
     <th class="num">Pagos</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);font-weight:700;">V&rarr;C %</th>
+    <th class="num" style="border-left:2px solid var(--hc-card-border);">CPL</th>
+    <th class="num">CPA</th>
     <th style="border-left:2px solid var(--hc-card-border);">Links</th>
   </tr></thead><tbody>`;
+
+  const fmtEurLocal = (n) => n == null ? '-' : '€' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const renderMetricsCells = (n, isLeaf) => {
     const viR = pctNum(n.started,   n.visits);    // Visitas → Iniciados
@@ -748,7 +780,27 @@ function paintMasterFunnel() {
     const vcCell = n.visits    > 0
       ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>`
       : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
+
+    // Gasto / CPL / CPA — only populated when n.spend is present (campaign-
+    // level aggregates). Adsets/ads pass through as dashes because Meta
+    // sync is campaign-granular.
+    const spend = n.spend;
+    const cpl   = (spend != null && n.leads  > 0) ? spend / n.leads  : null;
+    const cpa   = (spend != null && n.booked > 0) ? spend / n.booked : null;
+    const spendCell = spend != null
+      ? `<td class="num" style="border-left:2px solid var(--hc-card-border);font-weight:600;">${fmtEurLocal(spend)}</td>`
+      : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
+    const cplClass = cpl == null ? '' : (cpl < 10 ? 'good' : cpl < 25 ? 'warn' : 'bad');
+    const cpaClass = cpa == null ? '' : (cpa < 50 ? 'good' : cpa < 150 ? 'warn' : 'bad');
+    const cplCell = cpl != null
+      ? `<td class="num ${cplClass}" style="border-left:2px solid var(--hc-card-border);">${fmtEurLocal(cpl)}</td>`
+      : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
+    const cpaCell = cpa != null
+      ? `<td class="num ${cpaClass}">${fmtEurLocal(cpa)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
+
     return `
+      ${spendCell}
       <td class="num" style="border-left:2px solid var(--hc-card-border);">${n.visits > 0 ? fmt(n.visits) : '<span style="color:#666;">&mdash;</span>'}</td>
       ${viCell}
       <td class="num">${n.started > 0 ? fmt(n.started) : '<span style="color:#666;">&mdash;</span>'}</td>
@@ -761,6 +813,8 @@ function paintMasterFunnel() {
       ${cpCell}
       <td class="num">${fmt(n.paid)}</td>
       ${vcCell}
+      ${cplCell}
+      ${cpaCell}
     `;
   };
 
@@ -840,6 +894,7 @@ function paintMasterFunnel() {
   const totalRow = {
     visits: totalVisits, started: totalStarted, completed: totalCompleted,
     leads: totalLeads, booked: totalBooked, paid: totalPaid,
+    spend: totalSpend > 0 ? totalSpend : null,
   };
   html += `<tr style="font-weight:800;border-top:2px solid #444;background:rgba(76,169,148,0.08);">
     <td></td>
