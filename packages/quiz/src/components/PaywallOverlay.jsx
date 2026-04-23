@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Check, X, Star, ChevronDown, Lock, Phone, Clock } from 'lucide-react';
+import HCHeader from './HCHeader';
 
 const TESTIMONIALS_BY_ECP = {
   'Es Normal': [
@@ -62,7 +63,7 @@ const getfaqs = (price) => [
 
 const ORIGINAL_PRICE = 195;
 
-const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 125 }) => {
+const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 125, brandHeader = false }) => {
   const [openFaq, setOpenFaq] = useState(null);
   const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
   const discountPct = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
@@ -93,10 +94,14 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
   return (
     <div className="fixed inset-0 z-50 bg-[#F7F8FA] overflow-y-auto">
-      {/* Top banner */}
-      <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
-        Tu pre-análisis personalizado está listo
-      </div>
+      {/* Top header — HC brand (standalone) or green preanalysis banner (in-quiz) */}
+      {brandHeader ? (
+        <HCHeader />
+      ) : (
+        <div className="bg-[#4CA994] text-white text-center py-3 px-4 text-sm font-semibold sticky top-0 z-10">
+          Tu pre-análisis personalizado está listo
+        </div>
+      )}
 
       <div className="max-w-lg mx-auto px-4 pb-40">
         {/* Close button — only when onClose is provided (hidden on standalone paywall) */}

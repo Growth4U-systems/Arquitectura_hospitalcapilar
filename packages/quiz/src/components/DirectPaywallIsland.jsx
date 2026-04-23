@@ -108,6 +108,7 @@ function DirectPaywallInner() {
       onPay={handleStartPayment}
       onCallRequest={undefined} // Standalone paywall: no call-me fallback, pay-only
       onClose={undefined} // Standalone paywall: no close button — it's the whole page
+      brandHeader={true} // Render HC header with full nav for trust/brand consistency
     />
   );
 }
