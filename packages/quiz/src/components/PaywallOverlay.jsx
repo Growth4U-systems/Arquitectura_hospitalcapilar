@@ -18,6 +18,11 @@ const TESTIMONIALS_BY_ECP = {
     { name: 'Carlos M.', age: 38, text: 'Llevaba 3 años gastando en Olistic, champús, minoxidil. €800 tirados. En HC descubrieron que mi alopecia era mixta. En 6 meses noté la diferencia.', stars: 5 },
     { name: 'Andrea L.', age: 33, text: 'Probé todo lo de la farmacia durante 2 años. Nada. En HC me dijeron exactamente por qué no funcionaba y qué sí iba a funcionar.', stars: 5 },
   ],
+  'Protocolo Mujer': [
+    { name: 'Laura M.', age: 52, text: 'Desde la menopausia se me caía a puñados. Mi médica decía que era normal. En HC cruzaron mi perfil hormonal con tricoscopía y encontraron la causa real.', stars: 5 },
+    { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron AGA subyacente. Actué a tiempo y estoy recuperando densidad.', stars: 5 },
+    { name: 'Patricia G.', age: 48, text: 'Llevaba un año con caída brutal. En IMD me vendieron láser sin diagnosticar. En HC hicieron analítica completa y encontraron SOP. Ese era el problema real.', stars: 5 },
+  ],
 };
 
 const OBJECTIONS = {
@@ -40,6 +45,11 @@ const OBJECTIONS = {
     { myth: 'Si el minoxidil no funciona, no hay nada que hacer', truth: 'El 60% no responde a minoxidil sin saber la causa. No es que no funcione — es que puede no ser lo que necesitas.' },
     { myth: 'Los suplementos deberían ser suficientes', truth: 'Olistic, Iraltone, Pilexil… pueden complementar, pero sin saber la causa es tirar dinero.' },
     { myth: 'Ya me gasté demasiado, para qué gastar más', truth: null }, // dynamic — uses bonoPrice
+  ],
+  'Protocolo Mujer': [
+    { myth: 'Me dicen que es normal y que se pasará solo', truth: 'La caída capilar femenina tiene causa médica en el 80% de los casos. Analítica hormonal + tricoscopía la identifica en 30 minutos.' },
+    { myth: 'Las clínicas capilares son para hombres', truth: 'Hospital Capilar tiene una Unidad Capilar Femenina con médicas especialistas. El pelo de mujer no es un pelo de hombre con menos pelo.' },
+    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
   ],
 };
 
@@ -89,12 +99,14 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
       </div>
 
       <div className="max-w-lg mx-auto px-4 pb-40">
-        {/* Close button */}
-        <div className="flex justify-end pt-3 pb-1">
-          <button onClick={onClose} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
-            <X size={16} className="text-gray-500" />
-          </button>
-        </div>
+        {/* Close button — only when onClose is provided (hidden on standalone paywall) */}
+        {onClose && (
+          <div className="flex justify-end pt-3 pb-1">
+            <button onClick={onClose} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
+              <X size={16} className="text-gray-500" />
+            </button>
+          </div>
+        )}
 
         {/* Header */}
         <div className="text-center pb-6">
@@ -108,6 +120,8 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
               <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
             ) : ecp === 'La Farmacia' ? (
               <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
+            ) : ecp === 'Protocolo Mujer' ? (
+              <>La caída capilar femenina tiene causa médica. El <strong className="font-bold text-gray-900">Protocolo Mujer</strong> cruza tu analítica hormonal con un estudio capilar completo para identificarla.</>
             ) : (
               <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
             )}

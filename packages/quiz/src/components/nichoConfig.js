@@ -214,6 +214,43 @@ export const NICHOS = {
     tags: ['nicho-farmacia-sin-salida'],
   },
 
+  // ─── Protocolo Mujer — Nicho genérico femenino (pivote 2026-04-23) ─────
+  'protocolo-mujer': {
+    slug: 'protocolo-mujer',
+    door: 'landing_protocolo_mujer',
+    badge: 'Unidad Capilar Femenina · Hospital Capilar',
+    headline: 'Tu caída de pelo tiene una causa médica. Vamos a encontrarla.',
+    subheadline: 'El Protocolo Mujer de Hospital Capilar cruza tu perfil hormonal con un estudio capilar completo en 30 minutos. No vendemos productos estéticos — diagnosticamos.',
+    ctaQuiz: 'Reserva tu Protocolo Mujer',
+    ctaForm: 'SOLICITAR VALORACIÓN',
+    ecp: 'Protocolo Mujer',
+    stats: [
+      { value: '40%', label: 'de mujeres sufren caída capilar' },
+      { value: '80%', label: 'están mal diagnosticadas' },
+      { value: '30 min', label: 'para saber exactamente qué te pasa' },
+    ],
+    painPoints: [
+      '¿Tu médica te dice que "es normal" pero tú ves que no lo es?',
+      '¿Has probado champús, suplementos y sueros sin resultado?',
+      '¿Sospechas que puede ser hormonal (menopausia, postparto, SOP, tiroides) pero nadie lo evalúa?',
+      '¿Sientes que las clínicas capilares son "para hombres" y ninguna te entiende?',
+    ],
+    testimonials: [
+      { name: 'Laura M.', age: 52, text: 'Desde la menopausia se me caía a puñados. Mi médica decía que era normal. En Hospital Capilar cruzaron mi perfil hormonal con tricoscopía y encontraron la causa real.', stars: 5 },
+      { name: 'Elena R.', age: 32, text: 'Después del parto se me caía a puñados. 8 meses después seguía igual. En HC descubrieron AGA subyacente. Gracias a actuar a tiempo estoy recuperando densidad.', stars: 5 },
+      { name: 'Patricia G.', age: 48, text: 'Llevaba un año con caída brutal. Me dijeron que era por la edad. En HC descubrieron un desbalance hormonal tratable. Por fin alguien me escuchó.', stars: 5 },
+    ],
+    solution: 'El Protocolo Mujer es tricoscopía digital + analítica hormonal completa + valoración con médica especialista. Todo en el mismo día. Un informe con la causa real y tu plan. Si no necesitas tratamiento, te lo decimos.',
+    faqs: [
+      { q: '¿En qué se diferencia el Protocolo Mujer de una consulta capilar normal?', a: 'La mayoría de clínicas capilares se centran en hombres. El Protocolo Mujer está diseñado para identificar las causas específicamente femeninas: menopausia, postparto, SOP, tiroides, anemia ferropénica, estrés. Cruzamos tu analítica hormonal con el estudio capilar — nadie más los mira juntos.' },
+      { q: '¿Qué incluye exactamente?', a: 'Tricoscopia digital (microscopio capilar de alta resolución), analítica hormonal completa (perfil hormonal + serología + hemograma), valoración con médica especialista en salud capilar femenina, informe personalizado con plan de tratamiento. Todo en el mismo día.' },
+      { q: '¿Me van a intentar vender tratamientos estéticos?', a: 'No. Hospital Capilar es un centro médico. Nuestras médicas no cobran comisión por venta de tratamientos. Te dan un informe objetivo con datos y te explican tus opciones. Si no necesitas tratamiento, te lo decimos.' },
+      { q: '¿Cuánto cuesta el Protocolo Mujer?', a: '195€ reservando en clínica · 125€ reservando online (oferta limitada). Si inicias tratamiento, se descuenta íntegro del coste del mismo.' },
+      { q: '¿Me atenderá una médica mujer?', a: 'Tenemos médicas especialistas en salud capilar femenina en todas las unidades. Puedes solicitarlo al reservar.' },
+    ],
+    tags: ['nicho-protocolo-mujer'],
+  },
+
   // ─── La Inversión — Post-trasplante sin mantenimiento ─────
   'la-inversion': {
     slug: 'la-inversion',
