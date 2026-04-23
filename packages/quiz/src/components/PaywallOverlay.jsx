@@ -48,9 +48,9 @@ const OBJECTIONS = {
     { myth: 'Ya me gasté demasiado, para qué gastar más', truth: null }, // dynamic — uses bonoPrice
   ],
   'Protocolo Mujer': [
-    { myth: 'Me dicen que es normal y que se pasará solo', truth: 'La caída capilar femenina tiene causa médica en el 80% de los casos. Analítica hormonal + tricoscopía la identifica en 30 minutos.' },
-    { myth: 'Las clínicas capilares son para hombres', truth: 'Hospital Capilar tiene una Unidad Capilar Femenina con médicas especialistas. El pelo de mujer no es un pelo de hombre con menos pelo.' },
-    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
+    { myth: 'Me dicen que es normal y que se pasará solo', truth: 'En el 80% de los casos, la caída capilar femenina tiene causa médica. En una sola visita realizamos un estudio clínico completo para detectar exactamente qué está causando tu caída capilar y diseñar un tratamiento con resultados reales.' },
+    { myth: 'Las clínicas capilares son para hombres', truth: 'Trichometabolic está diseñado específicamente para la caída capilar femenina. Contamos con una unidad médica especializada en mujer, porque el cabello femenino tiene causas y tratamientos distintos.' },
+    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice (hardcoded Trichometabolic truth below)
   ],
 };
 
@@ -84,10 +84,11 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
   const countdownDisplay = `${String(Math.floor(countdownSeconds / 3600)).padStart(2, '0')}:${String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, '0')}:${String(countdownSeconds % 60).padStart(2, '0')}`;
   const dynamicTruth = `Los ${bonoPrice}€ se descuentan íntegros si inicias tratamiento.`;
   const dynamicOtcTruth = `Un test capilar de ${bonoPrice}€ (descontable) puede ahorrarte años de productos que no funcionan.`;
+  const dynamicTrichometabolicTruth = `¿Cuánto llevas gastado en tratamientos que no han funcionado? El problema no es empezar uno más, es empezar sin conocer la causa real. Por eso, los ${bonoPrice}€ se descuentan íntegramente si decides iniciar el tratamiento pautado tras el diagnóstico con Hospital Capilar.`;
   const rawObjections = OBJECTIONS[ecp] || OBJECTIONS['Es Normal'];
   const objections = rawObjections.map(obj => ({
     ...obj,
-    truth: obj.truth ?? (obj.myth.includes('gasté') ? dynamicOtcTruth : dynamicTruth),
+    truth: obj.truth ?? (ecp === 'Protocolo Mujer' ? dynamicTrichometabolicTruth : obj.myth.includes('gasté') ? dynamicOtcTruth : dynamicTruth),
   }));
   const faqs = getfaqs(bonoPrice);
   const firstName = (nombre || 'Paciente').split(' ')[0];
@@ -116,21 +117,32 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         {/* Header */}
         <div className={`text-center pb-6 ${onClose ? '' : 'pt-8 md:pt-10'}`}>
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
-            <span className="text-[#4CA994]">{firstName}</span>, descubre qué le pasa a tu pelo
-          </h2>
-          <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
-            {ecp === 'Lo Que Vino Con el Bebé' ? (
-              <>Tu caso necesita un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
-            ) : ecp === '¿Qué Me Pasa?' ? (
-              <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
-            ) : ecp === 'La Farmacia' ? (
-              <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
-            ) : ecp === 'Protocolo Mujer' ? (
-              <>La caída capilar femenina tiene causa médica. El <strong className="font-bold text-gray-900">Protocolo Mujer</strong> cruza tu analítica hormonal con un estudio capilar completo para identificarla.</>
+            {ecp === 'Protocolo Mujer' ? (
+              <><span className="text-[#4CA994]">{firstName}</span> deja de adivinar qué le pasa a tu pelo. Descúbrelo.</>
             ) : (
-              <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
+              <><span className="text-[#4CA994]">{firstName}</span>, descubre qué le pasa a tu pelo</>
             )}
-          </p>
+          </h2>
+          {ecp === 'Protocolo Mujer' ? (
+            <div className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto text-left space-y-3">
+              <p>La caída capilar femenina no tiene una única causa. Es multifactorial: estrés, desajustes hormonales, déficits nutricionales… Por eso los tratamientos genéricos fallan.</p>
+              <p className="font-bold text-gray-900">Necesitas precisión.</p>
+              <p>Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong>, identificamos el origen real de tu caída capilar con un enfoque completo que incluye analítica hormonal con <strong className="font-bold text-gray-900">27 biomarcadores clave</strong>, estudio capilar de alta precisión y consulta médica con plan de tratamiento personalizado.</p>
+              <p className="text-sm text-gray-500 italic">Desarrollado por especialistas capilares en España para tratar la caída desde su origen.</p>
+            </div>
+          ) : (
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
+              {ecp === 'Lo Que Vino Con el Bebé' ? (
+                <>Tu caso necesita un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
+              ) : ecp === '¿Qué Me Pasa?' ? (
+                <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
+              ) : ecp === 'La Farmacia' ? (
+                <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
+              ) : (
+                <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
+              )}
+            </p>
+          )}
         </div>
 
         {/* Objections section */}
@@ -169,16 +181,26 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
         {/* What's included */}
         <div className="mb-6">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lo que incluye tu test capilar</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+            {ecp === 'Protocolo Mujer' ? 'Lo que incluye tu diagnóstico Trichometabolic' : 'Lo que incluye tu test capilar'}
+          </h3>
           <div className="space-y-1.5">
-            {[
-              'Tricoscopia digital con microscopio de alta resolución',
-              'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
-              'Pauta médica con receta incluida en la primera consulta si fuera necesario',
-              'Valoración con médico especialista + informe personalizado con plan de tratamiento',
-            ].map((text, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5 flex items-center gap-2.5 shadow-sm">
-                <div className="w-6 h-6 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0">
+            {(ecp === 'Protocolo Mujer'
+              ? [
+                  'Estudio capilar con tricoscopía de alta precisión',
+                  'Analítica completa con 27 biomarcadores clave que influyen directamente en la salud capilar: perfil hormonal femenino + función tiroidea + serología + hemograma completo + regulación metabólica + estado nutricional',
+                  'Valoración con médico capilar especialista + informe personalizado',
+                  'Plan de tratamiento médico a medida para frenar la caída capilar con pauta médica en la primera visita',
+                ]
+              : [
+                  'Tricoscopia digital con microscopio de alta resolución',
+                  'Analítica completa personalizada: perfil hormonal + serología + hemograma completo',
+                  'Pauta médica con receta incluida en la primera consulta si fuera necesario',
+                  'Valoración con médico especialista + informe personalizado con plan de tratamiento',
+                ]
+            ).map((text, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5 flex items-start gap-2.5 shadow-sm">
+                <div className="w-6 h-6 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0 mt-0.5">
                   <Check size={14} className="text-[#4CA994]" />
                 </div>
                 <span className="text-gray-800 text-[13px] font-medium leading-snug">{text}</span>
