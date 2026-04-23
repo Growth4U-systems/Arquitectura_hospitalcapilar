@@ -114,9 +114,9 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         )}
 
         {/* Header */}
-        <div className="text-center pb-6">
+        <div className={`text-center pb-6 ${onClose ? '' : 'pt-8 md:pt-10'}`}>
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
-            {firstName}, descubre qué le pasa a tu pelo
+            <span className="text-[#4CA994]">{firstName}</span>, descubre qué le pasa a tu pelo
           </h2>
           <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
             {ecp === 'Lo Que Vino Con el Bebé' ? (
