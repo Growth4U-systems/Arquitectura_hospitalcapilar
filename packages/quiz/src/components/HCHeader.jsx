@@ -3,7 +3,7 @@ import React from 'react';
 // Visual-only header for the direct paywall (/p/). Renders the actual
 // hospitalcapilar.com logo centered, no nav — pure brand/trust signal with
 // zero exit ramps.
-const HC_LOGO_URL = 'https://hospitalcapilar.com/wp-content/uploads/2022/11/logo_web-1.webp';
+const HC_LOGO_URL = 'https://res.cloudinary.com/dsc0jsbkz/image/upload/v1776852800/LOGO_POSITIVO_lsmah2.png';
 
 const HCHeader = () => (
   <header className="bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
