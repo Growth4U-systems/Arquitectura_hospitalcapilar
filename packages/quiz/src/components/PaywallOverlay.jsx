@@ -28,14 +28,14 @@ const TESTIMONIALS_BY_ECP = {
 
 const OBJECTIONS = {
   'Es Normal': [
-    { myth: 'No sé si mi caída tiene solución', truth: 'Un test capilar con tricoscopia + analítica hormonal te da la respuesta en 30 minutos.' },
-    { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Nuestro equipo médico especializado en salud capilar cruza tu perfil hormonal con un estudio capilar completo. Nadie más los mira juntos.' },
-    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
+    { myth: 'No sé si mi caída tiene solución', truth: 'El Protocolo Femenino Trichometabolic te da la respuesta en 30 minutos con tricoscopía + analítica completa de 27 biomarcadores.' },
+    { myth: 'Ya fui a otro médico y no me dijeron nada', truth: 'Nuestro equipo médico especializado en salud capilar femenina cruza tu perfil hormonal con un estudio capilar completo. Nadie más los mira juntos.' },
+    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice (Trichometabolic truth applied via helper)
   ],
   'Lo Que Vino Con el Bebé': [
     { myth: 'Me dicen que es normal y que se pasará solo', truth: 'En el 70% de casos sí. Pero si hay AGA subyacente, cada mes sin actuar es pelo que no vuelve.' },
-    { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos se centran en hormonas. Nuestro equipo médico capilar cruza tu perfil hormonal con un estudio del pelo para encontrar la causa real.' },
-    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice
+    { myth: 'Mi ginecóloga no le da importancia', truth: 'Los ginecólogos se centran en hormonas. El Protocolo Femenino Trichometabolic cruza tu perfil hormonal con un estudio capilar completo para encontrar la causa real.' },
+    { myth: 'Es muy caro para no saber si funciona', truth: null }, // dynamic — uses bonoPrice (Trichometabolic truth applied via helper)
   ],
   '¿Qué Me Pasa?': [
     { myth: 'Seguro que no es nada, ya se pasará', truth: 'Puede ser estrés temporal… o el inicio de una alopecia. Solo un test capilar profesional te saca de dudas.' },
@@ -63,10 +63,15 @@ const getfaqs = (price) => [
 
 const ORIGINAL_PRICE = 195;
 
+// Female ECPs use the Trichometabolic product branding (per María 2026-04-23):
+// "Protocolo Femenino Trichometabolic" / "diagnóstico Trichometabolic" with 27 biomarcadores.
+const FEMALE_ECPS = new Set(['Protocolo Mujer', 'Lo Que Vino Con el Bebé', 'Es Normal']);
+
 const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 125, brandHeader = false }) => {
   const [openFaq, setOpenFaq] = useState(null);
   const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
   const discountPct = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
+  const isTrichometabolic = FEMALE_ECPS.has(ecp);
 
   // 24h countdown for "oferta limitada" — session-scoped urgency
   const [countdownSeconds, setCountdownSeconds] = useState(() => {
@@ -88,7 +93,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
   const rawObjections = OBJECTIONS[ecp] || OBJECTIONS['Es Normal'];
   const objections = rawObjections.map(obj => ({
     ...obj,
-    truth: obj.truth ?? (ecp === 'Protocolo Mujer' ? dynamicTrichometabolicTruth : obj.myth.includes('gasté') ? dynamicOtcTruth : dynamicTruth),
+    truth: obj.truth ?? (isTrichometabolic ? dynamicTrichometabolicTruth : obj.myth.includes('gasté') ? dynamicOtcTruth : dynamicTruth),
   }));
   const faqs = getfaqs(bonoPrice);
   const firstName = (nombre || 'Paciente').split(' ')[0];
@@ -133,11 +138,13 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           ) : (
             <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
               {ecp === 'Lo Que Vino Con el Bebé' ? (
-                <>Tu caso necesita un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
+                <>Tu caso necesita el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
               ) : ecp === '¿Qué Me Pasa?' ? (
                 <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
               ) : ecp === 'La Farmacia' ? (
                 <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
+              ) : ecp === 'Es Normal' ? (
+                <>Tu caída puede tener causa hormonal. Solo el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> —con 27 biomarcadores clave— puede confirmarlo.</>
               ) : (
                 <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
               )}
@@ -182,10 +189,10 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         {/* What's included */}
         <div className="mb-6">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-            {ecp === 'Protocolo Mujer' ? 'Lo que incluye tu diagnóstico Trichometabolic' : 'Lo que incluye tu test capilar'}
+            {isTrichometabolic ? 'Lo que incluye tu diagnóstico Trichometabolic' : 'Lo que incluye tu test capilar'}
           </h3>
           <div className="space-y-1.5">
-            {(ecp === 'Protocolo Mujer'
+            {(isTrichometabolic
               ? [
                   'Estudio capilar con tricoscopía de alta precisión',
                   'Analítica completa con 27 biomarcadores clave que influyen directamente en la salud capilar: perfil hormonal femenino + función tiroidea + serología + hemograma completo + regulación metabólica + estado nutricional',
