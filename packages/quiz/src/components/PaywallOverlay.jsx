@@ -121,20 +121,25 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
         {/* Header */}
         <div className={`text-center pb-6 ${onClose ? '' : 'pt-8 md:pt-10'}`}>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
             {ecp === 'Protocolo Mujer' ? (
-              <><span className="text-[#4CA994]">{firstName}</span> deja de adivinar qué le pasa a tu pelo. Descúbrelo.</>
+              <><span className="text-[#4CA994]">{firstName},</span> deja de adivinar qué le pasa a tu pelo. <span className="text-[#4CA994]">Descúbrelo.</span></>
             ) : (
               <><span className="text-[#4CA994]">{firstName}</span>, descubre qué le pasa a tu pelo</>
             )}
           </h2>
           {ecp === 'Protocolo Mujer' ? (
-            <div className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto text-left space-y-3">
-              <p>La caída capilar femenina no tiene una única causa. Es multifactorial: estrés, desajustes hormonales, déficits nutricionales… Por eso los tratamientos genéricos fallan.</p>
-              <p className="font-bold text-gray-900">Necesitas precisión.</p>
-              <p>Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong>, identificamos el origen real de tu caída capilar con un enfoque completo que incluye analítica hormonal con <strong className="font-bold text-gray-900">27 biomarcadores clave</strong>, estudio capilar de alta precisión y consulta médica con plan de tratamiento personalizado.</p>
-              <p className="text-sm text-gray-500 italic">Desarrollado por especialistas capilares en España para tratar la caída desde su origen.</p>
-            </div>
+            <>
+              <div className="max-w-md mx-auto space-y-3 text-gray-700 text-base font-medium leading-relaxed">
+                <p>La caída capilar femenina no tiene una única causa. Es <strong className="font-bold text-gray-900">multifactorial</strong>: estrés, desajustes hormonales, déficits nutricionales… Por eso los tratamientos genéricos fallan.</p>
+                <p className="text-lg text-gray-900 font-bold">Necesitas precisión.</p>
+                <p>Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> identificamos el origen real de tu caída con analítica hormonal de <strong className="font-bold text-gray-900">27 biomarcadores clave</strong>, tricoscopía de alta precisión y valoración médica.</p>
+              </div>
+              <div className="mt-5 inline-flex items-center gap-1.5 bg-[#F0F7F6] text-[#2C3E50] text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 bg-[#4CA994] rounded-full" />
+                Especialistas capilares · España
+              </div>
+            </>
           ) : (
             <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
               {ecp === 'Lo Que Vino Con el Bebé' ? (
