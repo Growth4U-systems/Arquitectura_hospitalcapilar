@@ -287,12 +287,14 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           >
             Reservar mi analítica · {bonoPrice}€
           </button>
-          <button
-            onClick={onCallRequest}
-            className="w-full text-center text-sm text-gray-500 mt-2 py-1 hover:text-[#4CA994] transition-colors flex items-center justify-center gap-1"
-          >
-            <Phone size={14} /> ¿Dudas? Te llamamos sin compromiso
-          </button>
+          {onCallRequest && (
+            <button
+              onClick={onCallRequest}
+              className="w-full text-center text-sm text-gray-500 mt-2 py-1 hover:text-[#4CA994] transition-colors flex items-center justify-center gap-1"
+            >
+              <Phone size={14} /> ¿Dudas? Te llamamos sin compromiso
+            </button>
+          )}
         </div>
       </div>
     </div>
