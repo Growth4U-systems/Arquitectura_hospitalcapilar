@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Loader2, CreditCard, Zap } from 'lucide-react';
+import { Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
 import BookingCalendar from './BookingCalendar';
 
 const CLINICS = {
@@ -32,37 +32,7 @@ export default function AgendarPage() {
 
   const [existingAppt, setExistingAppt] = useState(null); // null = loading, false = no appt, object = has appt
   const [checking, setChecking] = useState(!!params.contactId);
-  const [bonoRequired, setBonoRequired] = useState(false); // true = woman without payment
-
-  // Launch pricing — 195€ anchor (tachado), 125€ oferta limitada
-  const ORIGINAL_PRICE = 195;
-  const OFFER_PRICE = 125;
-  const DISCOUNT_PCT = Math.round(((ORIGINAL_PRICE - OFFER_PRICE) / ORIGINAL_PRICE) * 100);
-  const STRIPE_URL = 'https://buy.stripe.com/9B614n0s94op9kyblJbAs06';
-
-  // 24h countdown — session-scoped urgency; resets when tab closes.
-  const [countdownSeconds, setCountdownSeconds] = useState(() => {
-    if (typeof window === 'undefined') return 12 * 60 * 60;
-    const stored = window.sessionStorage.getItem('bonoOfferStart_12h');
-    const startTime = stored ? parseInt(stored, 10) : Date.now();
-    if (!stored) window.sessionStorage.setItem('bonoOfferStart_12h', String(startTime));
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    return Math.max(0, 12 * 60 * 60 - elapsed);
-  });
-
-  useEffect(() => {
-    const intv = setInterval(() => {
-      setCountdownSeconds(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(intv);
-  }, []);
-
-  const countdownDisplay = useMemo(() => {
-    const h = Math.floor(countdownSeconds / 3600);
-    const m = Math.floor((countdownSeconds % 3600) / 60);
-    const s = countdownSeconds % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  }, [countdownSeconds]);
+  const [bonoRequired, setBonoRequired] = useState(false); // true = woman without payment → redirect to /p/ paywall
 
   // Check if contact already has an appointment + bono status
   useEffect(() => {
@@ -109,114 +79,26 @@ export default function AgendarPage() {
     );
   }
 
-  // Bono gate — woman ECP who hasn't paid yet
+  // Bono gate — woman who hasn't paid yet: redirect to /p/ paywall (Trichometabolic).
+  // Keeps one canonical paywall instead of an inline duplicate.
   if (bonoRequired && !existingAppt) {
-    const stripeUrl = `${STRIPE_URL}?prefilled_email=${encodeURIComponent(params.email || '')}`;
+    if (typeof window !== 'undefined') {
+      const qs = new URLSearchParams();
+      qs.set('ecp', 'protocolo-mujer');
+      if (params.contactId) qs.set('contactId', params.contactId);
+      if (params.nombre) qs.set('nombre', params.nombre);
+      if (params.email) qs.set('email', params.email);
+      if (params.phone) qs.set('telefono', params.phone);
+      if (params.clinica) qs.set('ciudad', params.clinica);
+      window.location.replace(`/p/?${qs.toString()}`);
+    }
     return (
-      <div className="min-h-screen bg-[#F7F8FA]">
-        <div className="bg-[#2C3E50] text-white text-center py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2">
-          <img src="/logo-hc-white.png" alt="Hospital Capilar" className="h-5" />
-          <span>{params.tipo === 'asesoria' ? 'Agendar Asesoría Capilar' : 'Reservar mi analítica'}</span>
-        </div>
-        <div className="max-w-lg mx-auto px-4 py-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
-              Tu analítica de perfil hormonal
-            </h2>
-            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
-              La única prueba médica que identifica la causa real de tu caída. Reserva online para ahorrar frente al precio en clínica.
-            </p>
-          </div>
-
-          {/* POPULAR pricing card */}
-          <div className="relative mb-5">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1.5 rounded-full flex items-center gap-1 shadow-md z-10 whitespace-nowrap">
-              <Zap size={12} fill="currentColor" />
-              <span>Oferta limitada</span>
-            </div>
-            <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 shadow-sm">
-              <p className="font-extrabold text-gray-900 text-lg leading-tight text-center mb-3">Analítica de perfil hormonal</p>
-              <div className="grid grid-cols-2 gap-3">
-                {/* En clínica */}
-                <div className="text-center">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Reservando en clínica</p>
-                  <div className="text-2xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
-                </div>
-                {/* Online */}
-                <div className="text-center border-l border-gray-200 pl-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4CA994] mb-1">Reservando online</p>
-                  <div className="text-3xl font-extrabold text-gray-900 leading-none">{OFFER_PRICE}€</div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center">
-                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {DISCOUNT_PCT}% reservando online</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <ul className="space-y-1.5 text-[13px] text-gray-700 leading-snug">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Tricoscopia digital con microscopio de alta resolución
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Analítica completa personalizada: perfil hormonal + serología + hemograma completo
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Pauta médica con receta incluida en la primera consulta si fuera necesario
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#4CA994] mt-0.5">✓</span>
-                    Valoración con médico especialista + informe personalizado con plan
-                  </li>
-                </ul>
-                <p className="text-center text-xs text-gray-500 mt-3">
-                  <span aria-hidden="true">⚠️</span> <strong className="text-gray-700">Todo en el mismo día</strong> · sin esperas
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Countdown */}
-          <div className="flex items-center justify-center gap-2 bg-white rounded-full border border-gray-200 px-4 py-2 mb-5 mx-auto w-fit shadow-sm">
-            <Clock size={14} className="text-[#2C3E50]" />
-            <span className="text-xs font-semibold text-gray-700">Oferta limitada:</span>
-            <span className="text-sm font-extrabold text-[#2C3E50] tabular-nums">{countdownDisplay}</span>
-          </div>
-
-          {/* CTA */}
-          <a
-            href={stripeUrl}
-            className="block w-full bg-[#4CA994] hover:bg-[#3d9482] text-white font-bold py-4 rounded-xl transition-colors text-center text-lg shadow-lg flex items-center justify-center gap-2"
-          >
-            <CreditCard size={20} />
-            Reservar mi analítica · {OFFER_PRICE}€
-          </a>
-
-          <p className="text-center text-xs text-gray-400 mt-3">
-            Pago seguro con Stripe · La reserva se descuenta del tratamiento si decides continuar.
-          </p>
-          <p className="text-center text-xs text-gray-400 mt-2">
-            ¿Dudas? Llámanos al <a href="tel:+34623457218" className="text-[#4CA994] font-semibold">623 457 218</a>
-          </p>
-
-          {/* Video testimonial — below CTA so it doesn't compete with primary action */}
-          <div className="mt-8">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
-            <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[320px] mx-auto" style={{ maxWidth: '180px' }}>
-              <iframe
-                src="https://www.youtube.com/embed/pbJOQYupwFE"
-                title="Hospital Capilar"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#4CA994] animate-spin" />
       </div>
     );
   }
+
 
   // Already has appointment — show info + link to mi-cita
   if (existingAppt) {
