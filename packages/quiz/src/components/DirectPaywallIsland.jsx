@@ -47,6 +47,7 @@ function DirectPaywallInner() {
   useEffect(() => {
     const parsed = readQueryParams();
     setLead(parsed);
+    const ecpResolved = resolveEcp(parsed.ecp);
     try {
       analytics.trackEvent('paywall_directo_viewed', {
         ecp: parsed.ecp || 'none',
@@ -57,6 +58,20 @@ function DirectPaywallInner() {
       });
     } catch (e) {
       console.warn('[Analytics] paywall_directo_viewed failed:', e.message);
+    }
+    // Meta Pixel — ViewContent (user landed on the paywall)
+    try {
+      if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+        window.fbq('track', 'ViewContent', {
+          content_name: 'Protocolo Femenino Trichometabolic',
+          content_category: ecpResolved,
+          content_ids: [parsed.ecp || 'protocolo-mujer'],
+          value: bonoPrice,
+          currency: 'EUR',
+        });
+      }
+    } catch (e) {
+      console.warn('[Meta Pixel] ViewContent failed:', e.message);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -69,6 +84,22 @@ function DirectPaywallInner() {
     try {
       analytics.trackEvent('paywall_directo_pay_clicked', { ecp, bono_price: bonoPrice });
     } catch {}
+
+    // Meta Pixel — InitiateCheckout (user clicked Pay button)
+    try {
+      if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+        window.fbq('track', 'InitiateCheckout', {
+          content_name: 'Protocolo Femenino Trichometabolic',
+          content_category: ecp,
+          content_ids: [lead.ecp || 'protocolo-mujer'],
+          value: bonoPrice,
+          currency: 'EUR',
+          num_items: 1,
+        });
+      }
+    } catch (e) {
+      console.warn('[Meta Pixel] InitiateCheckout failed:', e.message);
+    }
 
     // If no email yet, let Stripe collect it (fallback link already does)
     try {
