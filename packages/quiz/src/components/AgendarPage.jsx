@@ -27,6 +27,9 @@ export default function AgendarPage() {
       clinica: sp.get('clinica') || '',
       contactId: sp.get('contactId') || '',
       tipo: sp.get('tipo') || 'diagnostico',  // 'diagnostico' | 'asesoria'
+      // ecp passes through to /p/ when we redirect the woman-bono gate —
+      // Meta Lead Ads sets this per form (postparto, menopausia, protocolo-mujer).
+      ecp: sp.get('ecp') || 'protocolo-mujer',
     };
   }, []);
 
@@ -84,7 +87,7 @@ export default function AgendarPage() {
   if (bonoRequired && !existingAppt) {
     if (typeof window !== 'undefined') {
       const qs = new URLSearchParams();
-      qs.set('ecp', 'protocolo-mujer');
+      qs.set('ecp', params.ecp); // inherited from /agendar URL — set per Meta form
       if (params.contactId) qs.set('contactId', params.contactId);
       if (params.nombre) qs.set('nombre', params.nombre);
       if (params.email) qs.set('email', params.email);
