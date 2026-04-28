@@ -194,15 +194,25 @@ async function fetchMetaAdCatalog() {
       'campaign{id,name}',
       'creative{id,name,video_id,thumbnail_url}',
     ].join(',');
-    const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=500&access_token=${token}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errText = (await res.text()).slice(0, 300);
-      console.log('[Meta catalog] read failed:', res.status, errText);
-      return { _error: `Meta API ${res.status}: ${errText}`, count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
+    // Paginate: Meta refuses limit=500 with creative subfields ("Please reduce
+    // the amount of data" error). Use limit=25 and follow paging.next links.
+    const ads = [];
+    let nextUrl = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=25&access_token=${token}`;
+    let pageGuard = 0;
+    while (nextUrl && pageGuard++ < 40) {  // hard cap: 1000 ads
+      const res = await fetch(nextUrl);
+      if (!res.ok) {
+        const errText = (await res.text()).slice(0, 300);
+        console.log('[Meta catalog] read failed:', res.status, errText);
+        if (ads.length === 0) {
+          return { _error: `Meta API ${res.status}: ${errText}`, count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
+        }
+        break;  // partial result is still useful
+      }
+      const data = await res.json();
+      ads.push(...(data.data || []));
+      nextUrl = data.paging?.next || null;
     }
-    const data = await res.json();
-    const ads = data.data || [];
     const byId = {};
     const byVideoId = {};          // video_id → array of ads using it
     // Meta frequently reuses the same creative name across multiple adsets
