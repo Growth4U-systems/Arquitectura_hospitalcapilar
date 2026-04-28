@@ -89,6 +89,88 @@ function inferSexoFromName(fullName) {
 // When gender is missing (contacts from form-direct flows that don't ask
 // sexo), fall back to a first-name heuristic against a Spanish name list.
 // Pulling directly avoids PostHog's person-property propagation lag.
+// Fetch current Google Ads catalog: ad_group_id → { ad_group_name, campaign_name }.
+// Lets us translate the raw {adgroupid} from utm_content into real ad group
+// names. Same conventions as fetchMetaAdCatalog: only campaigns whose ads
+// target diagnostico.hospitalcapilar.com are kept (mirrors sync-ad-spend.js).
+async function fetchGoogleAdsCatalog() {
+  const clientId = process.env.GOOGLE_ADS_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN;
+  const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
+  const customerId = process.env.GOOGLE_ADS_CUSTOMER_ID;
+  const mccId = process.env.GOOGLE_ADS_MCC_ID;
+  if (!clientId || !refreshToken || !developerToken || !customerId) return null;
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+    if (!tokenRes.ok) return null;
+    const { access_token } = await tokenRes.json();
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${access_token}`,
+      'developer-token': developerToken,
+    };
+    if (mccId) headers['login-customer-id'] = mccId;
+    const url = `https://googleads.googleapis.com/v20/customers/${customerId}/googleAds:searchStream`;
+    const runQuery = async (query) => {
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ query }) });
+      if (!res.ok) return null;
+      return res.json();
+    };
+    // 1) Find G4U-relevant campaigns (those whose ads target our landing).
+    const adsData = await runQuery(`
+      SELECT campaign.id, ad_group_ad.ad.final_urls
+      FROM ad_group_ad
+      WHERE campaign.status = 'ENABLED'
+    `);
+    if (!adsData) return null;
+    const ourCampaignIds = new Set();
+    for (const batch of (adsData || [])) {
+      for (const row of (batch.results || [])) {
+        const urls = row.adGroupAd?.ad?.finalUrls || [];
+        if (urls.some(u => u.includes('diagnostico.hospitalcapilar.com'))) {
+          ourCampaignIds.add(String(row.campaign?.id || ''));
+        }
+      }
+    }
+    if (ourCampaignIds.size === 0) return { byAdGroupId: {}, count: 0 };
+    const idList = [...ourCampaignIds].join(', ');
+    // 2) Pull ad group names + campaign names for those campaigns.
+    const groupsData = await runQuery(`
+      SELECT ad_group.id, ad_group.name, campaign.id, campaign.name
+      FROM ad_group
+      WHERE campaign.id IN (${idList})
+    `);
+    const byAdGroupId = {};
+    for (const batch of (groupsData || [])) {
+      for (const row of (batch.results || [])) {
+        const adGroupId = String(row.adGroup?.id || '');
+        if (!adGroupId) continue;
+        byAdGroupId[adGroupId] = {
+          ad_group_id: adGroupId,
+          ad_group_name: row.adGroup?.name || '',
+          campaign_id: String(row.campaign?.id || ''),
+          campaign_name: row.campaign?.name || '',
+          status: 'ENABLED',
+        };
+      }
+    }
+    return { byAdGroupId, count: Object.keys(byAdGroupId).length };
+  } catch (e) {
+    console.log('[GoogleAds catalog] fetch failed:', e.message);
+    return null;
+  }
+}
+
 // Fetch current Meta ads catalog: ad_id → { ad_name, adset_name, campaign_name }.
 // Lets us cross-reference the free-text utm_content that GHL stores (which is
 // whatever the marketer typed in the URL params) against Meta's real structure
@@ -349,13 +431,19 @@ async function fetchGhlBySexo(startDate, endDate) {
 //   "{{ad.name}}"          → Meta macro written literally, never substituted
 //   "198626380310"         → Google Ads {adgroupid} on a Meta-attributed row
 //   ""                     → empty
-function classifyUtmContent(utm, channel, landing, metaCatalog) {
+function classifyUtmContent(utm, channel, landing, metaCatalog, googleCatalog) {
   if (!utm || utm === 'sin-atribucion' || utm === 'sin-dato') {
     return { kind: 'sin-atribucion', display: 'Sin atribuir' };
   }
   if (/^\*+.+\*+$/.test(utm))              return { kind: 'placeholder',   display: 'Sin atribuir (placeholder)' };
   if (/^\{\{.+\}\}$/.test(utm))            return { kind: 'macro-literal', display: 'Sin atribuir (macro)' };
   if (/^\d{10,}$/.test(utm) && channel !== 'Meta') {
+    // Google: utm_content is the raw {adgroupid}. Cross-ref the catalog so we
+    // surface the actual ad group + campaign names instead of a numeric ID.
+    const hit = googleCatalog?.byAdGroupId?.[utm];
+    if (hit) {
+      return { kind: 'google-matched', display: hit.ad_group_name, google: hit };
+    }
     return { kind: 'google-adgroupid', display: `Google adgroup ${utm}` };
   }
   if (metaCatalog) {
@@ -388,7 +476,7 @@ function classifyUtmContent(utm, channel, landing, metaCatalog) {
 // × sexo × pago × clinica) combination. When a Meta ads catalog is available,
 // utm_content values that match a current Meta ad name get enriched with the
 // real ad_id + campaign/adset names from Ads Manager.
-function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
+function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null, googleCatalog = null) {
   if (!rows) return null;
 
   // Index PostHog dimensions by (utm_content, landing) for upstream enrichment.
@@ -407,20 +495,24 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
 
   const buckets = new Map();
   for (const r of rows) {
-    const cls = classifyUtmContent(r.utm_content, r.channel, r.landing, metaCatalog);
+    const cls = classifyUtmContent(r.utm_content, r.channel, r.landing, metaCatalog, googleCatalog);
     // Campaign resolution order:
-    //   1) Meta catalog match (authoritative)
+    //   1) Meta or Google catalog match (authoritative)
     //   2) nicho-slug → canonical Meta campaign (Menopausia G4U, etc.)
     //   3) raw utm_campaign string from GHL (fallback)
     const metaCampaign = cls.meta?.campaign_name
+      || cls.google?.campaign_name
       || canonicalCampaignFromUtm(r.utm_campaign)
       || r.utm_campaign;
-    const metaAdset    = cls.meta?.adset_name    || r.utm_medium;
+    const metaAdset    = cls.meta?.adset_name
+      || cls.google?.ad_group_name
+      || r.utm_medium;
     const metaAdId     = cls.meta?.ad_id         || null;
     const adDisplay    = cls.display;
     const adKind       = cls.kind;
     const videoId      = cls.meta?.video_id      || '';
-    const videoLabel   = (videoId && metaCatalog?.videoLabel?.[videoId]) || 'Sin video';
+    const videoLabel   = (videoId && metaCatalog?.videoLabel?.[videoId])
+      || (r.channel === 'Google' ? 'Google (texto)' : 'Sin video');
 
     const key = [r.channel, metaCampaign, metaAdset, adKind + '|' + adDisplay, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('::');
     let b = buckets.get(key);
@@ -1095,9 +1187,13 @@ exports.handler = async (event) => {
         // Master funnel — one row per unique 9-dim combination, enriched
         // with upstream counts from the PostHog slice + Meta catalog so
         // utm_content → ad_id/adset_name/campaign_name reflect real Meta.
-        const metaCatalog = await fetchMetaAdCatalog();
-        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog);
+        const [metaCatalog, googleCatalog] = await Promise.all([
+          fetchMetaAdCatalog(),
+          fetchGoogleAdsCatalog(),
+        ]);
+        result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog, googleCatalog);
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
+        result.google_ads_catalog_size = googleCatalog?.count || 0;
         // Expose the Video N → creative names mapping so the dashboard can
         // show the user what each video label corresponds to in Meta.
         if (metaCatalog?.videoLabel) {
