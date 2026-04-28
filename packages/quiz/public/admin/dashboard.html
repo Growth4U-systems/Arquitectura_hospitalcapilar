@@ -208,25 +208,6 @@
       <div id="funnelTypeBreakdown" style="margin-top:16px;"></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-header"><h3>Leads por nicho</h3><span class="type">Breakdown</span></div>
-    <div class="card-body" id="nichoChart"></div>
-  </div>
-  <div class="card full-width">
-    <div class="card-header"><h3>Leads diarios por fuente</h3><span class="type">Trend (stacked)</span></div>
-    <div class="card-body">
-      <div id="dailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
-      <div id="dailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
-        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
-        <div class="legend-item"><div class="legend-dot c-seo"></div>SEO</div>
-        <div class="legend-item"><div class="legend-dot c-tiktok"></div>TikTok</div>
-        <div class="legend-item"><div class="legend-dot c-direct"></div>Directo</div>
-        <div class="legend-item"><div class="legend-dot c-other"></div>Otro</div>
-      </div>
-    </div>
-  </div>
   <div class="card full-width">
     <div class="card-header"><h3>Drop-off por pregunta (Quiz Largo)</h3><span class="type">Funnel</span></div>
     <div class="card-body" id="quizDropoffChart"></div>
@@ -276,17 +257,6 @@
     <div class="card-header"><h3>CPL / CPA por fuente</h3><span class="type">Table</span></div>
     <div class="card-body">
       <table id="adSpendTable"></table>
-    </div>
-  </div>
-  <div class="card full-width">
-    <div class="card-header"><h3>Gasto diario por plataforma</h3><span class="type">Trend</span></div>
-    <div class="card-body">
-      <div id="adSpendDailyChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:4px;"></div>
-      <div id="adSpendDailyDates" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding-top:4px;"></div>
-      <div class="legend" style="margin-top:8px;">
-        <div class="legend-item"><div class="legend-dot c-meta"></div>Meta</div>
-        <div class="legend-item"><div class="legend-dot c-google"></div>Google Ads</div>
-      </div>
     </div>
   </div>
 </div>
@@ -519,17 +489,11 @@ function renderDashboard(data) {
   // Traffic source tables
   renderTrafficTables(data);
 
-  // Daily chart
-  renderDailyChart(data);
-
   // Funnel type
   renderFunnelType(data);
 
   // Quiz drop-off
   renderQuizDropoff(data);
-
-  // Nicho
-  renderNicho(data);
 
   // By sexo
   renderSexo(data);
@@ -923,6 +887,7 @@ function renderFunnel(k) {
     { label: 'quiz_started', value: k.quiz_started, color: '#34495e' },
     { label: 'quiz_completed', value: k.quiz_completed, color: '#3d8e7e' },
     { label: 'form_submitted', value: k.form_submitted, color: '#4CA994' },
+    { label: 'payment_completed', value: k.payment_completed || 0, color: '#52b89e' },
     { label: 'appointment_booked', value: k.appointment_booked, color: '#5fbfa8' },
     { label: 'appointment_attended', value: k.appointment_attended, color: '#4ade80' },
   ];
@@ -947,11 +912,15 @@ function renderFunnel(k) {
 
   // Summary
   const totalConv = pct(k.appointment_attended, k.pageviews);
-  const leadToCita = pct(k.appointment_booked, k.form_submitted);
+  const leadToPago = pct(k.payment_completed || 0, k.form_submitted);
+  const pagoToCita = (k.payment_completed || 0) > 0
+    ? pct(k.appointment_booked, k.payment_completed)
+    : '—';
   const noShowRate = k.appointment_booked > 0 ? pct(k.appointment_no_show, k.appointment_booked) : '0%';
   document.getElementById('funnelSummary').innerHTML = `
     <div><span style="color:#888;font-size:12px;">Conversion total (visit &rarr; attend)</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${totalConv}</span></div>
-    <div><span style="color:#888;font-size:12px;">Lead &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToCita}</span></div>
+    <div><span style="color:#888;font-size:12px;">Lead &rarr; Pago</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToPago}</span></div>
+    <div><span style="color:#888;font-size:12px;">Pago &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${pagoToCita}</span></div>
     <div><span style="color:#888;font-size:12px;">No-show rate</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${noShowRate}</span></div>
   `;
 }
@@ -1018,71 +987,6 @@ function renderTrafficTables(data) {
     <td class="num">${fmt(totalNoShow)}</td>
     <td class="num">${totalBooked > 0 ? pct(totalAttended, totalBooked) : '-'}</td></tr></tbody>`;
   document.getElementById('trafficTable1').innerHTML = t1;
-}
-
-function renderDailyChart(data) {
-  const dailyBySource = data.daily_leads_by_source || [];
-  // Collect all dates and sources
-  const dateSet = new Set();
-  const srcSet = new Set();
-  dailyBySource.forEach(r => {
-    dateSet.add(r.date);
-    srcSet.add(normalizeSource(r.source));
-  });
-  const dates = [...dateSet].sort();
-  const allSources = ['Meta', 'Google Ads', 'SEO', 'TikTok', 'Directo', 'Sin dato'];
-  // If there are sources not in allSources, add them
-  srcSet.forEach(s => { if (!allSources.includes(s)) allSources.push(s); });
-
-  // Build per-date-source map
-  const map = {};
-  dailyBySource.forEach(r => {
-    const d = r.date;
-    const s = normalizeSource(r.source);
-    if (!map[d]) map[d] = {};
-    map[d][s] = (map[d][s] || 0) + (r.count || 0);
-  });
-
-  // Find max daily total
-  let maxDay = 1;
-  dates.forEach(d => {
-    const total = allSources.reduce((sum, s) => sum + (map[d]?.[s] || 0), 0);
-    if (total > maxDay) maxDay = total;
-  });
-
-  const chartHeight = 120;
-  let html = '';
-  if (dates.length === 0) {
-    html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos diarios</div>';
-  } else {
-    dates.forEach(d => {
-      let col = '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">';
-      // Render sources bottom to top (Meta at bottom)
-      [...allSources].reverse().forEach(s => {
-        const cnt = map[d]?.[s] || 0;
-        if (cnt === 0) return;
-        const h = Math.max(Math.round((cnt / maxDay) * chartHeight), 2);
-        col += `<div style="height:${h}px;" class="${sourceCss(s)}" title="${s}: ${cnt} (${d})"></div>`;
-      });
-      col += '</div>';
-      html += col;
-    });
-  }
-  document.getElementById('dailyChart').innerHTML = html;
-
-  // Date labels
-  if (dates.length > 0) {
-    const fmtDate = d => { const dt = new Date(d); return dt.toLocaleDateString('es-ES', {day:'numeric',month:'short'}); };
-    const labels = [];
-    if (dates.length <= 5) {
-      dates.forEach(d => labels.push(fmtDate(d)));
-    } else {
-      const step = Math.floor(dates.length / 4);
-      for (let i = 0; i < dates.length; i += step) labels.push(fmtDate(dates[i]));
-      if (labels.length < 5) labels.push(fmtDate(dates[dates.length - 1]));
-    }
-    document.getElementById('dailyDates').innerHTML = labels.map(l => `<span>${l}</span>`).join('');
-  }
 }
 
 function renderFunnelType(data) {
@@ -1252,32 +1156,6 @@ function renderSexo(data) {
   }
 }
 
-function renderNicho(data) {
-  const nichos = (data.by_nicho || []).map(r => ({
-    nicho: normalizeNicho(r.nicho),
-    count: r.count || 0,
-  }));
-  // Merge
-  const nMap = {};
-  nichos.forEach(r => { nMap[r.nicho] = (nMap[r.nicho] || 0) + r.count; });
-  const entries = Object.entries(nMap).sort((a, b) => b[1] - a[1]);
-  const max = entries.length > 0 ? entries[0][1] : 1;
-  const total = entries.reduce((s, [, v]) => s + v, 0);
-
-  let html = '';
-  entries.forEach(([name, cnt], i) => {
-    const widthPct = Math.max((cnt / max) * 100, 3);
-    const color = NICHO_COLORS[i % NICHO_COLORS.length];
-    html += `<div class="hbar">
-      <div class="hbar-label">${name}</div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${widthPct}%;background:${color};">${fmt(cnt)}</div></div>
-      <div class="hbar-value">${total > 0 ? pct(cnt, total) : '-'}</div>
-    </div>`;
-  });
-  if (entries.length === 0) html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos</div>';
-  document.getElementById('nichoChart').innerHTML = html;
-}
-
 function renderNoShow(data) {
   // Build per-source no-show data from by_traffic_source
   const sourceMap = {};
@@ -1443,62 +1321,6 @@ function renderAdSpend(data) {
   </tr></tbody>`;
 
   document.getElementById('adSpendTable').innerHTML = html;
-
-  // Daily spend chart
-  renderAdSpendDaily(adDaily);
-}
-
-function renderAdSpendDaily(adDaily) {
-  const dateMap = {};
-  const srcSet = new Set();
-  adDaily.forEach(r => {
-    const d = r.date;
-    const s = normalizeAdSource(r.source);
-    srcSet.add(s);
-    if (!dateMap[d]) dateMap[d] = {};
-    dateMap[d][s] = (dateMap[d][s] || 0) + (Number(r.spend) || 0);
-  });
-  const dates = Object.keys(dateMap).sort();
-  const sources = ['Meta', 'Google Ads'];
-  srcSet.forEach(s => { if (!sources.includes(s)) sources.push(s); });
-
-  let maxDay = 1;
-  dates.forEach(d => {
-    const total = sources.reduce((sum, s) => sum + (dateMap[d]?.[s] || 0), 0);
-    if (total > maxDay) maxDay = total;
-  });
-
-  const chartHeight = 120;
-  let html = '';
-  if (dates.length === 0) {
-    html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos de gasto diario — los datos se sincronizan cada noche</div>';
-  } else {
-    dates.forEach(d => {
-      let col = '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:1px;flex:1;height:100%;">';
-      [...sources].reverse().forEach(s => {
-        const spend = dateMap[d]?.[s] || 0;
-        if (spend === 0) return;
-        const h = Math.max(Math.round((spend / maxDay) * chartHeight), 2);
-        col += `<div style="height:${h}px;" class="${sourceCss(s)}" title="${s}: ${fmtEurDec(spend)} (${d})"></div>`;
-      });
-      col += '</div>';
-      html += col;
-    });
-  }
-  document.getElementById('adSpendDailyChart').innerHTML = html;
-
-  if (dates.length > 0) {
-    const fmtDate = d => { const dt = new Date(d); return dt.toLocaleDateString('es-ES', {day:'numeric',month:'short'}); };
-    const labels = [];
-    if (dates.length <= 5) {
-      dates.forEach(d => labels.push(fmtDate(d)));
-    } else {
-      const step = Math.floor(dates.length / 4);
-      for (let i = 0; i < dates.length; i += step) labels.push(fmtDate(dates[i]));
-      if (labels.length < 5) labels.push(fmtDate(dates[dates.length - 1]));
-    }
-    document.getElementById('adSpendDailyDates').innerHTML = labels.map(l => `<span>${l}</span>`).join('');
-  }
 }
 
 // ---- QUIZ DROP-OFF ----

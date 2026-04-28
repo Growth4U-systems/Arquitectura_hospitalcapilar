@@ -291,7 +291,7 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       clinica,
       leads: 1,
       booked: isBooked ? 1 : 0,
-      paid: isBooked && isPaid ? 1 : 0,
+      paid: isPaid ? 1 : 0,
     };
   });
 }
@@ -495,6 +495,7 @@ exports.handler = async (event) => {
       kpiStarted,
       kpiCompleted,
       kpiLeads,
+      kpiPaid,
       kpiBooked,
       kpiAttended,
       kpiNoShow,
@@ -519,6 +520,9 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE (event = 'short_quiz_started' OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')) ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
+      // Pagos: dedupe by stripe_session_id (each Stripe checkout fires payment_completed
+      // exactly once from netlify/functions/stripe-webhook.js).
+      hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.stripe_session_id)) FROM events WHERE event = 'payment_completed' ${dateFilter}`),
       // Bookings: dedupe by opportunity_id across v4+v5 sync batches. A single opp
       // can have both a legacy _v4 insert_id and a new _v5 one after the sync
       // re-emits with enriched properties — dedupe-by-opp keeps the count stable.
@@ -787,6 +791,8 @@ exports.handler = async (event) => {
           ) as started,
           countIf(event IN ('quiz_completed', 'short_quiz_completed')) as completed,
           countIf(event IN ('form_submitted', 'direct_form_submitted', 'lead_form_submitted')) as leads,
+          uniqIf(toString(properties.stripe_session_id),
+                 event = 'payment_completed') as paid,
           uniqIf(toString(properties.opportunity_id),
                  event = 'appointment_booked' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5')) as booked,
           uniqIf(toString(properties.opportunity_id),
@@ -799,11 +805,12 @@ exports.handler = async (event) => {
           'quiz_started', 'short_quiz_started',
           'quiz_completed', 'short_quiz_completed',
           'form_submitted', 'direct_form_submitted', 'lead_form_submitted',
+          'payment_completed',
           'appointment_booked', 'appointment_attended', 'appointment_no_show'
         )
           ${dateFilter}
         GROUP BY ad, landing, nicho, sexo, payment_variant
-        HAVING visits > 0 OR started > 0 OR leads > 0 OR booked > 0
+        HAVING visits > 0 OR started > 0 OR leads > 0 OR paid > 0 OR booked > 0
         ORDER BY visits DESC, leads DESC
       `),
 
@@ -860,6 +867,7 @@ exports.handler = async (event) => {
         quiz_started: val(kpiStarted),
         quiz_completed: val(kpiCompleted),
         form_submitted: val(kpiLeads),
+        payment_completed: val(kpiPaid),
         appointment_booked: val(kpiBooked),
         appointment_attended: val(kpiAttended),
         appointment_no_show: val(kpiNoShow),
@@ -942,9 +950,10 @@ exports.handler = async (event) => {
         started: row[6],
         completed: row[7],
         leads: row[8],
-        booked: row[9],
-        attended: row[10],
-        no_show: row[11],
+        paid: row[9],
+        booked: row[10],
+        attended: row[11],
+        no_show: row[12],
       })),
       ad_spend_by_campaign: adSpendByCampaign.map(row => ({
         source: row[0],
@@ -960,13 +969,15 @@ exports.handler = async (event) => {
         const s = val(kpiStarted);
         const c = val(kpiCompleted);
         const l = val(kpiLeads);
+        const pa = val(kpiPaid);
         const b = val(kpiBooked);
         const a = val(kpiAttended);
         const stages = [
           { from: 'Visitante',      to: 'Iniciado',   prev: p, curr: s },
           { from: 'Iniciado',       to: 'Finalizado', prev: s, curr: c },
           { from: 'Finalizado',     to: 'Lead',       prev: c, curr: l },
-          { from: 'Lead',           to: 'Cita',       prev: l, curr: b },
+          { from: 'Lead',           to: 'Pago',       prev: l, curr: pa },
+          { from: 'Pago',           to: 'Cita',       prev: pa, curr: b },
           { from: 'Cita',           to: 'Asiste',     prev: b, curr: a },
         ];
         const withDrop = stages
@@ -989,7 +1000,8 @@ exports.handler = async (event) => {
             started: row[6],
             completed: row[7],
             leads: row[8],
-            booked: row[9],
+            paid: row[9],
+            booked: row[10],
           }))
           .filter(r => r.visits >= 30 || r.leads >= 3);
         const scored = lines
