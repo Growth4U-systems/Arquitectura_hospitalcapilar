@@ -69,6 +69,15 @@ const FEMALE_ECPS = new Set(['Protocolo Mujer', 'Lo Que Vino Con el Bebé', 'Es 
 
 const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice = 125, brandHeader = false }) => {
   const [openFaq, setOpenFaq] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const handlePayClick = async () => {
+    if (paying) return;
+    setPaying(true);
+    try { await onPay?.(); } finally {
+      // Re-enable after 20s in case redirect didn't fire (network failure)
+      setTimeout(() => setPaying(false), 20000);
+    }
+  };
   const testimonials = TESTIMONIALS_BY_ECP[ecp] || TESTIMONIALS_BY_ECP['Es Normal'];
   const discountPct = Math.round(((ORIGINAL_PRICE - bonoPrice) / ORIGINAL_PRICE) * 100);
   const isTrichometabolic = FEMALE_ECPS.has(ecp);
@@ -321,10 +330,18 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
             </span>
           </div>
           <button
-            onClick={onPay}
-            className="w-full bg-[#4CA994] hover:bg-[#3d9480] text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors"
+            onClick={handlePayClick}
+            disabled={paying}
+            className="w-full bg-[#4CA994] hover:bg-[#3d9480] disabled:bg-[#7BBFAE] disabled:cursor-wait text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
           >
-            Reservar mi analítica · {bonoPrice}€
+            {paying ? (
+              <>
+                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Conectando con Stripe…
+              </>
+            ) : (
+              <>Reservar mi analítica · {bonoPrice}€</>
+            )}
           </button>
           {onCallRequest && (
             <button

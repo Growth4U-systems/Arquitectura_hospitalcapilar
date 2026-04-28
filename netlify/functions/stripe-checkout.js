@@ -25,13 +25,9 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const { email, nombre, contactId, ecp, ubicacion, amount = 19500, embedded = false } = body;
 
-    if (!email) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'email is required' }) };
-    }
-
     const params = new URLSearchParams();
     params.append('mode', 'payment');
-    params.append('customer_email', email);
+    if (email) params.append('customer_email', email);
     params.append('line_items[0][quantity]', '1');
     params.append('line_items[0][price_data][currency]', 'eur');
     params.append('line_items[0][price_data][unit_amount]', amount.toString());
