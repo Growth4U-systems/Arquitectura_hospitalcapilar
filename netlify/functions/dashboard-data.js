@@ -183,16 +183,21 @@ async function fetchMetaAdCatalog() {
   try {
     // creative{...} pulls the underlying video_id so we can group all ads
     // that reuse the same video file (different copy, same UGC) under one
-    // "Video N" label in the master table.
+    // "Video N" label in the master table. Use a flat field list — nested
+    // object_story_spec{video_data{...}} can fail with permission errors
+    // on some ad accounts, dropping the whole catalog read.
     const fields = [
       'id', 'name', 'status', 'effective_status',
       'adset{id,name}',
       'campaign{id,name}',
-      'creative{id,name,video_id,thumbnail_url,object_story_spec{video_data{video_id,title}}}',
+      'creative{id,name,video_id,thumbnail_url}',
     ].join(',');
     const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=500&access_token=${token}`;
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log('[Meta catalog] read failed:', res.status, (await res.text()).slice(0, 300));
+      return null;
+    }
     const data = await res.json();
     const ads = data.data || [];
     const byId = {};
@@ -213,9 +218,7 @@ async function fetchMetaAdCatalog() {
     };
     const extractVideoId = (cr) => {
       if (!cr) return '';
-      return cr.video_id
-          || cr.object_story_spec?.video_data?.video_id
-          || '';
+      return cr.video_id || '';
     };
     for (const a of ads) {
       const videoId = extractVideoId(a.creative);
