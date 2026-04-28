@@ -48,16 +48,42 @@ function DirectPaywallInner() {
     const parsed = readQueryParams();
     setLead(parsed);
     const ecpResolved = resolveEcp(parsed.ecp);
+    // Pull ALL UTMs from URL so /p/ leads inherit attribution from Meta Lead
+    // Form macros (configure the form's redirect URL with utm_content={{ad.id}}
+    // etc.). Without this, master table groups them as "Sin atribuir".
+    const utms = getUTMParams();
     try {
       analytics.trackEvent('paywall_directo_viewed', {
         ecp: parsed.ecp || 'none',
         ciudad: parsed.ciudad || 'none',
         has_email: !!parsed.email,
         has_telefono: !!parsed.telefono,
-        utm_source: getUTMParams().utm_source || 'direct',
+        ...utms,
       });
     } catch (e) {
       console.warn('[Analytics] paywall_directo_viewed failed:', e.message);
+    }
+    // If the lead came pre-filled from Meta Lead Form, register it as a lead
+    // event in PostHog right away. Master table needs this to attribute the
+    // contact to its source ad (otherwise it sits in "sin atribución").
+    if (parsed.email) {
+      try {
+        analytics.trackEvent('lead_form_submitted', {
+          quiz_id: 'direct_paywall',
+          source: 'meta_lead_form',
+          ecp: ecpResolved,
+          ciudad: parsed.ciudad || '',
+          ...utms,
+        });
+        analytics.trackEvent('$identify', {
+          email: parsed.email,
+          name: parsed.nombre,
+          phone: parsed.telefono,
+          ...utms,
+        });
+      } catch (e) {
+        console.warn('[Analytics] lead_form_submitted failed:', e.message);
+      }
     }
     // Meta Pixel — ViewContent (user landed on the paywall)
     try {

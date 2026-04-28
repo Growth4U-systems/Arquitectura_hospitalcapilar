@@ -10,6 +10,7 @@ const LAUNCH_DATE = '2026-04-09';
 // GHL constants (mirrors sync-ghl-posthog.js)
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
+// Stages that count as "ever booked" (used for total appointments count).
 const GHL_BOOKED_STAGES = new Set([
   'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', // booked
   '24956338-65d9-4a16-97e5-ba01b64f390f', // reminder_sent
@@ -17,6 +18,13 @@ const GHL_BOOKED_STAGES = new Set([
   '1cd97c60-fb19-4699-9293-2b32fd48b54a', // won
   '437d0663-bd17-4d84-a939-11aed1b4b384', // no_show
 ]);
+// Per-stage classification so the dashboard can split:
+//   Agendadas (booked|reminder_sent), Atendidas (attended|won),
+//   No-show, Canceladas (lost — bookings that didn't happen).
+const GHL_STAGE_AGENDADA  = new Set(['f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', '24956338-65d9-4a16-97e5-ba01b64f390f']);
+const GHL_STAGE_ATENDIDA  = new Set(['71a5cc36-584e-47dc-9cce-215803e3140d', '1cd97c60-fb19-4699-9293-2b32fd48b54a']);
+const GHL_STAGE_NO_SHOW   = new Set(['437d0663-bd17-4d84-a939-11aed1b4b384']);
+const GHL_STAGE_CANCELADA = new Set(['c961b576-b14d-43a6-ac75-a26695886d58']); // lost
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
@@ -418,14 +426,19 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     else pago = 'unknown';
 
     const tags = Array.isArray(contact.tags) ? contact.tags : [];
-    const isBooked = GHL_BOOKED_STAGES.has(opp.pipelineStageId);
+    const stage = opp.pipelineStageId;
+    const isBooked    = GHL_BOOKED_STAGES.has(stage);
+    const isAgendada  = GHL_STAGE_AGENDADA.has(stage);
+    const isAtendida  = GHL_STAGE_ATENDIDA.has(stage);
+    const isNoShow    = GHL_STAGE_NO_SHOW.has(stage);
+    const isCancelada = GHL_STAGE_CANCELADA.has(stage);
     const isPaid = tags.includes('bono_pagado');
 
     return {
       opp_id: opp.id,
       contact_id: opp.contactId,
       createdAt: opp.createdAt,
-      pipeline_stage: opp.pipelineStageId,
+      pipeline_stage: stage,
       channel,
       utm_source: utmSource,
       utm_medium: cf('utm_medium') || 'sin-dato',
@@ -438,7 +451,11 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       pago,
       clinica,
       leads: 1,
-      booked: isBooked ? 1 : 0,
+      booked:    isBooked ? 1 : 0,    // anything that ever was a booking
+      agendada:  isAgendada ? 1 : 0,  // currently scheduled (booked|reminder_sent)
+      atendida:  isAtendida ? 1 : 0,  // attended|won
+      no_show:   isNoShow ? 1 : 0,
+      cancelada: isCancelada ? 1 : 0, // lost stage
       paid: isPaid ? 1 : 0,
     };
   });
@@ -571,12 +588,20 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null, g
         completed: 0,
         leads: 0,
         booked: 0,
+        agendada: 0,
+        atendida: 0,
+        no_show: 0,
+        cancelada: 0,
         paid: 0,
       };
       buckets.set(key, b);
     }
     b.leads += r.leads;
     b.booked += r.booked;
+    b.agendada += r.agendada || 0;
+    b.atendida += r.atendida || 0;
+    b.no_show += r.no_show || 0;
+    b.cancelada += r.cancelada || 0;
     b.paid += r.paid;
   }
 
@@ -1217,6 +1242,45 @@ exports.handler = async (event) => {
         }
         const bySexoArr = Object.values(bySexoMap).sort((a, b) => b.leads - a.leads);
         if (bySexoArr.length > 0) result.by_sexo = bySexoArr;
+
+        // ─── SINGLE SOURCE OF TRUTH ───
+        // GHL is the operational system. Override KPIs derived from PostHog
+        // events so every widget tells the same story:
+        //   leads      = unique opps in pipeline
+        //   agendada   = currently scheduled (booked|reminder_sent)
+        //   atendida   = attended|won
+        //   no_show    = no_show stage
+        //   cancelada  = lost stage (booked then cancelled)
+        //   booked     = ever made it to a booking (sum of the 4 above)
+        const ghlAgg = ghlRows.reduce((acc, r) => ({
+          leads:     acc.leads + r.leads,
+          agendada:  acc.agendada + (r.agendada || 0),
+          atendida:  acc.atendida + (r.atendida || 0),
+          no_show:   acc.no_show + (r.no_show || 0),
+          cancelada: acc.cancelada + (r.cancelada || 0),
+          paid:      acc.paid + r.paid,
+        }), { leads: 0, agendada: 0, atendida: 0, no_show: 0, cancelada: 0, paid: 0 });
+        const ghlBooked = ghlAgg.agendada + ghlAgg.atendida + ghlAgg.no_show + ghlAgg.cancelada;
+        result.kpis = {
+          ...result.kpis,
+          leads_ghl: ghlAgg.leads,
+          appointment_booked: ghlBooked,
+          appointment_attended: ghlAgg.atendida,
+          appointment_no_show: ghlAgg.no_show,
+          appointment_cancelada: ghlAgg.cancelada,
+          appointment_agendada: ghlAgg.agendada,
+        };
+        // Replace executive_header stages with GHL truth so the funnel adds up.
+        if (result.executive_header) {
+          result.executive_header.ghl_truth = {
+            leads: ghlAgg.leads,
+            agendada: ghlAgg.agendada,
+            atendida: ghlAgg.atendida,
+            no_show: ghlAgg.no_show,
+            cancelada: ghlAgg.cancelada,
+            paid: ghlAgg.paid,
+          };
+        }
 
         // Master funnel — one row per unique 9-dim combination, enriched
         // with upstream counts from the PostHog slice + Meta catalog so

@@ -887,14 +887,16 @@ function paintMasterFunnel() {
 }
 
 function renderFunnel(k) {
+  // Use GHL-derived leads count when available (single source of truth).
+  const leads = (k.leads_ghl != null) ? k.leads_ghl : k.form_submitted;
   const steps = [
-    { label: '$pageview', value: k.pageviews, color: '#2C3E50' },
-    { label: 'quiz_started', value: k.quiz_started, color: '#34495e' },
-    { label: 'quiz_completed', value: k.quiz_completed, color: '#3d8e7e' },
-    { label: 'form_submitted', value: k.form_submitted, color: '#4CA994' },
-    { label: 'payment_completed', value: k.payment_completed || 0, color: '#52b89e' },
-    { label: 'appointment_booked', value: k.appointment_booked, color: '#5fbfa8' },
-    { label: 'appointment_attended', value: k.appointment_attended, color: '#4ade80' },
+    { label: 'Visitantes',  value: k.pageviews, color: '#2C3E50' },
+    { label: 'Quiz iniciado',  value: k.quiz_started, color: '#34495e' },
+    { label: 'Quiz completado', value: k.quiz_completed, color: '#3d8e7e' },
+    { label: 'Leads',  value: leads, color: '#4CA994' },
+    { label: 'Pago',  value: k.payment_completed || 0, color: '#52b89e' },
+    { label: 'Citas (todas)',  value: k.appointment_booked, color: '#5fbfa8' },
+    { label: 'Asistidas',  value: k.appointment_attended, color: '#4ade80' },
   ];
   const max = Math.max(steps[0].value || 1, 1);
   let html = '';
@@ -915,18 +917,26 @@ function renderFunnel(k) {
   }
   document.getElementById('funnelChart').innerHTML = html;
 
-  // Summary
+  // Summary — break down the "Citas (todas)" total into its 4 states.
+  const leads = (k.leads_ghl != null) ? k.leads_ghl : k.form_submitted;
   const totalConv = pct(k.appointment_attended, k.pageviews);
-  const leadToPago = pct(k.payment_completed || 0, k.form_submitted);
+  const leadToPago = pct(k.payment_completed || 0, leads);
   const pagoToCita = (k.payment_completed || 0) > 0
     ? pct(k.appointment_booked, k.payment_completed)
     : '—';
-  const noShowRate = k.appointment_booked > 0 ? pct(k.appointment_no_show, k.appointment_booked) : '0%';
+  const agendada = k.appointment_agendada || 0;
+  const atendida = k.appointment_attended || 0;
+  const noShow = k.appointment_no_show || 0;
+  const cancelada = k.appointment_cancelada || 0;
   document.getElementById('funnelSummary').innerHTML = `
     <div><span style="color:#888;font-size:12px;">Conversion total (visit &rarr; attend)</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${totalConv}</span></div>
     <div><span style="color:#888;font-size:12px;">Lead &rarr; Pago</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToPago}</span></div>
     <div><span style="color:#888;font-size:12px;">Pago &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${pagoToCita}</span></div>
-    <div><span style="color:#888;font-size:12px;">No-show rate</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${noShowRate}</span></div>
+    <div style="flex-basis:100%;height:0;"></div>
+    <div><span style="color:#888;font-size:12px;">Agendadas</span><br><span style="font-size:20px;font-weight:700;color:#5fbfa8;">${agendada}</span></div>
+    <div><span style="color:#888;font-size:12px;">Atendidas</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${atendida}</span></div>
+    <div><span style="color:#888;font-size:12px;">No-show</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${noShow}</span></div>
+    <div><span style="color:#888;font-size:12px;">Canceladas</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${cancelada}</span></div>
   `;
 }
 
