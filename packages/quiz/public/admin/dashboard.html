@@ -264,6 +264,9 @@
       <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Canal
         <select id="mfFilterChannel" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
       </label>
+      <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Video
+        <select id="mfFilterVideo" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
+      </label>
       <label style="display:flex;align-items:center;gap:4px;color:var(--hc-text-muted);">Landing
         <select id="mfFilterLanding" style="background:var(--hc-surface);border:1px solid var(--hc-card-border);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;"><option value="">Todos</option></select>
       </label>
@@ -287,6 +290,7 @@
       </label>
       <span style="margin-left:auto;font-size:11px;color:var(--hc-text-dim);" id="mfRowCount"></span>
     </div>
+    <div id="mfVideoLegend" style="padding:8px 16px;border-bottom:1px solid var(--hc-card-border);font-size:11px;color:var(--hc-text-muted);display:none;"></div>
     <div class="card-body" style="overflow-x:auto;">
       <table id="masterFunnelTable" style="font-size:12px;white-space:nowrap;"></table>
     </div>
@@ -518,6 +522,7 @@ function renderMasterFunnel(data) {
     if (current && uniques.includes(current)) sel.value = current;
   };
   fill('mfFilterChannel',  _masterFunnelRows.map(r => r.channel));
+  fill('mfFilterVideo',    _masterFunnelRows.map(r => r.video_label));
   fill('mfFilterLanding',  _masterFunnelRows.map(r => r.landing));
   fill('mfFilterSexo',     _masterFunnelRows.map(r => r.sexo));
   fill('mfFilterPago',     _masterFunnelRows.map(r => r.pago));
@@ -525,10 +530,26 @@ function renderMasterFunnel(data) {
   fill('mfFilterAd',       _masterFunnelRows.map(r => r.ad_display || r.utm_content));
   fill('mfFilterCampaign', _masterFunnelRows.map(r => r.utm_campaign));
 
-  ['mfFilterChannel','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica','mfFilterAd','mfFilterCampaign'].forEach(id => {
+  ['mfFilterChannel','mfFilterVideo','mfFilterLanding','mfFilterSexo','mfFilterPago','mfFilterClinica','mfFilterAd','mfFilterCampaign'].forEach(id => {
     document.getElementById(id).onchange = paintMasterFunnel;
   });
   document.getElementById('mfFilterMinLeads').oninput = paintMasterFunnel;
+
+  // Video legend: show what each "Video N" refers to in Meta (campaigns + ad names).
+  const legendEl = document.getElementById('mfVideoLegend');
+  const videos = data.meta_videos || [];
+  if (videos.length > 0) {
+    const items = videos.map(v => {
+      const ads = v.ads || [];
+      const campaigns = [...new Set(ads.map(a => a.campaign_name).filter(Boolean))];
+      const sample = ads.slice(0, 3).map(a => a.ad_name).join(' · ');
+      return `<span style="display:inline-block;margin-right:18px;"><strong style="color:#4CA994;">${v.label}</strong> &mdash; ${ads.length} ad(s) en ${campaigns.length} campaña(s) · <span style="color:#888;">${sample}</span></span>`;
+    }).join('');
+    legendEl.innerHTML = '<strong style="color:#bbb;">Mapping de videos:</strong> ' + items;
+    legendEl.style.display = 'block';
+  } else {
+    legendEl.style.display = 'none';
+  }
 
   paintMasterFunnel();
 }
@@ -588,6 +609,7 @@ function addTo(agg, r) {
 
 function paintMasterFunnel() {
   const fChannel  = document.getElementById('mfFilterChannel').value;
+  const fVideo    = document.getElementById('mfFilterVideo').value;
   const fLanding  = document.getElementById('mfFilterLanding').value;
   const fSexo     = document.getElementById('mfFilterSexo').value;
   const fPago     = document.getElementById('mfFilterPago').value;
@@ -612,6 +634,7 @@ function paintMasterFunnel() {
 
   const filtered = _masterFunnelRows.filter(r =>
     (!fChannel  || r.channel === fChannel) &&
+    (!fVideo    || r.video_label === fVideo) &&
     (!fLanding  || r.landing === fLanding) &&
     (!fSexo     || r.sexo === fSexo) &&
     (!fPago     || r.pago === fPago) &&

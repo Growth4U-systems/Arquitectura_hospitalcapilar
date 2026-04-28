@@ -99,12 +99,22 @@ async function fetchMetaAdCatalog() {
   const account = process.env.META_AD_ACCOUNT_ID;
   if (!token || !account) return null;
   try {
-    const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=id,name,status,effective_status,adset{id,name},campaign{id,name}&limit=500&access_token=${token}`;
+    // creative{...} pulls the underlying video_id so we can group all ads
+    // that reuse the same video file (different copy, same UGC) under one
+    // "Video N" label in the master table.
+    const fields = [
+      'id', 'name', 'status', 'effective_status',
+      'adset{id,name}',
+      'campaign{id,name}',
+      'creative{id,name,video_id,thumbnail_url,object_story_spec{video_data{video_id,title}}}',
+    ].join(',');
+    const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=500&access_token=${token}`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     const ads = data.data || [];
     const byId = {};
+    const byVideoId = {};          // video_id → array of ads using it
     // Meta frequently reuses the same creative name across multiple adsets
     // (e.g., "Miniaturizacion soto" lives in both a Quiz Largo adset and a
     // Quiz Rápido adset). To disambiguate we infer the landing flavor
@@ -119,7 +129,14 @@ async function fetchMetaAdCatalog() {
       if (/quiz\s*largo/.test(s))                         return 'quiz_largo';
       return null;
     };
+    const extractVideoId = (cr) => {
+      if (!cr) return '';
+      return cr.video_id
+          || cr.object_story_spec?.video_data?.video_id
+          || '';
+    };
     for (const a of ads) {
+      const videoId = extractVideoId(a.creative);
       const info = {
         ad_id: a.id,
         ad_name: a.name || '',
@@ -130,8 +147,15 @@ async function fetchMetaAdCatalog() {
         campaign_name: a.campaign?.name || '',
         status: a.effective_status || a.status || '',
         is_g4u: isG4U(a.campaign?.name),
+        video_id: videoId,
+        creative_name: a.creative?.name || '',
+        thumbnail: a.creative?.thumbnail_url || '',
       };
       byId[a.id] = info;
+      if (videoId) {
+        if (!byVideoId[videoId]) byVideoId[videoId] = [];
+        byVideoId[videoId].push(info);
+      }
       const nameKey = (a.name || '').trim().toLowerCase();
       if (!nameKey) continue;
       if (!byNameAny[nameKey]) byNameAny[nameKey] = [];
@@ -146,7 +170,15 @@ async function fetchMetaAdCatalog() {
         }
       }
     }
-    return { byId, byNameAndLanding, byNameAny, count: ads.length };
+    // Build video → label map. Order videos by total ad count desc, give
+    // each a stable "Video 1/2/3..." label. Only G4U videos get labelled
+    // (HC's other campaigns use their own creatives we don't care about).
+    const g4uVideos = Object.entries(byVideoId)
+      .filter(([, ads]) => ads.some(x => x.is_g4u))
+      .sort((a, b) => b[1].length - a[1].length);
+    const videoLabel = {};
+    g4uVideos.forEach(([videoId], i) => { videoLabel[videoId] = `Video ${i + 1}`; });
+    return { byId, byVideoId, byNameAndLanding, byNameAny, videoLabel, count: ads.length };
   } catch (e) {
     console.log('[Meta catalog] fetch failed:', e.message);
     return null;
@@ -387,6 +419,8 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
     const metaAdId     = cls.meta?.ad_id         || null;
     const adDisplay    = cls.display;
     const adKind       = cls.kind;
+    const videoId      = cls.meta?.video_id      || '';
+    const videoLabel   = (videoId && metaCatalog?.videoLabel?.[videoId]) || 'Sin video';
 
     const key = [r.channel, metaCampaign, metaAdset, adKind + '|' + adDisplay, r.nicho, r.landing, r.sexo, r.pago, r.clinica].join('::');
     let b = buckets.get(key);
@@ -399,6 +433,8 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null) {
         ad_display:   adDisplay,
         ad_kind:      adKind,
         ad_id:        metaAdId,
+        video_id:     videoId,
+        video_label:  videoLabel,
         nicho: r.nicho,
         landing: r.landing,
         sexo: r.sexo,
@@ -1062,6 +1098,27 @@ exports.handler = async (event) => {
         const metaCatalog = await fetchMetaAdCatalog();
         result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog);
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
+        // Expose the Video N → creative names mapping so the dashboard can
+        // show the user what each video label corresponds to in Meta.
+        if (metaCatalog?.videoLabel) {
+          result.meta_videos = Object.entries(metaCatalog.videoLabel).map(([videoId, label]) => {
+            const ads = metaCatalog.byVideoId[videoId] || [];
+            const g4uAds = ads.filter(a => a.is_g4u);
+            return {
+              video_id: videoId,
+              label,
+              ad_count: ads.length,
+              ads: g4uAds.map(a => ({
+                ad_id: a.ad_id,
+                ad_name: a.ad_name,
+                campaign_name: a.campaign_name,
+                adset_name: a.adset_name,
+                status: a.status,
+                thumbnail: a.thumbnail,
+              })),
+            };
+          });
+        }
       }
     } catch (e) {
       console.log('[Dashboard] GHL fetch failed, falling back to PostHog:', e.message);
