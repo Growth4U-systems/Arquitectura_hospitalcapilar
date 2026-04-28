@@ -167,16 +167,6 @@
   </div>
 </div>
 
-<!-- KPI ROW -->
-<div class="kpi-row" id="kpiRow">
-  <div class="kpi"><div class="value" id="kpi-pageviews">-</div><div class="label">Visitantes</div><div class="sublabel">unique persons</div></div>
-  <div class="kpi"><div class="value" id="kpi-started">-</div><div class="label">Quiz Iniciado</div></div>
-  <div class="kpi"><div class="value" id="kpi-completed">-</div><div class="label">Quiz Completado</div></div>
-  <div class="kpi"><div class="value" id="kpi-leads">-</div><div class="label">Leads</div></div>
-  <div class="kpi"><div class="value" id="kpi-booked">-</div><div class="label">Citas Agendadas</div></div>
-  <div class="kpi"><div class="value" id="kpi-attended">-</div><div class="label">Asistieron</div></div>
-</div>
-
 <!-- FUNNEL -->
 <div class="section-header">Embudo completo</div>
 <div class="grid">
@@ -474,14 +464,6 @@ async function fetchData() {
 // ---- RENDER ----
 function renderDashboard(data) {
   const k = data.kpis;
-
-  // KPIs
-  document.getElementById('kpi-pageviews').textContent = fmt(k.pageviews);
-  document.getElementById('kpi-started').textContent = fmt(k.quiz_started);
-  document.getElementById('kpi-completed').textContent = fmt(k.quiz_completed);
-  document.getElementById('kpi-leads').textContent = fmt(k.form_submitted);
-  document.getElementById('kpi-booked').textContent = fmt(k.appointment_booked);
-  document.getElementById('kpi-attended').textContent = fmt(k.appointment_attended);
 
   // Funnel
   renderFunnel(k);
