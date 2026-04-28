@@ -176,11 +176,22 @@ async function fetchGoogleAdsCatalog() {
 // whatever the marketer typed in the URL params) against Meta's real structure
 // of campaigns → adsets → ads. Each HC campaign has BOTH Quiz Largo and Quiz
 // Corto adsets inside, so proper attribution needs the adset_name.
+// Module-level cache to survive across warm lambda invocations.
+// Meta hits rate-limit fast on the ads-management endpoint — caching for
+// 5 min cuts our calls from once-per-dashboard-load to once per cold-start
+// or 5min interval.
+let _metaCatalogCache = null;
+let _metaCatalogCacheAt = 0;
+const META_CATALOG_TTL_MS = 5 * 60 * 1000;
+
 async function fetchMetaAdCatalog() {
   const token = process.env.META_ACCESS_TOKEN;
   const account = process.env.META_AD_ACCOUNT_ID;
   if (!token || !account) {
     return { _error: 'Missing META_ACCESS_TOKEN or META_AD_ACCOUNT_ID', count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
+  }
+  if (_metaCatalogCache && (Date.now() - _metaCatalogCacheAt) < META_CATALOG_TTL_MS) {
+    return _metaCatalogCache;
   }
   try {
     // creative{...} pulls the underlying video_id so we can group all ads
@@ -194,12 +205,15 @@ async function fetchMetaAdCatalog() {
       'campaign{id,name}',
       'creative{id,name,video_id,thumbnail_url}',
     ].join(',');
-    // Paginate: Meta refuses limit=500 with creative subfields ("Please reduce
-    // the amount of data" error). Use limit=25 and follow paging.next links.
+    // Paginate ACTIVE ads only — inactive/archived ads still count toward
+    // attribution if their utm_content shows up in a lead, but for the
+    // overwhelming majority of leads we only need active. Filtering at the
+    // API drops volume ~70% and avoids rate-limit (code 80004).
     const ads = [];
-    let nextUrl = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=25&access_token=${token}`;
+    const filter = encodeURIComponent(JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE'] }]));
+    let nextUrl = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&filtering=${filter}&limit=25&access_token=${token}`;
     let pageGuard = 0;
-    while (nextUrl && pageGuard++ < 40) {  // hard cap: 1000 ads
+    while (nextUrl && pageGuard++ < 20) {  // hard cap: 500 ACTIVE ads
       const res = await fetch(nextUrl);
       if (!res.ok) {
         const errText = (await res.text()).slice(0, 300);
@@ -276,9 +290,13 @@ async function fetchMetaAdCatalog() {
       .sort((a, b) => b[1].length - a[1].length);
     const videoLabel = {};
     g4uVideos.forEach(([videoId], i) => { videoLabel[videoId] = `Video ${i + 1}`; });
-    return { byId, byVideoId, byNameAndLanding, byNameAny, videoLabel, count: ads.length };
+    const result = { byId, byVideoId, byNameAndLanding, byNameAny, videoLabel, count: ads.length };
+    _metaCatalogCache = result;
+    _metaCatalogCacheAt = Date.now();
+    return result;
   } catch (e) {
     console.log('[Meta catalog] fetch failed:', e.message);
+    if (_metaCatalogCache) return _metaCatalogCache;  // serve stale on error
     return { _error: e.message, count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
   }
 }
