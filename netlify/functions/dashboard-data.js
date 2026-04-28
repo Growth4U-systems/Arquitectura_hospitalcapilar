@@ -179,7 +179,9 @@ async function fetchGoogleAdsCatalog() {
 async function fetchMetaAdCatalog() {
   const token = process.env.META_ACCESS_TOKEN;
   const account = process.env.META_AD_ACCOUNT_ID;
-  if (!token || !account) return null;
+  if (!token || !account) {
+    return { _error: 'Missing META_ACCESS_TOKEN or META_AD_ACCOUNT_ID', count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
+  }
   try {
     // creative{...} pulls the underlying video_id so we can group all ads
     // that reuse the same video file (different copy, same UGC) under one
@@ -195,8 +197,9 @@ async function fetchMetaAdCatalog() {
     const url = `https://graph.facebook.com/v21.0/${account}/ads?fields=${fields}&limit=500&access_token=${token}`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.log('[Meta catalog] read failed:', res.status, (await res.text()).slice(0, 300));
-      return null;
+      const errText = (await res.text()).slice(0, 300);
+      console.log('[Meta catalog] read failed:', res.status, errText);
+      return { _error: `Meta API ${res.status}: ${errText}`, count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
     }
     const data = await res.json();
     const ads = data.data || [];
@@ -266,7 +269,7 @@ async function fetchMetaAdCatalog() {
     return { byId, byVideoId, byNameAndLanding, byNameAny, videoLabel, count: ads.length };
   } catch (e) {
     console.log('[Meta catalog] fetch failed:', e.message);
-    return null;
+    return { _error: e.message, count: 0, byId: {}, byVideoId: {}, byNameAndLanding: {}, byNameAny: {}, videoLabel: {} };
   }
 }
 
@@ -1197,6 +1200,8 @@ exports.handler = async (event) => {
         result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog, googleCatalog);
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
         result.google_ads_catalog_size = googleCatalog?.count || 0;
+        if (metaCatalog?._error) result.meta_ads_catalog_error = metaCatalog._error;
+        if (googleCatalog?._error) result.google_ads_catalog_error = googleCatalog._error;
         // Expose the Video N → creative names mapping so the dashboard can
         // show the user what each video label corresponds to in Meta.
         if (metaCatalog?.videoLabel) {
