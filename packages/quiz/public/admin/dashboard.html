@@ -496,6 +496,20 @@ function renderDashboard(data) {
 // active Meta ad even if it hasn't generated leads yet.
 const _caminoExpanded = new Set();
 
+// Client-side mirror of the backend's CAMPAIGN_ALIASES map. Used so the
+// active-Meta-ads / active-Google-ad-groups injection rolls up under the
+// same canonical campaign name as the historical leads.
+const _CAMPAIGN_ALIASES_CLIENT = {
+  '¿qué me pasa?':                                  '¿Qué me pasa? G4U',
+  '¿que me pasa?':                                  '¿Qué me pasa? G4U',
+  'postparto / lo que vino con el bebé /madrid':    'Postparto_G4U_Madrid',
+};
+function aliasCampaignNameClient(name) {
+  if (!name) return name;
+  const key = String(name).trim().toLowerCase();
+  return _CAMPAIGN_ALIASES_CLIENT[key] || name;
+}
+
 function renderCamino(data) {
   renderCaminoTree(data, 'mujer',  'caminoPagoTable',   true);
   renderCaminoTree(data, 'hombre', 'caminoNoPagoTable', false);
@@ -545,18 +559,21 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     caminoAdd(ad, r);
   }
 
-  // Inject every ACTIVE Meta G4U ad as an empty row if it didn't surface
-  // any leads yet. Mirrors what we do in the master table — every running
-  // ad shows up, even with 0 metrics.
-  // For sexoFilter='mujer' we include ALL active ads (they target women).
-  // For 'hombre' we don't inject because the campaigns to men are paused.
+  // Inject every ACTIVE Meta G4U ad and every Google ad group as empty
+  // rows if they didn't surface any leads yet. Mirrors what we do in the
+  // master table — every running ad/adgroup shows up, even with 0 metrics.
+  // For sexoFilter='mujer' we include EVERYTHING (current campaigns target
+  // women). For 'hombre' we skip injection because campaigns to men are
+  // paused — only show what actually has data.
   if (sexoFilter === 'mujer') {
+    // Meta: Campaign → AdSet → Ad
     const metaActive = data.meta_active_ads || [];
     for (const a of metaActive) {
-      let camp = tree.get(a.campaign_name);
+      const campName = aliasCampaignNameClient(a.campaign_name);
+      let camp = tree.get(campName);
       if (!camp) {
-        camp = { key: a.campaign_name, name: a.campaign_name, channel: 'Meta', adsets: new Map(), ...caminoAggInit() };
-        tree.set(a.campaign_name, camp);
+        camp = { key: campName, name: campName, channel: 'Meta', adsets: new Map(), ...caminoAggInit() };
+        tree.set(campName, camp);
       }
       let adset = camp.adsets.get(a.adset_name);
       if (!adset) {
@@ -570,6 +587,21 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
           video_label: a.video_label || '',
           ...caminoAggInit(),
         });
+      }
+    }
+    // Google: Campaign → AdGroup (adgroup acts as adset; we don't track
+    // individual Responsive Search Ads as separate rows because Google
+    // doesn't pass {creative} per click in our setup yet).
+    const googleAdGroups = data.google_active_ad_groups || [];
+    for (const g of googleAdGroups) {
+      const campName = aliasCampaignNameClient(g.campaign_name);
+      let camp = tree.get(campName);
+      if (!camp) {
+        camp = { key: campName, name: campName, channel: 'Google', adsets: new Map(), ...caminoAggInit() };
+        tree.set(campName, camp);
+      }
+      if (!camp.adsets.has(g.ad_group_name)) {
+        camp.adsets.set(g.ad_group_name, { key: g.ad_group_name, name: g.ad_group_name, ads: new Map(), ...caminoAggInit() });
       }
     }
   }
