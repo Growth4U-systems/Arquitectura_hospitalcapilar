@@ -395,9 +395,21 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Flatten each opportunity into a dimension row
+  // Flatten each opportunity into a dimension row, filtering out non-funnel
+  // sources (IG DMs from Manychat, manual entries) so the lead count matches
+  // the paid funnel reality (~60). Without this filter we'd include ~45 IG
+  // DMs that never went through the quiz/form, inflating leads to ~87.
+  const isFunnelSource = (contact) => {
+    const source = (contact.source || '').toLowerCase();
+    if (!source) return true; // empty source — give benefit of doubt (could be lost UTM)
+    if (source.includes('social media instagram')) return false; // IG DM via Manychat
+    if (source.includes('social media facebook')) return false; // FB DM via Manychat
+    if (source.includes('manual')) return false;
+    return true;
+  };
   return inRange.map(opp => {
     const contact = contactById[opp.contactId] || {};
+    if (!isFunnelSource(contact)) return null;
     const cfMap = {};
     (contact.customFields || []).forEach(f => { cfMap[f.id] = f.value; });
     const cf = (key) => cfMap[GHL_CF[key]] || null;
@@ -460,7 +472,7 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       cancelada: isCancelada ? 1 : 0, // lost stage
       paid: isPaid ? 1 : 0,
     };
-  });
+  }).filter(Boolean);
 }
 
 // Backward-compatible wrapper — aggregate rows by sexo only.
