@@ -147,6 +147,19 @@ exports.handler = async (event) => {
       ? `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&phone=${encodeURIComponent(body.phone || '')}&tipo=${tipoConsulta}`
       : '';
 
+    // Build paywallUrl for women (tipo=diagnostico). Map ECP to the paywall slug
+    // expected by DirectPaywallIsland on /p/.
+    const ecpToSlug = {
+      'es normal': 'es-normal',
+      'lo que vino con el bebé': 'postparto',
+      'lo que vino con el bebe': 'postparto',
+      'protocolo mujer': 'protocolo-mujer',
+    };
+    const paywallSlug = ecpToSlug[(ecpValue || '').toLowerCase()] || 'protocolo-mujer';
+    const paywallUrl = (contactId && isWoman)
+      ? `https://diagnostico.hospitalcapilar.com/p/?ecp=${paywallSlug}&contactId=${contactId}&nombre=${encodeURIComponent((body.firstName || '') + ' ' + (body.lastName || ''))}&email=${encodeURIComponent(body.email || '')}&telefono=${encodeURIComponent(body.phone || '')}`
+      : '';
+
     // 1b. Add "new_lead" tag + populate link_agendar on contact
     if (contactId) {
       try {
@@ -160,11 +173,14 @@ exports.handler = async (event) => {
         console.log('[GHL] Tag addition failed:', tagErr.message);
       }
 
-      // PUT all custom fields + link_agendar on contact (ensures fields are set even for duplicate contacts)
+      // PUT all custom fields + link_agendar (+ link_paywall for women) on contact
       const allCustomFields = [
         ...(body.customFields || []),
         { id: 'UdbclFWU2YGw0YYup4vm', field_value: bookingUrl },
       ];
+      if (paywallUrl) {
+        allCustomFields.push({ id: 'uRxexlYy8HItx45Z7sih', field_value: paywallUrl });
+      }
       try {
         const updatePayload = { customFields: allCustomFields };
         console.log('[GHL] PUT contact payload:', JSON.stringify(updatePayload));
