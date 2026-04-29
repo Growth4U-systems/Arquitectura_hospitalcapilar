@@ -659,13 +659,18 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     : '<span style="color:var(--hc-text-muted);display:inline-block;width:12px;">▸</span>';
 
   // Render Campaign rows sorted by leads desc (then visits desc as tiebreak)
+  // Channel-tinted background: Meta=blue, Google=green
   [...tree.values()]
     .sort((a, b) => (b.leads - a.leads) || (b.visits - a.visits))
     .forEach(camp => {
       const cKey = `c:${tableId}:${camp.key}`;
       const cExp = _caminoExpanded.has(cKey);
-      html += `<tr data-camino-toggle="${cKey}" style="cursor:pointer;background:rgba(76,169,148,0.04);font-weight:700;">
-        <td>${arrow(cKey)} ${camp.name} <span style="color:#888;font-weight:400;font-size:11px;">· ${camp.adsets.size} adset(s)</span></td>
+      const channelColor = CHANNEL_COLORS[camp.channel] || '#78716c';
+      const tint = camp.channel === 'Meta'   ? 'rgba(24,119,242,0.12)'
+                 : camp.channel === 'Google' ? 'rgba(52,168,83,0.12)'
+                 : 'rgba(120,113,108,0.06)';
+      html += `<tr data-camino-toggle="${cKey}" style="cursor:pointer;background:${tint};font-weight:700;">
+        <td><span style="color:${channelColor};">&#9679;</span> ${arrow(cKey)} ${camp.name} <span style="color:#888;font-weight:400;font-size:11px;">· ${camp.adsets.size} adset(s)</span></td>
         ${metricsCells(camp)}
       </tr>`;
       if (!cExp) return;
@@ -700,6 +705,27 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
             });
         });
     });
+
+  // Totales row — sum across all campaigns + per-channel breakdown
+  const totals = caminoAggInit();
+  const byChannel = { Meta: caminoAggInit(), Google: caminoAggInit() };
+  for (const camp of tree.values()) {
+    caminoAdd(totals, camp);
+    if (byChannel[camp.channel]) caminoAdd(byChannel[camp.channel], camp);
+  }
+  html += `<tr style="font-weight:700;border-top:2px solid #444;background:rgba(76,169,148,0.06);">
+    <td>Total</td>
+    ${metricsCells(totals)}
+  </tr>`;
+  for (const [ch, agg] of Object.entries(byChannel)) {
+    if (agg.leads === 0 && agg.visits === 0) continue;
+    const channelColor = CHANNEL_COLORS[ch] || '#78716c';
+    const tint = ch === 'Meta' ? 'rgba(24,119,242,0.08)' : 'rgba(52,168,83,0.08)';
+    html += `<tr style="font-weight:600;background:${tint};">
+      <td style="padding-left:24px;color:#bbb;"><span style="color:${channelColor};">&#9679;</span> Total ${ch}</td>
+      ${metricsCells(agg)}
+    </tr>`;
+  }
 
   html += '</tbody>';
   document.getElementById(tableId).innerHTML = html;
