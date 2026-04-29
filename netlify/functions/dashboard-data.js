@@ -729,7 +729,17 @@ exports.handler = async (event) => {
       adSpendByCampaign,
     ] = await Promise.all([
       // KPIs — all use count() for funnel consistency
-      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events WHERE event = '$pageview' ${dateFilter}`),
+      // Pageviews: exclude non-landing paths (admin, preview, /agendar, /mi-cita,
+      // /test-*, /api/*) so the funnel head matches actual ad-driven traffic.
+      hogqlQuery(apiKey, `SELECT count(DISTINCT person_id) FROM events
+        WHERE event = '$pageview'
+          AND properties.$pathname NOT LIKE '/admin%'
+          AND properties.$pathname NOT LIKE '/preview/%'
+          AND properties.$pathname NOT LIKE '/agendar%'
+          AND properties.$pathname NOT LIKE '/mi-cita%'
+          AND properties.$pathname NOT LIKE '/test-%'
+          AND properties.$pathname NOT LIKE '/api/%'
+          ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE (event = 'short_quiz_started' OR (event = 'quiz_started' AND properties.$pathname NOT LIKE '%/rapido/%')) ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('quiz_completed', 'short_quiz_completed') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count() FROM events WHERE event IN ('form_submitted', 'direct_form_submitted') ${dateFilter}`),
