@@ -1187,55 +1187,85 @@ function paintMasterFunnel() {
 function renderFunnel(k) {
   // Use GHL-derived leads count when available (single source of truth).
   const leads = (k.leads_ghl != null) ? k.leads_ghl : k.form_submitted;
+  const pago = k.payment_completed || 0;
+  const agendada  = k.appointment_agendada || 0;
+  const atendida  = k.appointment_attended || 0;
+  const noShow    = k.appointment_no_show || 0;
+  const cancelada = k.appointment_cancelada || 0;
+  const citas     = k.appointment_booked;
+
+  // Compact horizontal table: each step is a column with [value, drop% to next].
   const steps = [
-    { label: 'Visitantes',  value: k.pageviews, color: '#2C3E50' },
-    { label: 'Quiz iniciado',  value: k.quiz_started, color: '#34495e' },
-    { label: 'Quiz completado', value: k.quiz_completed, color: '#3d8e7e' },
-    { label: 'Leads',  value: leads, color: '#4CA994' },
-    { label: 'Pago de protocolo',  value: k.payment_completed || 0, color: '#52b89e' },
-    { label: 'Citas (todas)',  value: k.appointment_booked, color: '#5fbfa8' },
-    { label: 'Asistidas',  value: k.appointment_attended, color: '#4ade80' },
+    { label: 'Visitantes',      value: k.pageviews,        color: '#2C3E50' },
+    { label: 'Quiz iniciado',   value: k.quiz_started,     color: '#34495e' },
+    { label: 'Quiz completado', value: k.quiz_completed,   color: '#3d8e7e' },
+    { label: 'Leads',           value: leads,              color: '#4CA994' },
+    { label: 'Pago protocolo',  value: pago,               color: '#52b89e' },
+    { label: 'Citas (todas)',   value: citas,              color: '#5fbfa8' },
+    { label: 'Asistidas',       value: atendida,           color: '#4ade80' },
   ];
-  const max = Math.max(steps[0].value || 1, 1);
-  let html = '';
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(${steps.length}, 1fr);gap:6px;">`;
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
-    const widthPct = Math.max((s.value / max) * 100, 3);
-    const pctOfTotal = max > 0 ? (s.value / max * 100).toFixed(1) + '%' : '0%';
-    html += `<div class="funnel-step">
-      <div class="funnel-label">${s.label}</div>
-      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${widthPct}%;background:${s.color};">${fmt(s.value)}</div></div>
-      <div class="funnel-stats">${pctOfTotal}</div>
+    const next = steps[i + 1];
+    const dropPct = (next && s.value > 0) ? (next.value / s.value * 100).toFixed(1) + '%' : null;
+    const dropClass = dropPct
+      ? (parseFloat(dropPct) >= 50 ? 'good' : parseFloat(dropPct) >= 20 ? 'warn' : 'bad')
+      : '';
+    html += `<div style="background:rgba(255,255,255,0.02);border:1px solid var(--hc-card-border);border-left:3px solid ${s.color};border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">${s.label}</div>
+      <div style="font-size:24px;font-weight:700;color:#fff;line-height:1;">${fmt(s.value)}</div>
+      ${dropPct ? `<div style="font-size:10px;color:#888;margin-top:2px;">→ <span class="${dropClass}" style="font-weight:600;">${dropPct}</span></div>` : '<div style="font-size:10px;color:transparent;margin-top:2px;">.</div>'}
     </div>`;
-    if (i < steps.length - 1) {
-      const next = steps[i + 1];
-      const dropPct = s.value > 0 ? (next.value / s.value * 100).toFixed(1) : '0.0';
-      html += `<div class="funnel-arrow">&#x25BC; ${dropPct}%</div>`;
-    }
   }
-  document.getElementById('funnelChart').innerHTML = html;
+  html += '</div>';
 
-  // Summary — break down the "Citas (todas)" total into its 4 states.
-  const totalConv = pct(k.appointment_attended, k.pageviews);
-  const pago = k.payment_completed || 0;
+  // Citas breakdown row + headline rates — compact one-liner.
   const leadToPago = leads > 0 ? pct(pago, leads) : '0%';
   const pagoToCita = pago > 0
-    ? pct(k.appointment_booked, pago)
-    : '<span style="font-size:13px;color:#888;font-weight:500;">N/A &mdash; 0 pagos Stripe</span>';
-  const agendada = k.appointment_agendada || 0;
-  const atendida = k.appointment_attended || 0;
-  const noShow = k.appointment_no_show || 0;
-  const cancelada = k.appointment_cancelada || 0;
-  document.getElementById('funnelSummary').innerHTML = `
-    <div><span style="color:#888;font-size:12px;">Conversion total (visit &rarr; attend)</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${totalConv}</span></div>
-    <div><span style="color:#888;font-size:12px;">Lead &rarr; Pago protocolo</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToPago}</span></div>
-    <div><span style="color:#888;font-size:12px;">Pago protocolo &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${pagoToCita}</span></div>
-    <div style="flex-basis:100%;height:0;"></div>
-    <div><span style="color:#888;font-size:12px;">Agendadas</span><br><span style="font-size:20px;font-weight:700;color:#5fbfa8;">${agendada}</span></div>
-    <div><span style="color:#888;font-size:12px;">Atendidas</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${atendida}</span></div>
-    <div><span style="color:#888;font-size:12px;">No-show</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${noShow}</span></div>
-    <div><span style="color:#888;font-size:12px;">Canceladas</span><br><span style="font-size:20px;font-weight:700;color:#f87171;">${cancelada}</span></div>
-  `;
+    ? pct(citas, pago)
+    : '<span style="color:#666;">N/A — 0 Stripe</span>';
+  const totalConv = pct(atendida, k.pageviews);
+
+  html += `<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;">
+    <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Visit &rarr; Asistida</span>
+      <span style="float:right;font-weight:700;color:#4ade80;">${totalConv}</span>
+    </div>
+    <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Lead &rarr; Pago</span>
+      <span style="float:right;font-weight:700;color:#f59e0b;">${leadToPago}</span>
+    </div>
+    <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Pago &rarr; Cita</span>
+      <span style="float:right;font-weight:700;color:#f59e0b;">${pagoToCita}</span>
+    </div>
+  </div>`;
+
+  // Citas detail row — agendada / atendida / no_show / cancelada
+  html += `<div style="margin-top:8px;display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;font-size:12px;">
+    <div style="background:rgba(95,191,168,0.08);border:1px solid rgba(95,191,168,0.18);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Agendadas</span>
+      <span style="float:right;font-weight:700;color:#5fbfa8;">${agendada}</span>
+    </div>
+    <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Atendidas</span>
+      <span style="float:right;font-weight:700;color:#4ade80;">${atendida}</span>
+    </div>
+    <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">No-show</span>
+      <span style="float:right;font-weight:700;color:#f87171;">${noShow}</span>
+    </div>
+    <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:6px;padding:8px 12px;">
+      <span style="color:#888;">Canceladas</span>
+      <span style="float:right;font-weight:700;color:#f87171;">${cancelada}</span>
+    </div>
+  </div>`;
+
+  document.getElementById('funnelChart').innerHTML = html;
+  document.getElementById('funnelSummary').innerHTML = '';
+  document.getElementById('funnelSummary').style.display = 'none';
 }
 
 function renderTrafficTables(data) {
