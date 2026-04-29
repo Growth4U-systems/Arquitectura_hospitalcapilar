@@ -235,11 +235,33 @@
   </div>
 </div>
 
+<!-- CAMINO COMPLETO POR ANUNCIO -->
+<div class="section-header">
+  Camino completo por anuncio
+  <span style="font-size:11px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;margin-left:8px;">
+    &mdash; mujeres = camino pago (paywall &rarr; Stripe) &middot; hombres = camino sin pago (agenda directa)
+  </span>
+</div>
+<div class="grid">
+  <div class="card full-width">
+    <div class="card-header"><h3>Camino Pago (mujeres)</h3><span class="type">Funnel por anuncio</span></div>
+    <div class="card-body" style="overflow-x:auto;">
+      <table id="caminoPagoTable" style="font-size:12px;white-space:nowrap;width:100%;"></table>
+    </div>
+  </div>
+  <div class="card full-width">
+    <div class="card-header"><h3>Camino No-Pago (hombres)</h3><span class="type">Funnel por anuncio</span></div>
+    <div class="card-body" style="overflow-x:auto;">
+      <table id="caminoNoPagoTable" style="font-size:12px;white-space:nowrap;width:100%;"></table>
+    </div>
+  </div>
+</div>
+
 <!-- MASTER FUNNEL TABLE -->
 <div class="section-header">
   Tabla maestra del funnel
   <span style="font-size:11px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;margin-left:8px;">
-    &mdash; una fila = combinaci&oacute;n &uacute;nica (canal &times; campa&ntilde;a &times; adset &times; anuncio &times; nicho &times; landing &times; sexo &times; pago &times; cl&iacute;nica)
+    &mdash; vista granular: una fila = combinaci&oacute;n &uacute;nica (canal &times; campa&ntilde;a &times; adset &times; anuncio &times; nicho &times; landing &times; sexo &times; pago &times; cl&iacute;nica)
   </span>
 </div>
 <div class="grid">
@@ -472,8 +494,181 @@ function renderDashboard(data) {
   // Ad Spend / ROI
   renderAdSpend(data);
 
+  // Camino completo por anuncio (split sexo)
+  renderCamino(data);
+
   // Master funnel table (end of dashboard)
   renderMasterFunnel(data);
+}
+
+// ─── Camino completo por anuncio ─────────────────────────────────
+// Aggregate the master funnel rows by (anuncio, sexo) and render two
+// side-by-side tables — one for the pago path (mujeres → paywall →
+// Stripe → agenda) and one for the no-pago path (hombres → agenda
+// directa, sin paywall). Lets us compare the same anuncio across both
+// paths in a single glance.
+function renderCamino(data) {
+  const rows = data.by_master_funnel || [];
+  if (rows.length === 0) {
+    document.getElementById('caminoPagoTable').innerHTML = '<tbody><tr><td style="padding:20px;text-align:center;color:#666;">Sin datos</td></tr></tbody>';
+    document.getElementById('caminoNoPagoTable').innerHTML = '<tbody><tr><td style="padding:20px;text-align:center;color:#666;">Sin datos</td></tr></tbody>';
+    return;
+  }
+
+  // Group by anuncio (prefer ad_display, fall back to utm_content). Each
+  // anuncio gets two buckets: mujer (pago path) and hombre (no-pago path).
+  const byAnuncio = new Map();
+  for (const r of rows) {
+    const adKey = r.ad_display || r.utm_content || 'sin-atribucion';
+    const sexo = (r.sexo || 'sin-dato').toLowerCase();
+    if (!byAnuncio.has(adKey)) {
+      byAnuncio.set(adKey, {
+        anuncio: adKey,
+        video: r.video_label || '—',
+        campaign: r.utm_campaign || '—',
+        channel: r.channel || '—',
+        mujer:  emptyCamino(),
+        hombre: emptyCamino(),
+        otro:   emptyCamino(),
+      });
+    }
+    const a = byAnuncio.get(adKey);
+    const bucket = sexo === 'mujer' ? a.mujer : sexo === 'hombre' ? a.hombre : a.otro;
+    bucket.visits   += r.visits   || 0;
+    bucket.started  += r.started  || 0;
+    bucket.leads    += r.leads    || 0;
+    bucket.paid     += r.paid     || 0;
+    bucket.agendada += (r.agendada || 0) + (r.atendida || 0); // current+past appointments
+  }
+
+  function emptyCamino() {
+    return { visits: 0, started: 0, leads: 0, paid: 0, agendada: 0 };
+  }
+
+  const anuncios = [...byAnuncio.values()];
+
+  // ─── Camino Pago (mujeres) ───
+  const pagoRows = anuncios.filter(a => a.mujer.leads > 0 || a.mujer.visits > 0)
+    .sort((a, b) => b.mujer.leads - a.mujer.leads);
+  let pagoTotals = emptyCamino();
+  pagoRows.forEach(a => {
+    pagoTotals.visits   += a.mujer.visits;
+    pagoTotals.started  += a.mujer.started;
+    pagoTotals.leads    += a.mujer.leads;
+    pagoTotals.paid     += a.mujer.paid;
+    pagoTotals.agendada += a.mujer.agendada;
+  });
+  let pagoHtml = `<thead><tr>
+    <th>Anuncio</th>
+    <th class="num">Visitas</th>
+    <th class="num">V&rarr;I %</th>
+    <th class="num">Iniciados</th>
+    <th class="num">I&rarr;L %</th>
+    <th class="num">Leads</th>
+    <th class="num">L&rarr;Pago %</th>
+    <th class="num">Pago protocolo</th>
+    <th class="num">Pago&rarr;Cita %</th>
+    <th class="num">Agenda</th>
+  </tr></thead><tbody>`;
+  for (const a of pagoRows) {
+    const m = a.mujer;
+    pagoHtml += renderCaminoRow(a, m, true);
+  }
+  pagoHtml += renderCaminoTotalRow(pagoTotals, true);
+  pagoHtml += '</tbody>';
+  document.getElementById('caminoPagoTable').innerHTML = pagoHtml;
+
+  // ─── Camino No-Pago (hombres) ───
+  const noPagoRows = anuncios.filter(a => a.hombre.leads > 0 || a.hombre.visits > 0)
+    .sort((a, b) => b.hombre.leads - a.hombre.leads);
+  let noPagoTotals = emptyCamino();
+  noPagoRows.forEach(a => {
+    noPagoTotals.visits   += a.hombre.visits;
+    noPagoTotals.started  += a.hombre.started;
+    noPagoTotals.leads    += a.hombre.leads;
+    noPagoTotals.agendada += a.hombre.agendada;
+  });
+  let noPagoHtml = `<thead><tr>
+    <th>Anuncio</th>
+    <th class="num">Visitas</th>
+    <th class="num">V&rarr;I %</th>
+    <th class="num">Iniciados</th>
+    <th class="num">I&rarr;L %</th>
+    <th class="num">Leads</th>
+    <th class="num">Pago protocolo</th>
+    <th class="num">L&rarr;Cita %</th>
+    <th class="num">Agenda</th>
+  </tr></thead><tbody>`;
+  if (noPagoRows.length === 0) {
+    noPagoHtml += '<tr><td colspan="9" style="padding:16px;text-align:center;color:#888;font-style:italic;">Sin tráfico de hombres en el rango. Las campañas a hombres están pausadas desde la 3ª semana de abril.</td></tr>';
+  }
+  for (const a of noPagoRows) {
+    const h = a.hombre;
+    noPagoHtml += renderCaminoRow(a, h, false);
+  }
+  if (noPagoRows.length > 0) noPagoHtml += renderCaminoTotalRow(noPagoTotals, false);
+  noPagoHtml += '</tbody>';
+  document.getElementById('caminoNoPagoTable').innerHTML = noPagoHtml;
+}
+
+function renderCaminoRow(a, b, isPago) {
+  const vi = pctNum(b.started, b.visits);
+  const il = pctNum(b.leads, b.started);
+  const lp = pctNum(b.paid, b.leads);
+  const pc = pctNum(b.agendada, b.paid);
+  const lc = pctNum(b.agendada, b.leads);
+  const adLabel = a.video !== '—' && a.video !== 'Sin video'
+    ? `<span style="color:#4CA994;font-weight:600;">${a.video}</span> &middot; ${a.anuncio}`
+    : a.anuncio;
+  const camp = `<span style="color:#888;font-size:10px;">${a.channel} &middot; ${a.campaign}</span>`;
+  const cellPaid = isPago
+    ? `<td class="num">${fmt(b.paid)}</td>`
+    : `<td class="num" style="color:#666;">N/A</td>`;
+  const cellLp = isPago
+    ? `<td class="num ${convClass(lp)}">${b.leads > 0 ? lp.toFixed(1) + '%' : '—'}</td>`
+    : '';
+  const cellPc = isPago
+    ? `<td class="num ${convClass(pc)}">${b.paid > 0 ? pc.toFixed(1) + '%' : '—'}</td>`
+    : `<td class="num ${convClass(lc)}">${b.leads > 0 ? lc.toFixed(1) + '%' : '—'}</td>`;
+  return `<tr>
+    <td>${adLabel}<br>${camp}</td>
+    <td class="num">${fmt(b.visits)}</td>
+    <td class="num">${b.visits > 0 ? vi.toFixed(1) + '%' : '—'}</td>
+    <td class="num">${fmt(b.started)}</td>
+    <td class="num">${b.started > 0 ? il.toFixed(1) + '%' : '—'}</td>
+    <td class="num">${fmt(b.leads)}</td>
+    ${cellLp}
+    ${cellPaid}
+    ${cellPc}
+    <td class="num">${fmt(b.agendada)}</td>
+  </tr>`;
+}
+
+function renderCaminoTotalRow(t, isPago) {
+  const vi = pctNum(t.started, t.visits);
+  const il = pctNum(t.leads, t.started);
+  const lp = pctNum(t.paid, t.leads);
+  const pc = pctNum(t.agendada, t.paid);
+  const lc = pctNum(t.agendada, t.leads);
+  const cellPaid = isPago ? `<td class="num">${fmt(t.paid)}</td>` : `<td class="num" style="color:#666;">N/A</td>`;
+  const cellLp = isPago
+    ? `<td class="num">${t.leads > 0 ? lp.toFixed(1) + '%' : '—'}</td>`
+    : '';
+  const cellPc = isPago
+    ? `<td class="num">${t.paid > 0 ? pc.toFixed(1) + '%' : '—'}</td>`
+    : `<td class="num">${t.leads > 0 ? lc.toFixed(1) + '%' : '—'}</td>`;
+  return `<tr style="font-weight:600;border-top:2px solid #444;">
+    <td>Total</td>
+    <td class="num">${fmt(t.visits)}</td>
+    <td class="num">${t.visits > 0 ? vi.toFixed(1) + '%' : '—'}</td>
+    <td class="num">${fmt(t.started)}</td>
+    <td class="num">${t.started > 0 ? il.toFixed(1) + '%' : '—'}</td>
+    <td class="num">${fmt(t.leads)}</td>
+    ${cellLp}
+    ${cellPaid}
+    ${cellPc}
+    <td class="num">${fmt(t.agendada)}</td>
+  </tr>`;
 }
 
 // ─── Master funnel table ──────────────────────────────────────────
