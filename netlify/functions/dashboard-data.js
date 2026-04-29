@@ -1352,6 +1352,41 @@ exports.handler = async (event) => {
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
         result.google_ads_catalog_size = googleCatalog?.count || 0;
 
+        // Expose every ACTIVE G4U ad (Meta + Google) so the master table can
+        // mirror Meta's structure 1:1 — even ads with 0 leads show up as
+        // rows with all metrics at 0. This way the dashboard reflects the
+        // marketer's reality (what's running) instead of just what produced
+        // leads.
+        result.meta_active_ads = [];
+        if (metaCatalog?.byId) {
+          for (const a of Object.values(metaCatalog.byId)) {
+            if (a.is_g4u && a.status === 'ACTIVE') {
+              result.meta_active_ads.push({
+                ad_id: a.ad_id,
+                ad_name: a.ad_name,
+                campaign_id: a.campaign_id,
+                campaign_name: a.campaign_name,
+                adset_id: a.adset_id,
+                adset_name: a.adset_name,
+                adset_landing: a.adset_landing,
+                video_id: a.video_id,
+                video_label: metaCatalog.videoLabel?.[a.video_id] || '',
+              });
+            }
+          }
+        }
+        result.google_active_ad_groups = [];
+        if (googleCatalog?.byAdGroupId) {
+          for (const g of Object.values(googleCatalog.byAdGroupId)) {
+            result.google_active_ad_groups.push({
+              ad_group_id: g.ad_group_id,
+              ad_group_name: g.ad_group_name,
+              campaign_id: g.campaign_id,
+              campaign_name: g.campaign_name,
+            });
+          }
+        }
+
         // ─── Comparativa Camino Pago vs Camino No-pago ───
         // Bucket every master row by its routing path. Pagos column is N/A
         // for the no-paywall branch since it doesn't apply.

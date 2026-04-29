@@ -839,6 +839,53 @@ function paintMasterFunnel() {
     addTo(ad, r);
   }
 
+  // Inject every ACTIVE Meta G4U ad as an empty row if it didn't surface
+  // any leads yet. This makes the master table mirror Meta's reality 1:1
+  // — every running ad appears, even with 0 metrics, so the marketer
+  // sees the full inventory not just what converted.
+  const metaActiveAds = _lastDashboardData?.meta_active_ads || [];
+  for (const a of metaActiveAds) {
+    // Apply current filters to decide if this ad should appear
+    if (fChannel && fChannel !== 'Meta') continue;
+    if (fCampaign && a.campaign_name !== fCampaign) continue;
+    if (fAd && a.ad_name !== fAd) continue;
+    if (fVideo && a.video_label !== fVideo) continue;
+
+    let camp = tree.get(a.campaign_name);
+    if (!camp) {
+      camp = { key: a.campaign_name, name: a.campaign_name, channel: 'Meta', adsets: new Map(), ...aggNode() };
+      tree.set(a.campaign_name, camp);
+    }
+    let adset = camp.adsets.get(a.adset_name);
+    if (!adset) {
+      adset = { key: a.adset_name, name: a.adset_name, ads: new Map(), ...aggNode() };
+      camp.adsets.set(a.adset_name, adset);
+    }
+    // Keyed by ad_id so we don't duplicate an ad that already has lead rows
+    const emptyKey = a.ad_id + '|empty|empty';
+    const hasLeadVariant = [...adset.ads.keys()].some(k => k.startsWith(a.ad_id + '|'));
+    if (!hasLeadVariant) {
+      adset.ads.set(emptyKey, {
+        key: emptyKey,
+        name: a.ad_name,
+        ad_id: a.ad_id,
+        ad_kind: 'meta-active-no-leads',
+        channel: 'Meta',
+        utm_campaign: a.campaign_name,
+        utm_medium: a.adset_name,
+        utm_content: a.ad_name,
+        ad_display: a.ad_name,
+        nicho: '—',
+        landing: a.adset_landing || '—',
+        sexo: 'sin-dato',
+        pago: 'unknown',
+        clinica: '—',
+        video_label: a.video_label || '',
+        ...aggNode(),
+      });
+    }
+  }
+
   // Attach spend to each campaign node based on its canonical name
   let totalSpend = 0;
   for (const camp of tree.values()) {
