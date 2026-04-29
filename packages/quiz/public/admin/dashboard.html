@@ -560,18 +560,17 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
   }
 
   if (tree.size === 0) {
-    const colspan = isPago ? 10 : 8;
     const msg = isPago
       ? 'Sin tráfico de mujeres en el rango.'
       : 'Sin tráfico de hombres en el rango. Campañas a hombres pausadas desde la 3ª semana de abril.';
-    document.getElementById(tableId).innerHTML = `<tbody><tr><td colspan="${colspan}" style="padding:16px;text-align:center;color:#888;font-style:italic;">${msg}</td></tr></tbody>`;
+    document.getElementById(tableId).innerHTML = `<tbody><tr><td colspan="10" style="padding:16px;text-align:center;color:#888;font-style:italic;">${msg}</td></tr></tbody>`;
     return;
   }
 
-  // Header
-  const headers = isPago
-    ? ['Campaña / AdSet / Anuncio', 'Visitas', 'V→I %', 'Iniciados', 'I→L %', 'Leads', 'L→Pago %', 'Pago protocolo', 'Pago→Cita %', 'Citas']
-    : ['Campaña / AdSet / Anuncio', 'Visitas', 'V→I %', 'Iniciados', 'I→L %', 'Leads', 'Pago protocolo', 'L→Cita %', 'Citas'];
+  // Header — same columns for both Pago and No-Pago paths so the marketer
+  // can compare them column-by-column. For No-Pago, the pago-specific cells
+  // render as N/A since the paywall doesn't apply.
+  const headers = ['Campaña / AdSet / Anuncio', 'Visitas', 'V→I %', 'Iniciados', 'I→L %', 'Leads', 'L→Pago %', 'Pago protocolo', 'Pago→Cita %', 'Citas'];
   let html = '<thead><tr>';
   headers.forEach((h, i) => {
     html += i === 0
@@ -585,7 +584,6 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     const il = pctNum(n.leads, n.started);
     const lp = pctNum(n.paid, n.leads);
     const pc = pctNum(n.booked, n.paid);
-    const lc = pctNum(n.booked, n.leads);
     const dash = `<td class="num" style="color:#666;">&mdash;</td>`;
     const naCell = `<td class="num" style="color:#888;font-size:11px;">N/A</td>`;
     const visitsCell = n.visits > 0 ? `<td class="num">${fmt(n.visits)}</td>` : dash;
@@ -593,18 +591,20 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     const startedCell = n.started > 0 ? `<td class="num">${fmt(n.started)}</td>` : dash;
     const ilCell    = n.started > 0 ? `<td class="num ${convClass(il)}">${pct(n.leads, n.started)}</td>` : dash;
     const leadsCell = `<td class="num">${fmt(n.leads)}</td>`;
+    const bookedCell= `<td class="num">${fmt(n.booked)}</td>`;
 
-    if (isPago) {
-      const lpCell    = n.leads > 0 ? `<td class="num ${convClass(lp)}">${pct(n.paid, n.leads)}</td>` : dash;
-      const paidCell  = `<td class="num">${fmt(n.paid)}</td>`;
-      const pcCell    = n.paid  > 0 ? `<td class="num ${convClass(pc)}">${pct(n.booked, n.paid)}</td>` : dash;
-      const bookedCell= `<td class="num">${fmt(n.booked)}</td>`;
-      return [visitsCell, viCell, startedCell, ilCell, leadsCell, lpCell, paidCell, pcCell, bookedCell].join('');
-    } else {
-      const lcCell    = n.leads > 0 ? `<td class="num ${convClass(lc)}">${pct(n.booked, n.leads)}</td>` : dash;
-      const bookedCell= `<td class="num">${fmt(n.booked)}</td>`;
-      return [visitsCell, viCell, startedCell, ilCell, leadsCell, naCell, lcCell, bookedCell].join('');
-    }
+    // Pago-specific cells: real values for Pago path, N/A for No-Pago.
+    const lpCell   = isPago
+      ? (n.leads > 0 ? `<td class="num ${convClass(lp)}">${pct(n.paid, n.leads)}</td>` : dash)
+      : naCell;
+    const paidCell = isPago
+      ? `<td class="num">${fmt(n.paid)}</td>`
+      : naCell;
+    const pcCell   = isPago
+      ? (n.paid  > 0 ? `<td class="num ${convClass(pc)}">${pct(n.booked, n.paid)}</td>` : dash)
+      : naCell;
+
+    return [visitsCell, viCell, startedCell, ilCell, leadsCell, lpCell, paidCell, pcCell, bookedCell].join('');
   }
 
   const arrow = (k) => _caminoExpanded.has(k)
