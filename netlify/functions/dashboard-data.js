@@ -1292,6 +1292,38 @@ exports.handler = async (event) => {
         result.by_master_funnel = buildMasterFunnelFromGhl(ghlRows, result.by_funnel_dimensions, metaCatalog, googleCatalog);
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
         result.google_ads_catalog_size = googleCatalog?.count || 0;
+
+        // ─── Comparativa Camino Pago vs Camino No-pago ───
+        // Bucket every master row by its routing path. Pagos column is N/A
+        // for the no-paywall branch since it doesn't apply.
+        const caminoOf = (pago) => {
+          if (pago === '125' || pago === '195')        return 'pago';
+          if (pago === '0')                             return 'no_pago';
+          if (pago === 'clinica' || pago === 'asesores') return 'clinica';
+          return 'sin_dato';
+        };
+        const caminoBuckets = { pago: aggInit(), no_pago: aggInit(), clinica: aggInit(), sin_dato: aggInit() };
+        function aggInit() { return { visits: 0, started: 0, completed: 0, leads: 0, paid: 0, booked: 0, agendada: 0, atendida: 0, no_show: 0, cancelada: 0 }; }
+        for (const row of result.by_master_funnel) {
+          const c = caminoOf(row.pago);
+          const b = caminoBuckets[c];
+          b.visits    += row.visits || 0;
+          b.started   += row.started || 0;
+          b.completed += row.completed || 0;
+          b.leads     += row.leads || 0;
+          b.paid      += row.paid || 0;
+          b.booked    += row.booked || 0;
+          b.agendada  += row.agendada || 0;
+          b.atendida  += row.atendida || 0;
+          b.no_show   += row.no_show || 0;
+          b.cancelada += row.cancelada || 0;
+        }
+        result.by_camino = [
+          { camino: 'pago',     label: 'Camino Pago',     pago_aplica: true,  ...caminoBuckets.pago },
+          { camino: 'no_pago',  label: 'Camino No-Pago',  pago_aplica: false, ...caminoBuckets.no_pago },
+          { camino: 'clinica',  label: 'Pago en Clínica', pago_aplica: false, ...caminoBuckets.clinica },
+          { camino: 'sin_dato', label: 'Sin Dato',        pago_aplica: false, ...caminoBuckets.sin_dato },
+        ];
         if (metaCatalog?._error) result.meta_ads_catalog_error = metaCatalog._error;
         if (googleCatalog?._error) result.google_ads_catalog_error = googleCatalog._error;
         // Expose the Video N → creative names mapping so the dashboard can

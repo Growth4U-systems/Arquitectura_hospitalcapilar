@@ -918,7 +918,6 @@ function renderFunnel(k) {
   document.getElementById('funnelChart').innerHTML = html;
 
   // Summary — break down the "Citas (todas)" total into its 4 states.
-  const leads = (k.leads_ghl != null) ? k.leads_ghl : k.form_submitted;
   const totalConv = pct(k.appointment_attended, k.pageviews);
   const leadToPago = pct(k.payment_completed || 0, leads);
   const pagoToCita = (k.payment_completed || 0) > 0
