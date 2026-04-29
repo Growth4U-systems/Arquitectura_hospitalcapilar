@@ -245,6 +245,8 @@ async function fetchMetaAdCatalog() {
     // from the adset name and index by (name, landing).
     const byNameAndLanding = {};   // "miniaturizacion soto|quiz_largo" → info
     const byNameAny = {};          // "miniaturizacion soto" → array of all matches
+    const byCreativeName = {};     // "miniaturizacion soto" → array of ads w/ that creative.name
+    const allInfos = [];           // for substring fallback search
     const isG4U = (camp) => /G4U|Postparto_G4U|Menopausia G4U|¿Qué me pasa/i.test(camp || '');
     const detectLanding = (adsetName) => {
       const s = (adsetName || '').toLowerCase();
@@ -274,22 +276,30 @@ async function fetchMetaAdCatalog() {
         thumbnail: a.creative?.thumbnail_url || '',
       };
       byId[a.id] = info;
+      allInfos.push(info);
       if (videoId) {
         if (!byVideoId[videoId]) byVideoId[videoId] = [];
         byVideoId[videoId].push(info);
       }
       const nameKey = (a.name || '').trim().toLowerCase();
-      if (!nameKey) continue;
-      if (!byNameAny[nameKey]) byNameAny[nameKey] = [];
-      byNameAny[nameKey].push(info);
-      if (info.adset_landing) {
-        const key = nameKey + '|' + info.adset_landing;
-        const existing = byNameAndLanding[key];
-        if (!existing ||
-            (info.is_g4u && !existing.is_g4u) ||
-            (info.is_g4u === existing.is_g4u && info.status === 'ACTIVE' && existing.status !== 'ACTIVE')) {
-          byNameAndLanding[key] = info;
+      if (nameKey) {
+        if (!byNameAny[nameKey]) byNameAny[nameKey] = [];
+        byNameAny[nameKey].push(info);
+        if (info.adset_landing) {
+          const key = nameKey + '|' + info.adset_landing;
+          const existing = byNameAndLanding[key];
+          if (!existing ||
+              (info.is_g4u && !existing.is_g4u) ||
+              (info.is_g4u === existing.is_g4u && info.status === 'ACTIVE' && existing.status !== 'ACTIVE')) {
+            byNameAndLanding[key] = info;
+          }
         }
+      }
+      // Also index by creative.name (Meta's separate creative-level label)
+      const creativeKey = (a.creative?.name || '').trim().toLowerCase();
+      if (creativeKey) {
+        if (!byCreativeName[creativeKey]) byCreativeName[creativeKey] = [];
+        byCreativeName[creativeKey].push(info);
       }
     }
     // Build video → label map. Order videos by total ad count desc, give
@@ -300,7 +310,7 @@ async function fetchMetaAdCatalog() {
       .sort((a, b) => b[1].length - a[1].length);
     const videoLabel = {};
     g4uVideos.forEach(([videoId], i) => { videoLabel[videoId] = `Video ${i + 1}`; });
-    const result = { byId, byVideoId, byNameAndLanding, byNameAny, videoLabel, count: ads.length };
+    const result = { byId, byVideoId, byNameAndLanding, byNameAny, byCreativeName, allInfos, videoLabel, count: ads.length };
     _metaCatalogCache = result;
     _metaCatalogCacheAt = Date.now();
     return result;
@@ -571,6 +581,34 @@ function classifyUtmContent(utm, channel, landing, metaCatalog, googleCatalog) {
                 || candidates.find(c => c.is_g4u)
                 || candidates[0];
       return { kind: 'matched-ambiguous', display: pick.ad_name, meta: pick };
+    }
+    // Try by creative.name (Meta has separate ad-name and creative-name).
+    const creativeHits = metaCatalog.byCreativeName?.[nameKey] || [];
+    if (creativeHits.length > 0) {
+      const pick = creativeHits.find(c => c.is_g4u && c.status === 'ACTIVE')
+                || creativeHits.find(c => c.is_g4u)
+                || creativeHits[0];
+      return { kind: 'matched-creative', display: pick.ad_name, meta: pick };
+    }
+    // Substring fallback: try to match any ad whose name CONTAINS this
+    // utm_content phrase (or vice-versa). Lets us hook orphan rows up to
+    // a video when the marketer used a shorthand label (e.g. utm_content=
+    // "soto" matching ad_name "Mujer 45-55 / Quiz Largo / Soto - Tricho").
+    const all = metaCatalog.allInfos || [];
+    const subHits = all.filter(c => {
+      const adN = (c.ad_name || '').toLowerCase();
+      const crN = (c.creative_name || '').toLowerCase();
+      return c.is_g4u && (
+        adN.includes(nameKey) || nameKey.includes(adN) ||
+        crN.includes(nameKey) || nameKey.includes(crN)
+      );
+    });
+    if (subHits.length > 0) {
+      // Prefer ones whose adset_landing matches the lead's landing, then ACTIVE.
+      const pick = subHits.find(c => landing && c.adset_landing === landing && c.status === 'ACTIVE')
+                || subHits.find(c => c.status === 'ACTIVE')
+                || subHits[0];
+      return { kind: 'matched-substring', display: pick.ad_name, meta: pick };
     }
   }
   return { kind: 'unmatched', display: utm };
