@@ -395,23 +395,35 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Flatten each opportunity into a dimension row, filtering out non-funnel
-  // sources (IG DMs from Manychat, manual entries) so the lead count matches
-  // the paid funnel reality (~60). Without this filter we'd include ~45 IG
-  // DMs that never went through the quiz/form, inflating leads to ~87.
-  const isFunnelSource = (contact) => {
+  // Filter to paid-funnel leads only. We want to exclude:
+  //   - IG/FB DMs via Manychat (source="Social media instagram"/...) — not funnel
+  //   - Manual entries
+  //   - Meta Lead Form leads with no attribution (no UTM, no source) — those
+  //     are real but show as "sin-dato" in the master table and inflate counts
+  //     without giving us anything actionable
+  // Keep:
+  //   - Quiz HC / Quiz Corto HC (facebook/paid_social, google/cpc)
+  //   - Anything with a custom field utm_source set (post-Meta-Lead-Form fix)
+  const isFunnelSource = (contact, cfMap) => {
     const source = (contact.source || '').toLowerCase();
-    if (!source) return true; // empty source — give benefit of doubt (could be lost UTM)
-    if (source.includes('social media instagram')) return false; // IG DM via Manychat
-    if (source.includes('social media facebook')) return false; // FB DM via Manychat
+    if (source.includes('social media instagram')) return false;
+    if (source.includes('social media facebook')) return false;
     if (source.includes('manual')) return false;
-    return true;
+    // Has a recognized paid funnel source string
+    if (/quiz hc|quiz corto hc|paid_social|cpc|google\/|facebook\//.test(source)) return true;
+    // Or has explicit UTM tracking from CF (new Meta Lead Form path will have
+    // this once /p/ paywall captures UTMs and propagates them to GHL)
+    const utmSource = cfMap[GHL_CF.utm_source];
+    const utmCampaign = cfMap[GHL_CF.utm_campaign];
+    if (utmSource || utmCampaign) return true;
+    // Otherwise drop (sin-atribución noise)
+    return false;
   };
   return inRange.map(opp => {
     const contact = contactById[opp.contactId] || {};
-    if (!isFunnelSource(contact)) return null;
     const cfMap = {};
     (contact.customFields || []).forEach(f => { cfMap[f.id] = f.value; });
+    if (!isFunnelSource(contact, cfMap)) return null;
     const cf = (key) => cfMap[GHL_CF[key]] || null;
 
     const g = (contact.gender || '').toLowerCase();

@@ -296,7 +296,6 @@
       </label>
       <span style="margin-left:auto;font-size:11px;color:var(--hc-text-dim);" id="mfRowCount"></span>
     </div>
-    <div id="mfVideoLegend" style="padding:8px 16px;border-bottom:1px solid var(--hc-card-border);font-size:11px;color:var(--hc-text-muted);display:none;"></div>
     <div class="card-body" style="overflow-x:auto;">
       <table id="masterFunnelTable" style="font-size:12px;white-space:nowrap;"></table>
     </div>
@@ -708,22 +707,6 @@ function renderMasterFunnel(data) {
     document.getElementById(id).onchange = paintMasterFunnel;
   });
   document.getElementById('mfFilterMinLeads').oninput = paintMasterFunnel;
-
-  // Video legend: show what each "Video N" refers to in Meta (campaigns + ad names).
-  const legendEl = document.getElementById('mfVideoLegend');
-  const videos = data.meta_videos || [];
-  if (videos.length > 0) {
-    const items = videos.map(v => {
-      const ads = v.ads || [];
-      const campaigns = [...new Set(ads.map(a => a.campaign_name).filter(Boolean))];
-      const sample = ads.slice(0, 3).map(a => a.ad_name).join(' · ');
-      return `<span style="display:inline-block;margin-right:18px;"><strong style="color:#4CA994;">${v.label}</strong> &mdash; ${ads.length} ad(s) en ${campaigns.length} campaña(s) · <span style="color:#888;">${sample}</span></span>`;
-    }).join('');
-    legendEl.innerHTML = '<strong style="color:#bbb;">Mapping de videos:</strong> ' + items;
-    legendEl.style.display = 'block';
-  } else {
-    legendEl.style.display = 'none';
-  }
 
   paintMasterFunnel();
 }
