@@ -611,9 +611,13 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null, g
       || canonicalCampaignFromUtm(r.utm_campaign)
       || r.utm_campaign
     );
+    // Adset name only from authoritative sources (Meta catalog / Google
+    // catalog). utm_medium fallback would surface generic mediums like
+    // "paid_social" / "cpc" / "social" as fake adset names — guarded out.
+    const isGenericMedium = (v) => /^(paid_social|paid-social|cpc|social|email|referral|organic|none|\(none\))$/i.test((v || '').trim());
     const metaAdset    = cls.meta?.adset_name
       || cls.google?.ad_group_name
-      || r.utm_medium;
+      || (isGenericMedium(r.utm_medium) ? 'Sin adset' : r.utm_medium);
     const metaAdId     = cls.meta?.ad_id         || null;
     const adDisplay    = cls.display;
     const adKind       = cls.kind;
