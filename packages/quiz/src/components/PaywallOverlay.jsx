@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, X, Star, ChevronDown, Lock, Phone, Clock } from 'lucide-react';
+import { Check, X, Star, ChevronDown, Lock, Phone, Clock, FlaskConical, Microscope, Stethoscope } from 'lucide-react';
 import HCHeader from './HCHeader';
 
 const TESTIMONIALS_BY_ECP = {
@@ -118,7 +118,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         </div>
       )}
 
-      <div className="max-w-lg mx-auto px-4 pb-40">
+      <div className="max-w-lg md:max-w-2xl mx-auto px-4 md:px-8 pb-40">
         {/* Close button — only when onClose is provided (hidden on standalone paywall) */}
         {onClose && (
           <div className="flex justify-end pt-3 pb-1">
@@ -130,7 +130,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
 
         {/* Header */}
         <div className={`text-center pb-6 ${onClose ? '' : 'pt-8 md:pt-10'}`}>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-4 md:mb-6 leading-tight">
             {ecp === 'Protocolo Mujer' ? (
               <><span className="text-[#4CA994]">{firstName},</span> deja de adivinar qué le pasa a tu pelo. <span className="text-[#4CA994]">Descúbrelo.</span></>
             ) : (
@@ -139,13 +139,54 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           </h2>
           {ecp === 'Protocolo Mujer' ? (
             <>
-              <div className="max-w-md mx-auto space-y-3 text-gray-700 text-base font-medium leading-relaxed">
-                <p>La caída capilar femenina no tiene una única causa. Es <strong className="font-bold text-gray-900">multifactorial</strong>: estrés, desajustes hormonales, déficits nutricionales… Por eso los tratamientos genéricos fallan.</p>
-                <p className="text-lg text-gray-900 font-bold">Necesitas precisión.</p>
-                <p>Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> identificamos el origen real de tu caída con analítica hormonal de <strong className="font-bold text-gray-900">27 biomarcadores clave</strong>, tricoscopía de alta precisión y valoración médica.</p>
+              <div className="max-w-md md:max-w-xl mx-auto">
+                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
+                  La caída capilar femenina no tiene una única causa. Es <strong className="font-bold text-gray-900">multifactorial</strong>:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 my-3 md:my-4">
+                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Estrés</span>
+                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Desajustes hormonales</span>
+                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Déficits nutricionales</span>
+                </div>
+                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
+                  Por eso los tratamientos genéricos <strong className="font-bold text-gray-900">fallan</strong>.
+                </p>
               </div>
-              <div className="mt-5 inline-flex items-center gap-1.5 bg-[#F0F7F6] text-[#2C3E50] text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 bg-[#4CA994] rounded-full" />
+              <div className="flex items-center gap-3 max-w-md md:max-w-xl mx-auto my-5 md:my-7">
+                <div className="flex-1 h-px bg-gray-200" />
+                <p className="text-xs md:text-sm text-[#4CA994] font-extrabold uppercase tracking-wider whitespace-nowrap">Necesitas precisión</p>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+              <div className="max-w-md md:max-w-xl mx-auto">
+                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed mb-4 md:mb-5">
+                  Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> identificamos el origen real de tu caída:
+                </p>
+                <div className="grid grid-cols-3 gap-2 md:gap-4">
+                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                      <FlaskConical className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                    </div>
+                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">27 biomarcadores</p>
+                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Analítica hormonal</p>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                      <Microscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                    </div>
+                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Tricoscopía</p>
+                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Alta precisión</p>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                      <Stethoscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                    </div>
+                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Valoración</p>
+                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Médica especialista</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5 md:mt-7 inline-flex items-center gap-1.5 md:gap-2 bg-[#F0F7F6] text-[#2C3E50] text-[11px] md:text-xs font-bold uppercase tracking-wider px-3 md:px-4 py-1.5 md:py-2 rounded-full">
+                <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#4CA994] rounded-full" />
                 Especialistas capilares · España
               </div>
             </>
@@ -166,30 +207,10 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           )}
         </div>
 
-        {/* Objections section */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-1">
-            ¿Te sientes así? <span className="text-[#4CA994]">Tenemos la respuesta.</span>
-          </h3>
-          <div className="space-y-4 mt-4">
-            {objections.map((obj, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="w-6 h-6 bg-red-50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <X size={14} className="text-red-400" />
-                </div>
-                <div>
-                  <p className="text-gray-400 text-sm line-through">"{obj.myth}"</p>
-                  <p className="text-gray-800 text-sm font-medium mt-0.5">{obj.truth}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Video testimonial — right after objections */}
-        <div className="mb-6">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Conoce Hospital Capilar</h3>
-          <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[360px] mx-auto" style={{ maxWidth: '200px' }}>
+        {/* Video testimonial — right after hero (Especialistas chip) */}
+        <div className="mb-6 md:mb-8">
+          <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 md:mb-4 text-center">Conoce Hospital Capilar</h3>
+          <div className="rounded-2xl overflow-hidden shadow-sm bg-black aspect-[9/16] max-h-[360px] md:max-h-[420px] mx-auto max-w-[200px] md:max-w-[240px]">
             <iframe
               src="https://www.youtube.com/embed/pbJOQYupwFE"
               title="Hospital Capilar"
@@ -200,12 +221,32 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           </div>
         </div>
 
-        {/* What's included */}
-        <div className="mb-6">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-            {isTrichometabolic ? 'Lo que incluye tu diagnóstico Trichometabolic' : 'Lo que incluye tu test capilar'}
+        {/* Objections section */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-7 mb-6 md:mb-8 shadow-sm">
+          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">
+            ¿Te sientes así? <span className="text-[#4CA994]">Tenemos la respuesta.</span>
           </h3>
-          <div className="space-y-1.5">
+          <div className="space-y-4 md:space-y-5 mt-4">
+            {objections.map((obj, i) => (
+              <div key={i} className="flex gap-3 md:gap-4">
+                <div className="w-6 h-6 md:w-7 md:h-7 bg-red-50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <X className="text-red-400 w-[14px] h-[14px] md:w-4 md:h-4" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm md:text-base line-through">"{obj.myth}"</p>
+                  <p className="text-gray-800 text-sm md:text-base font-medium mt-0.5">{obj.truth}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* What's included */}
+        <div className="mb-6 md:mb-8">
+          <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 md:mb-4">
+            {isTrichometabolic ? 'Lo que incluye tu Protocolo Femenino Trichometabolic' : 'Lo que incluye tu test capilar'}
+          </h3>
+          <div className="space-y-1.5 md:space-y-2">
             {(isTrichometabolic
               ? [
                   'Estudio capilar con tricoscopía de alta precisión',
@@ -220,86 +261,86 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
                   'Valoración con médico especialista + informe personalizado con plan de tratamiento',
                 ]
             ).map((text, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 py-2.5 flex items-start gap-2.5 shadow-sm">
-                <div className="w-6 h-6 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={14} className="text-[#4CA994]" />
+              <div key={i} className="bg-white rounded-xl border border-gray-100 px-3 md:px-4 py-2.5 md:py-3.5 flex items-start gap-2.5 md:gap-3 shadow-sm">
+                <div className="w-6 h-6 md:w-7 md:h-7 bg-[#F0F7F6] rounded-md flex items-center justify-center shrink-0 mt-0.5">
+                  <Check className="text-[#4CA994] w-[14px] h-[14px] md:w-4 md:h-4" />
                 </div>
-                <span className="text-gray-800 text-[13px] font-medium leading-snug">{text}</span>
+                <span className="text-gray-800 text-[13px] md:text-[15px] font-medium leading-snug">{text}</span>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-gray-500 mt-3">
+          <p className="text-center text-xs md:text-sm text-gray-500 mt-3 md:mt-4">
             <span aria-hidden="true">⚠️</span> <strong className="text-gray-700">Todo en el mismo día</strong> · sin esperas ni vueltas
           </p>
         </div>
 
         {/* Price card */}
-        <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 pt-7 mb-4 shadow-sm relative">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs font-extrabold uppercase tracking-wider px-4 py-1.5 rounded-full whitespace-nowrap shadow-md">
+        <div className="bg-white rounded-2xl border-2 border-[#4CA994] p-5 md:p-7 pt-7 md:pt-9 mb-4 md:mb-6 shadow-sm relative">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2C3E50] text-white text-xs md:text-sm font-extrabold uppercase tracking-wider px-4 md:px-5 py-1.5 md:py-2 rounded-full whitespace-nowrap shadow-md">
             Oferta limitada
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:gap-6">
             {/* En clínica */}
             <div className="text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Reservando en clínica</p>
-              <div className="text-2xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
+              <p className="text-[11px] md:text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1 md:mb-2">Reservando en clínica</p>
+              <div className="text-2xl md:text-4xl font-bold text-gray-400 line-through">{ORIGINAL_PRICE}€</div>
             </div>
             {/* Online */}
-            <div className="text-center border-l border-gray-200 pl-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4CA994] mb-1">Reservando online</p>
-              <div className="text-3xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
+            <div className="text-center border-l border-gray-200 pl-3 md:pl-6">
+              <p className="text-[11px] md:text-xs font-semibold uppercase tracking-wider text-[#4CA994] mb-1 md:mb-2">Reservando online</p>
+              <div className="text-3xl md:text-5xl font-extrabold text-gray-900 leading-none">{bonoPrice}€</div>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}% reservando online</span>
+          <div className="mt-3 md:mt-5 pt-3 md:pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
+            <span className="bg-amber-100 text-amber-800 text-xs md:text-sm font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-md">Ahorra {discountPct}% reservando online</span>
           </div>
-          <p className="text-xs text-gray-500 text-center mt-2">Pago único · Se descuenta si inicias tratamiento</p>
+          <p className="text-xs md:text-sm text-gray-500 text-center mt-2">Pago único · Se descuenta si inicias tratamiento</p>
         </div>
 
         {/* Countdown */}
-        <div className="flex items-center justify-center gap-2 bg-white rounded-full border border-gray-200 px-4 py-2 mb-6 mx-auto w-fit shadow-sm">
-          <Clock size={14} className="text-[#2C3E50]" />
-          <span className="text-xs font-semibold text-gray-700">Oferta limitada:</span>
-          <span className="text-sm font-extrabold text-[#2C3E50] tabular-nums">{countdownDisplay}</span>
+        <div className="flex items-center justify-center gap-2 md:gap-3 bg-white rounded-full border border-gray-200 px-4 md:px-5 py-2 md:py-2.5 mb-6 md:mb-8 mx-auto w-fit shadow-sm">
+          <Clock className="text-[#2C3E50] w-[14px] h-[14px] md:w-4 md:h-4" />
+          <span className="text-xs md:text-sm font-semibold text-gray-700">Oferta limitada:</span>
+          <span className="text-sm md:text-base font-extrabold text-[#2C3E50] tabular-nums">{countdownDisplay}</span>
         </div>
 
         {/* Testimonials */}
-        <div className="mb-6">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">Historias reales</h3>
-          <div className="space-y-3">
+        <div className="mb-6 md:mb-10">
+          <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 md:mb-4 text-center">Historias reales</h3>
+          <div className="space-y-3 md:space-y-4">
             {testimonials.map((t, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-sm text-gray-900">{t.name}</span>
-                  <span className="text-gray-400 text-xs">{t.age} años</span>
+                  <span className="font-bold text-sm md:text-base text-gray-900">{t.name}</span>
+                  <span className="text-gray-400 text-xs md:text-sm">{t.age} años</span>
                   <div className="flex gap-0.5 ml-auto">
                     {Array.from({ length: t.stars }).map((_, j) => (
-                      <Star key={j} size={14} className="text-yellow-400 fill-yellow-400" />
+                      <Star key={j} className="text-yellow-400 fill-yellow-400 w-[14px] h-[14px] md:w-4 md:h-4" />
                     ))}
                   </div>
                 </div>
-                <p className="text-gray-600 text-sm italic leading-relaxed">"{t.text}"</p>
+                <p className="text-gray-600 text-sm md:text-base italic leading-relaxed">"{t.text}"</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* FAQ */}
-        <div className="mb-8">
-          <h3 className="text-base font-bold text-gray-900 text-center mb-4">Preguntas frecuentes</h3>
-          <div className="space-y-2">
+        <div className="mb-8 md:mb-10">
+          <h3 className="text-base md:text-xl font-bold text-gray-900 text-center mb-4 md:mb-5">Preguntas frecuentes</h3>
+          <div className="space-y-2 md:space-y-3">
             {faqs.map((faq, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-4 text-left"
+                  className="w-full flex items-center justify-between p-4 md:p-5 text-left"
                 >
-                  <span className="text-sm font-medium text-gray-800 pr-4">{faq.q}</span>
-                  <ChevronDown size={18} className={`text-gray-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <span className="text-sm md:text-base font-medium text-gray-800 pr-4">{faq.q}</span>
+                  <ChevronDown className={`text-gray-400 shrink-0 transition-transform w-[18px] h-[18px] md:w-5 md:h-5 ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 {openFaq === i && (
-                  <div className="px-4 pb-4">
-                    <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+                  <div className="px-4 md:px-5 pb-4 md:pb-5">
+                    <p className="text-sm md:text-base text-gray-600 leading-relaxed">{faq.a}</p>
                   </div>
                 )}
               </div>
@@ -316,15 +357,15 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
       </div>
 
       {/* Sticky CTA — fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="max-w-lg mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 px-4 md:px-8 py-3 md:py-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-lg md:max-w-2xl mx-auto">
           {/* Offer line — tachado + descuento + countdown */}
-          <div className="flex items-center justify-center gap-2 flex-wrap mb-2 text-xs">
-            <span className="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-md">Ahorra {discountPct}%</span>
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-2 md:mb-3 text-xs md:text-sm">
+            <span className="bg-amber-100 text-amber-800 font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-md">Ahorra {discountPct}%</span>
             <span className="text-gray-400 line-through">{ORIGINAL_PRICE}€</span>
             <span className="text-gray-300">·</span>
             <span className="flex items-center gap-1 text-[#2C3E50] font-semibold">
-              <Clock size={11} />
+              <Clock className="w-[11px] h-[11px] md:w-[14px] md:h-[14px]" />
               <span>Oferta limitada:</span>
               <span className="font-extrabold tabular-nums">{countdownDisplay}</span>
             </span>
@@ -332,7 +373,7 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
           <button
             onClick={handlePayClick}
             disabled={paying}
-            className="w-full bg-[#4CA994] hover:bg-[#3d9480] disabled:bg-[#7BBFAE] disabled:cursor-wait text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-[#4CA994] hover:bg-[#3d9480] disabled:bg-[#7BBFAE] disabled:cursor-wait text-white font-bold text-lg md:text-xl py-4 md:py-5 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
           >
             {paying ? (
               <>
