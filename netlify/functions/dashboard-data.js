@@ -1461,6 +1461,32 @@ exports.handler = async (event) => {
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
         result.google_ads_catalog_size = googleCatalog?.count || 0;
 
+        // ─── Override by_funnel_type with GHL counts ───
+        // Same drift as by_traffic_source: PostHog form events count differently
+        // than GHL opps (mostly because lead_form_submitted from Meta Lead Form
+        // creates GHL opps without firing the standard form_submitted event).
+        // Using GHL keeps "Comparativa por funnel" aligned with everything else.
+        const ghlFunnelMap = {};
+        for (const r of ghlRows) {
+          const f = r.landing || 'sin-dato';
+          if (!ghlFunnelMap[f]) ghlFunnelMap[f] = { funnel: f, visits: 0, started: 0, leads: 0, booked: 0 };
+          ghlFunnelMap[f].leads  += r.leads || 0;
+          ghlFunnelMap[f].booked += r.booked || 0;
+        }
+        // Carry visits/started over from PostHog (GHL doesn't track pageviews).
+        for (const ph of (result.by_funnel_type || [])) {
+          const f = ph.funnel;
+          if (ghlFunnelMap[f]) {
+            ghlFunnelMap[f].visits = ph.visits || 0;
+            ghlFunnelMap[f].started = ph.started || 0;
+          } else if (ph.visits > 0) {
+            ghlFunnelMap[f] = { funnel: f, visits: ph.visits, started: ph.started, leads: 0, booked: 0 };
+          }
+        }
+        result.by_funnel_type = Object.values(ghlFunnelMap)
+          .filter(r => r.funnel && r.funnel !== 'null' && r.funnel !== 'None' && r.funnel !== 'sin-dato')
+          .sort((a, b) => b.visits - a.visits);
+
         // ─── Override by_traffic_source with GHL counts ───
         // PostHog form_submitted events lose UTM attribution often (autocapture
         // only sets $utm_source on the landing pageview, not on later events).
