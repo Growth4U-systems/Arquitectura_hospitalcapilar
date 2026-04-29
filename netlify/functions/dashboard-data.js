@@ -344,6 +344,23 @@ function canonicalCampaignFromUtm(utm_campaign) {
   return null; // unknown nicho → keep raw
 }
 
+// Alias map for campaign names that have been renamed in the source
+// platforms. Keeps historical leads (which still carry the old name)
+// merged with new leads under the unified name. Add new aliases here
+// when a campaign gets renamed in Meta/Google.
+const CAMPAIGN_ALIASES = new Map([
+  // Google ¿Qué me pasa? renamed to add G4U suffix on 2026-04-29.
+  ['¿qué me pasa?',                         '¿Qué me pasa? G4U'],
+  ['¿que me pasa?',                         '¿Qué me pasa? G4U'],
+  ['postparto / lo que vino con el bebé /madrid', 'Postparto_G4U_Madrid'],
+]);
+
+function aliasCampaignName(name) {
+  if (!name) return name;
+  const key = String(name).trim().toLowerCase();
+  return CAMPAIGN_ALIASES.get(key) || name;
+}
+
 // Fetch all opportunities in the pipeline + every related contact. Returns
 // an array of flattened rows; each row has the fully resolved dimensions
 // we can use to cross-tab the master table.
@@ -577,10 +594,12 @@ function buildMasterFunnelFromGhl(rows, phDimensions = [], metaCatalog = null, g
     //   1) Meta or Google catalog match (authoritative)
     //   2) nicho-slug → canonical Meta campaign (Menopausia G4U, etc.)
     //   3) raw utm_campaign string from GHL (fallback)
-    const metaCampaign = cls.meta?.campaign_name
+    const metaCampaign = aliasCampaignName(
+      cls.meta?.campaign_name
       || cls.google?.campaign_name
       || canonicalCampaignFromUtm(r.utm_campaign)
-      || r.utm_campaign;
+      || r.utm_campaign
+    );
     const metaAdset    = cls.meta?.adset_name
       || cls.google?.ad_group_name
       || r.utm_medium;
@@ -1193,14 +1212,30 @@ exports.handler = async (event) => {
         attended: row[11],
         no_show: row[12],
       })),
-      ad_spend_by_campaign: adSpendByCampaign.map(row => ({
-        source: row[0],
-        campaign_id: row[1],
-        campaign_name: row[2],
-        spend: row[3],
-        clicks: row[4],
-        impressions: row[5],
-      })),
+      ad_spend_by_campaign: (() => {
+        // Apply campaign name aliases and merge any duplicates that result.
+        const merged = new Map();
+        for (const row of adSpendByCampaign) {
+          const aliasedName = aliasCampaignName(row[2]);
+          const key = row[0] + '::' + aliasedName;
+          const existing = merged.get(key);
+          if (existing) {
+            existing.spend       += Number(row[3]) || 0;
+            existing.clicks      += Number(row[4]) || 0;
+            existing.impressions += Number(row[5]) || 0;
+          } else {
+            merged.set(key, {
+              source: row[0],
+              campaign_id: row[1],
+              campaign_name: aliasedName,
+              spend: Number(row[3]) || 0,
+              clicks: Number(row[4]) || 0,
+              impressions: Number(row[5]) || 0,
+            });
+          }
+        }
+        return [...merged.values()].sort((a, b) => b.spend - a.spend);
+      })(),
       executive_header: (() => {
         // Global funnel stages
         const p = val(kpiPageviews);
