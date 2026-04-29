@@ -9,6 +9,7 @@
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const CONTACT_LINK_AGENDAR_CF = 'UdbclFWU2YGw0YYup4vm';
+const CONTACT_LINK_PAYWALL_CF = 'uRxexlYy8HItx45Z7sih';
 const OPP_LINK_AGENDADOS_CF   = 'eHCAvPZKNph7h15z1gGt';
 
 exports.handler = async (event) => {
@@ -41,13 +42,17 @@ exports.handler = async (event) => {
 
   console.log('[meta-lead-enrich] received', { contactId, email, phone });
 
-  // 1. Build link_agendar (tipo=diagnostico for all Meta-direct leads — paid bono path)
+  // 1. Build personalized links (agendar + paywall) with the contact's data prefilled.
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const link = `https://diagnostico.hospitalcapilar.com/agendar?contactId=${contactId}`
     + `&nombre=${encodeURIComponent(fullName)}`
     + `&email=${encodeURIComponent(email || '')}`
     + `&phone=${encodeURIComponent(phone || '')}`
     + `&tipo=diagnostico`;
+  const linkPaywall = `https://diagnostico.hospitalcapilar.com/p/?ecp=protocolo-mujer&contactId=${contactId}`
+    + `&nombre=${encodeURIComponent(fullName)}`
+    + `&email=${encodeURIComponent(email || '')}`
+    + `&telefono=${encodeURIComponent(phone || '')}`;
 
   // 2. PUT contact link_agendar.
   // The bono gate in AgendarPage / koibox-proxy now triggers on tipo=diagnostico
@@ -58,7 +63,10 @@ exports.handler = async (event) => {
       method: 'PUT',
       headers: ghlHeaders,
       body: JSON.stringify({
-        customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }],
+        customFields: [
+          { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
+          { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
+        ],
       }),
     });
     contactStatus = r.status;

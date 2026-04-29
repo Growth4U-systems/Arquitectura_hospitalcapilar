@@ -19,6 +19,7 @@ const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 const GHL_BASE     = 'https://services.leadconnectorhq.com';
 
 const CONTACT_LINK_AGENDAR_CF = 'UdbclFWU2YGw0YYup4vm';
+const CONTACT_LINK_PAYWALL_CF = 'uRxexlYy8HItx45Z7sih';
 const OPP_LINK_AGENDADOS_CF   = 'eHCAvPZKNph7h15z1gGt';
 
 const ghlHeaders = { 'Authorization': `Bearer ${GHL_KEY}`, 'Content-Type': 'application/json', 'Version': '2021-07-28' };
@@ -34,6 +35,14 @@ function buildLink(c) {
     + `&email=${encodeURIComponent(c.email || '')}`
     + `&phone=${encodeURIComponent(c.phone || '')}`
     + `&tipo=diagnostico`;
+}
+
+function buildPaywallLink(c) {
+  const fullName = [c.firstName, c.lastName].filter(Boolean).join(' ');
+  return `https://diagnostico.hospitalcapilar.com/p/?ecp=protocolo-mujer&contactId=${c.id}`
+    + `&nombre=${encodeURIComponent(fullName)}`
+    + `&email=${encodeURIComponent(c.email || '')}`
+    + `&telefono=${encodeURIComponent(c.phone || '')}`;
 }
 
 async function searchFacebookContacts() {
@@ -76,9 +85,11 @@ async function enrichOne(contact) {
   const c = cd?.contact || {};
   const cfs = c.customFields || [];
   const currentLink = cfs.find(f => f.id === CONTACT_LINK_AGENDAR_CF)?.value || '';
+  const currentPaywall = cfs.find(f => f.id === CONTACT_LINK_PAYWALL_CF)?.value || '';
   const link = buildLink(c);
+  const linkPaywall = buildPaywallLink(c);
 
-  const needsContactUpdate = currentLink !== link;
+  const needsContactUpdate = currentLink !== link || currentPaywall !== linkPaywall;
   if (!needsContactUpdate) {
     return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), action: 'skip (already correct)' };
   }
@@ -87,11 +98,14 @@ async function enrichOne(contact) {
     return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), action: 'WOULD update', link };
   }
 
-  // PUT contact link_agendar. Bono gate triggers on tipo=diagnostico alone now.
+  // PUT contact: link_agendar + link_paywall. Bono gate triggers on tipo=diagnostico alone.
   const ur = await fetch(`${GHL_BASE}/contacts/${c.id}`, {
     method: 'PUT', headers: ghlHeaders,
     body: JSON.stringify({
-      customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }],
+      customFields: [
+        { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
+        { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
+      ],
     }),
   });
   const contactStatus = ur.status;
