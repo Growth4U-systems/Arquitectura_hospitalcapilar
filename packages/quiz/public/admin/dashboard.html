@@ -485,12 +485,17 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
   const rows = allRows.filter(r => (r.sexo || '').toLowerCase() === sexoFilter);
 
   // Build tree: Campaña → AdSet → Anuncio
+  // Key by (channel + campaign) so Meta "¿Qué me pasa? G4U" and Google
+  // "¿Qué me pasa? G4U" (same alias name post-rename) stay as separate
+  // rows instead of getting merged.
   const tree = new Map();
   for (const r of rows) {
-    const campKey = r.utm_campaign || 'Sin campaña';
+    const campName = r.utm_campaign || 'Sin campaña';
+    const channel = r.channel || '—';
+    const campKey = channel + '::' + campName;
     let camp = tree.get(campKey);
     if (!camp) {
-      camp = { key: campKey, name: campKey, channel: r.channel || '—', adsets: new Map(), ...caminoAggInit() };
+      camp = { key: campKey, name: campName, channel, adsets: new Map(), ...caminoAggInit() };
       tree.set(campKey, camp);
     }
     caminoAdd(camp, r);
@@ -523,10 +528,11 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     const metaActive = data.meta_active_ads || [];
     for (const a of metaActive) {
       const campName = aliasCampaignNameClient(a.campaign_name);
-      let camp = tree.get(campName);
+      const campKey = 'Meta::' + campName;
+      let camp = tree.get(campKey);
       if (!camp) {
-        camp = { key: campName, name: campName, channel: 'Meta', adsets: new Map(), ...caminoAggInit() };
-        tree.set(campName, camp);
+        camp = { key: campKey, name: campName, channel: 'Meta', adsets: new Map(), ...caminoAggInit() };
+        tree.set(campKey, camp);
       }
       let adset = camp.adsets.get(a.adset_name);
       if (!adset) {
@@ -548,10 +554,11 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     const googleAdGroups = data.google_active_ad_groups || [];
     for (const g of googleAdGroups) {
       const campName = aliasCampaignNameClient(g.campaign_name);
-      let camp = tree.get(campName);
+      const campKey = 'Google::' + campName;
+      let camp = tree.get(campKey);
       if (!camp) {
-        camp = { key: campName, name: campName, channel: 'Google', adsets: new Map(), ...caminoAggInit() };
-        tree.set(campName, camp);
+        camp = { key: campKey, name: campName, channel: 'Google', adsets: new Map(), ...caminoAggInit() };
+        tree.set(campKey, camp);
       }
       if (!camp.adsets.has(g.ad_group_name)) {
         camp.adsets.set(g.ad_group_name, { key: g.ad_group_name, name: g.ad_group_name, ads: new Map(), ...caminoAggInit() });
