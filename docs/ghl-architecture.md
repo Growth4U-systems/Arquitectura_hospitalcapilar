@@ -24,8 +24,8 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 
 | Tag | Lo asigna | Dispara | Para qué |
 |---|---|---|---|
-| `pago_195` | Automático (stripe-webhook.js) | W2 | Lead pagó bono diagnóstico 195€ |
-| `pago_70` | Automático (stripe-webhook.js) | W2 | Lead pagó bono reducido 70€ (A/B test) |
+| `bono_pendiente` | Automático (koibox-proxy.js) | — | Mujer agendó cita y falta cobrar el bono |
+| `bono_pagado` | Automático (stripe-webhook.js) | W2 | Sustituye `bono_pendiente` cuando entra el pago de 125€ |
 | `mala-experiencia` | W1 automático | Rama especial W1 | Segunda opinión, nunca pago directo |
 | `no-candidato` | W1 automático | — | Derivación dermatología, fuera del funnel comercial |
 | `waitlist` | W1 automático | Campaña apertura nueva ciudad | Ciudad sin clínica operativa |
@@ -58,7 +58,7 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 |---|---|---|---|---|
 | `lead_priority` | `l99Opesqh9cJBLxSPs4z` | Dropdown | `HOT` / `WARM` / `COLD` | ghl-proxy.js |
 | `agent_message` | `cVtN5KboKd2R1cf1s7QA` | Text | Resumen del agente | ghl-proxy.js |
-| `tratamiento_status` | `Hk81fRW2HaTqlry4I1L0` | Dropdown | `not_paid` / `paid_195` / `paid_70` / `refunded` | ghl-proxy.js + stripe-webhook.js |
+| `tratamiento_status` | `Hk81fRW2HaTqlry4I1L0` | Dropdown | `not_paid` / `paid_125` / `refunded` | ghl-proxy.js + stripe-webhook.js |
 | `fecha_cita` | *Crear en GHL* | Date | Fecha de la cita | koibox-webhook.js (pendiente) |
 | `hora_cita` | *Crear en GHL* | Text | Hora de la cita (ej: "10:30") | koibox-webhook.js (pendiente) |
 | `koibox_booking_id` | *Crear en GHL* | Text | ID reserva en Koibox | koibox-webhook.js (pendiente) |
@@ -147,10 +147,10 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 ---
 
 ### W2 — Post-pago sin agendar
-**Trigger:** Tag añadido = `pago_195` OR `pago_70`
+**Trigger:** Tag añadido = `bono_pagado`
 
 ```
-[Tag pago_195 o pago_70]
+[Tag bono_pagado]
 │
 → 0min    WhatsApp: confirmación pago + link Koibox para agendar
 → +24h    [koibox_booking_id vacío] WhatsApp: recordatorio agendar
@@ -197,7 +197,6 @@ Si reagenda → Stage → Booked → W3 arranca de nuevo
 
 | Tarea | Archivo | Estado |
 |---|---|---|
-| Diferenciar `paid_195` vs `paid_70` en stripe-webhook.js | `netlify/functions/stripe-webhook.js` | Pendiente |
 | Webhook Koibox → GHL (actualizar Stage + fecha_cita + koibox_booking_id) | `netlify/functions/koibox-webhook.js` | Pendiente crear |
 | Crear IDs de campos nuevos en GHL y añadir al código | `netlify/functions/ghl-proxy.js` | Pendiente (esperando IDs de GHL) |
 
