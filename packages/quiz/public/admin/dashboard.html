@@ -211,7 +211,7 @@
 <div class="kpi-row" id="adSpendKpiRow" style="grid-template-columns: repeat(4, 1fr);">
   <div class="kpi"><div class="value" id="kpi-total-spend">-</div><div class="label">Gasto total</div></div>
   <div class="kpi"><div class="value" id="kpi-avg-cpl">-</div><div class="label">CPL medio</div></div>
-  <div class="kpi"><div class="value" id="kpi-avg-cpa">-</div><div class="label">Coste / Agenda</div></div>
+  <div class="kpi"><div class="value" id="kpi-avg-cpa">-</div><div class="label">Coste / Cita</div></div>
   <div class="kpi"><div class="value" id="kpi-total-ad-clicks">-</div><div class="label">Clicks (ads)</div></div>
 </div>
 <div class="grid">
@@ -728,7 +728,7 @@ function renderFunnel(k) {
     { label: 'Quiz completado', value: k.quiz_completed,   color: '#3d8e7e' },
     { label: 'Leads',           value: leads,              color: '#4CA994' },
     { label: 'Pago protocolo',  value: pago,               color: '#52b89e' },
-    { label: 'Citas (todas)',   value: citas,              color: '#5fbfa8' },
+    { label: 'Citas',           value: citas,              color: '#5fbfa8' },
     { label: 'Asistidas',       value: atendida,           color: '#4ade80' },
   ];
 
@@ -1027,7 +1027,7 @@ function renderAdSpend(data) {
   let html = `<thead><tr>
     <th>Fuente</th><th class="num">Spend</th><th class="num">Clicks</th>
     <th class="num">Leads</th><th class="num">CPL</th>
-    <th class="num">Agendadas</th><th class="num">Coste/Agenda</th>
+    <th class="num">Citas</th><th class="num">Coste/Cita</th>
   </tr></thead><tbody>`;
 
   rows.sort((a, b) => b.spend - a.spend);
