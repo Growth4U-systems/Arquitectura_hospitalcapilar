@@ -738,7 +738,16 @@ function buildAdLink(r) {
 // Hierarchical expand/collapse state — persists across repaints.
 const _mfExpanded = new Set();
 
-function aggNode() { return { leads: 0, booked: 0, paid: 0, visits: 0, started: 0, completed: 0, rows: [] }; }
+function aggNode() {
+  return {
+    leads: 0, booked: 0, paid: 0, visits: 0, started: 0, completed: 0,
+    // Track leads on the paywall path (mujeres pago=125/195) vs not
+    // (hombres pago=0, asesores pago=clinica). When pagoLeads === 0
+    // the row's "Pagos" cell renders as N/A.
+    pagoLeads: 0,
+    rows: [],
+  };
+}
 function addTo(agg, r) {
   agg.leads     += r.leads || 0;
   agg.booked    += r.booked || 0;
@@ -746,6 +755,9 @@ function addTo(agg, r) {
   agg.visits    += r.visits || 0;
   agg.started   += r.started || 0;
   agg.completed += r.completed || 0;
+  if (r.pago === '125' || r.pago === '195') {
+    agg.pagoLeads += r.leads || 0;
+  }
 }
 
 function paintMasterFunnel() {
@@ -860,10 +872,10 @@ function paintMasterFunnel() {
     <th class="num">Finaliz.</th>
     <th class="num">F&rarr;L %</th>
     <th class="num">Leads</th>
-    <th class="num">L&rarr;C %</th>
-    <th class="num">Citas</th>
-    <th class="num">C&rarr;P %</th>
+    <th class="num">L&rarr;P %</th>
     <th class="num">Pagos</th>
+    <th class="num">P&rarr;C %</th>
+    <th class="num">Citas</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);font-weight:700;">V&rarr;C %</th>
     <th class="num" style="border-left:2px solid var(--hc-card-border);">CPL</th>
     <th class="num">CPA</th>
@@ -873,20 +885,31 @@ function paintMasterFunnel() {
   const fmtEurLocal = (n) => n == null ? '-' : '€' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const renderMetricsCells = (n, isLeaf) => {
-    const viR = pctNum(n.started,   n.visits);    // Visitas → Iniciados
-    const ifR = pctNum(n.completed, n.started);   // Iniciados → Finalizados
-    const flR = pctNum(n.leads,     n.completed); // Finalizados → Leads
-    const lcR = pctNum(n.booked,    n.leads);     // Leads → Citas
-    const cpR = pctNum(n.paid,      n.booked);    // Citas → Pagos
-    const vcR = pctNum(n.booked,    n.visits);    // Visitas → Citas (bottom-line)
+    const viR = pctNum(n.started,   n.visits);     // Visitas → Iniciados
+    const ifR = pctNum(n.completed, n.started);    // Iniciados → Finalizados
+    const flR = pctNum(n.leads,     n.completed);  // Finalizados → Leads
+    const lpR = pctNum(n.paid,      n.pagoLeads || n.leads); // Leads (paywall) → Pago
+    const pcR = pctNum(n.booked,    n.paid);       // Pago → Cita
+    const vcR = pctNum(n.booked,    n.visits);     // Visitas → Citas (bottom-line)
     const vcClass = vcR >= 2 ? 'good' : vcR >= 0.5 ? 'warn' : vcR > 0 ? 'bad' : '';
+    const pagoAplica = (n.pagoLeads || 0) > 0;
 
     const dash = `<td class="num" style="color:#666;">&mdash;</td>`;
+    const naCell = `<td class="num" style="color:#888;font-size:11px;">N/A</td>`;
     const viCell = n.visits    > 0 ? `<td class="num ${convClass(viR)}">${pct(n.started, n.visits)}</td>`       : dash;
     const ifCell = n.started   > 0 ? `<td class="num ${convClass(ifR)}">${pct(n.completed, n.started)}</td>`    : dash;
     const flCell = n.completed > 0 ? `<td class="num ${convClass(flR)}">${pct(n.leads, n.completed)}</td>`      : dash;
-    const lcCell = n.leads     > 0 ? `<td class="num ${convClass(lcR)}">${pct(n.booked, n.leads)}</td>`         : dash;
-    const cpCell = n.booked    > 0 ? `<td class="num ${convClass(cpR)}">${pct(n.paid, n.booked)}</td>`          : dash;
+    // L→P %: only meaningful for paywall paths. N/A for hombres/asesores rows.
+    const lpCell = !pagoAplica
+      ? naCell
+      : (n.leads > 0 ? `<td class="num ${convClass(lpR)}">${pct(n.paid, n.pagoLeads || n.leads)}</td>` : dash);
+    const pagoCell = !pagoAplica
+      ? naCell
+      : `<td class="num">${fmt(n.paid)}</td>`;
+    // P→C %: paid → booked. N/A for non-paywall rows or 0 paid.
+    const pcCell = !pagoAplica || n.paid === 0
+      ? naCell
+      : `<td class="num ${convClass(pcR)}">${pct(n.booked, n.paid)}</td>`;
     const vcCell = n.visits    > 0
       ? `<td class="num ${vcClass}" style="border-left:2px solid var(--hc-card-border);font-weight:700;">${vcR.toFixed(2)}%</td>`
       : `<td class="num" style="border-left:2px solid var(--hc-card-border);color:#666;">&mdash;</td>`;
@@ -918,10 +941,10 @@ function paintMasterFunnel() {
       <td class="num">${n.completed > 0 ? fmt(n.completed) : '<span style="color:#666;">&mdash;</span>'}</td>
       ${flCell}
       <td class="num" style="font-weight:${isLeaf?'500':'700'};">${fmt(n.leads)}</td>
-      ${lcCell}
+      ${lpCell}
+      ${pagoCell}
+      ${pcCell}
       <td class="num">${fmt(n.booked)}</td>
-      ${cpCell}
-      <td class="num">${fmt(n.paid)}</td>
       ${vcCell}
       ${cplCell}
       ${cpaCell}
