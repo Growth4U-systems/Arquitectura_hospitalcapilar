@@ -87,10 +87,12 @@ async function enrichOne(contact) {
     return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), action: 'WOULD update', link };
   }
 
-  // PUT contact
+  // PUT contact link_agendar. Bono gate triggers on tipo=diagnostico alone now.
   const ur = await fetch(`${GHL_BASE}/contacts/${c.id}`, {
     method: 'PUT', headers: ghlHeaders,
-    body: JSON.stringify({ customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }] }),
+    body: JSON.stringify({
+      customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }],
+    }),
   });
   const contactStatus = ur.status;
 

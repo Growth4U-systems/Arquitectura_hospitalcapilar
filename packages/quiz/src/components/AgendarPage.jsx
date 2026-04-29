@@ -51,16 +51,12 @@ export default function AgendarPage() {
     })
       .then(res => res.json())
       .then(data => {
-        // Check bono gate: woman who hasn't paid (skip for asesoria flow).
-        // Gate on sexo CF OR standard GHL gender — ECP is unreliable (overridden to
-        // 'Ciudad sin clinica' outside pilot) and sexo CF is empty for partial-quiz leads.
-        if (params.tipo !== 'asesoria') {
-          const sexo = (data.contactSexo || '').toLowerCase();
-          const gender = (data.contactGender || '').toLowerCase();
-          const isWoman = sexo === 'mujer' || gender === 'female';
-          if (isWoman && !data.bonoPaid) {
-            setBonoRequired(true);
-          }
+        // Bono gate: diagnostico flow without payment → redirect to /p/.
+        // tipo=diagnostico is set only for women (ghl-proxy + Meta-direct enrich),
+        // so the tipo param alone is a sufficient signal — sexo CF was removed and
+        // gender is unset for Meta-direct leads.
+        if (params.tipo !== 'asesoria' && !data.bonoPaid) {
+          setBonoRequired(true);
         }
 
         if (data.hasAppointment) {

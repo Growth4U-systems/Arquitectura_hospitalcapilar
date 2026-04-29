@@ -49,13 +49,17 @@ exports.handler = async (event) => {
     + `&phone=${encodeURIComponent(phone || '')}`
     + `&tipo=diagnostico`;
 
-  // 2. PUT contact custom field
+  // 2. PUT contact link_agendar.
+  // The bono gate in AgendarPage / koibox-proxy now triggers on tipo=diagnostico
+  // alone (no sexo/gender check), so the link itself enforces the paywall.
   let contactStatus, contactBody;
   try {
     const r = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
       method: 'PUT',
       headers: ghlHeaders,
-      body: JSON.stringify({ customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }] }),
+      body: JSON.stringify({
+        customFields: [{ id: CONTACT_LINK_AGENDAR_CF, field_value: link }],
+      }),
     });
     contactStatus = r.status;
     contactBody = await r.text();

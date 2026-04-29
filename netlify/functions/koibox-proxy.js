@@ -21,10 +21,11 @@ const PROVINCIAS = {
 
 // ── Flow A: Trichometabolic (diagnóstico médico, con bono para mujeres) ──
 // 30257 = hueco de agenda abierto para campaña quiz online (confirmado por María / Óscar, 2026-03-18)
+// Horario L-V 09:30–14:00, bloques de 1h (confirmado 2026-04-22)
 const DIAGNOSTICO = {
   employees: { madrid: [30257], pontevedra: [30257], murcia: [30257] },
   service: SERVICES.primera_consulta_diagnostico,
-  hours: { madrid: { open: '09:00', close: '16:00' }, pontevedra: { open: '09:00', close: '16:00' }, murcia: { open: '09:00', close: '16:00' } },
+  hours: { madrid: { open: '09:30', close: '14:00' }, pontevedra: { open: '09:30', close: '14:00' }, murcia: { open: '09:30', close: '14:00' } },
   maxDaily: { madrid: 6, pontevedra: 6, murcia: 6 },
   titulo: 'Test Capilar con Analítica Hormonal',
 };
@@ -421,14 +422,14 @@ async function createAppointment(body, koiboxHeaders, corsHeaders) {
     }
   }
 
-  // 0b. Block women who haven't paid the bono (only for diagnostico flow).
-  // Gate on sexo CF OR standard GHL gender — ECP is unreliable (city outside
-  // pilot overrides it to 'Ciudad sin clinica'), and the sexo CF is empty for
-  // leads that didn't complete the full quiz.
+  // 0b. Block diagnostico flow without bono payment.
+  // tipo=diagnostico is by design assigned only to women in ghl-proxy and the
+  // Meta-direct enrich function. Gating purely on tipo avoids depending on the
+  // sexo CF (deleted from the location) or the gender field (not API-writable
+  // after contact creation, so empty for Meta-direct leads).
   const isAsesoria = tipo_consulta === 'asesoria';
-  const isWoman = contactSexo === 'mujer' || contactGender === 'female';
-  if (!isAsesoria && isWoman && !bonoPaid) {
-    console.log('[Koibox] BLOCKED — Woman without bono payment. sexo:', contactSexo, 'gender:', contactGender, 'ECP:', contactEcp);
+  if (!isAsesoria && !bonoPaid) {
+    console.log('[Koibox] BLOCKED — diagnostico flow without bono. ECP:', contactEcp, 'sexo:', contactSexo, 'gender:', contactGender);
     return {
       statusCode: 403,
       headers: corsHeaders,
