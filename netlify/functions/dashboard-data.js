@@ -1411,6 +1411,37 @@ exports.handler = async (event) => {
         result.meta_ads_catalog_size = metaCatalog?.count || 0;
         result.google_ads_catalog_size = googleCatalog?.count || 0;
 
+        // ─── Override by_traffic_source with GHL counts ───
+        // PostHog form_submitted events lose UTM attribution often (autocapture
+        // only sets $utm_source on the landing pageview, not on later events).
+        // GHL is operational truth — every contact has a resolved channel via
+        // utm_source CF / source string. Overriding here makes "Leads y citas
+        // por fuente" match the Camino tables row-for-row.
+        const channelFromGhlRow = (r) => {
+          // r.channel comes pre-normalized in fetchGhlOppsWithContacts.
+          const ch = (r.channel || '').toLowerCase();
+          if (ch === 'meta') return 'meta';
+          if (ch === 'google') return 'google_ads';
+          if (ch === 'directo' || ch === 'direct') return 'direct';
+          return 'direct';
+        };
+        const ghlChannelMap = {};
+        for (const r of ghlRows) {
+          const k = channelFromGhlRow(r);
+          if (!ghlChannelMap[k]) ghlChannelMap[k] = { source: k, visits: 0, leads: 0, booked: 0, attended: 0, no_show: 0 };
+          ghlChannelMap[k].leads    += r.leads || 0;
+          ghlChannelMap[k].booked   += r.booked || 0;
+          ghlChannelMap[k].attended += r.atendida || 0;
+          ghlChannelMap[k].no_show  += r.no_show || 0;
+        }
+        // Preserve PostHog-derived visits per channel (visits aren't in GHL).
+        for (const ph of (result.by_traffic_source || [])) {
+          const k = (ph.source || '').toLowerCase();
+          if (ghlChannelMap[k]) ghlChannelMap[k].visits = ph.visits || 0;
+          else if (ph.visits > 0) ghlChannelMap[k] = { source: k, visits: ph.visits, leads: 0, booked: 0, attended: 0, no_show: 0 };
+        }
+        result.by_traffic_source = Object.values(ghlChannelMap).sort((a, b) => b.leads - a.leads);
+
         // Expose every ACTIVE G4U ad (Meta + Google) so the master table can
         // mirror Meta's structure 1:1 — even ads with 0 leads show up as
         // rows with all metrics at 0. This way the dashboard reflects the
