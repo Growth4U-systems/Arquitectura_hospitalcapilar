@@ -1086,7 +1086,8 @@ function renderTrafficTables(data) {
   const sourceMap = {};
   (data.by_traffic_source || []).forEach(r => {
     const s = normalizeSource(r.source);
-    if (!sourceMap[s]) sourceMap[s] = { leads: 0, booked: 0, attended: 0, no_show: 0 };
+    if (!sourceMap[s]) sourceMap[s] = { visits: 0, leads: 0, booked: 0, attended: 0, no_show: 0 };
+    sourceMap[s].visits += r.visits || 0;
     sourceMap[s].leads += r.leads || 0;
     sourceMap[s].booked += r.booked || 0;
     sourceMap[s].attended += r.attended || 0;
@@ -1106,15 +1107,16 @@ function renderTrafficTables(data) {
   });
 
   const sources = Object.entries(sourceMap).sort((a, b) => b[1].leads - a[1].leads);
+  const totalVisits = sources.reduce((s, [, v]) => s + v.visits, 0);
   const totalLeads = sources.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = sources.reduce((s, [, v]) => s + v.booked, 0);
   const totalAttended = Object.values(attendedMap).reduce((s, v) => s + v, 0);
   const totalNoShow = Object.values(noShowMap).reduce((s, v) => s + v, 0);
 
-  // Single unified table: Leads y citas por fuente (merge of the previous
-  // trafficTable1 and trafficTable2 which were mostly duplicated columns).
   let t1 = `<thead><tr>
     <th>Fuente</th>
+    <th class="num">Visitantes</th>
+    <th class="num">V&rarr;L %</th>
     <th class="num">Leads</th>
     <th class="num">% Leads</th>
     <th class="num">Citas</th>
@@ -1125,9 +1127,15 @@ function renderTrafficTables(data) {
   sources.forEach(([name, v]) => {
     const att = attendedMap[name] || 0;
     const ns = noShowMap[name] || 0;
+    const vlR = pctNum(v.leads, v.visits);
     const convR = pctNum(v.booked, v.leads);
     const showR = v.booked > 0 ? pctNum(att, v.booked) : 0;
+    const vlCell = v.visits > 0
+      ? `<td class="num ${convClass(vlR)}">${pct(v.leads, v.visits)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
     t1 += `<tr><td><span style="color:${sourceColor(name)};">&#9679;</span> ${name}</td>
+      <td class="num">${fmt(v.visits)}</td>
+      ${vlCell}
       <td class="num">${fmt(v.leads)}</td>
       <td class="num">${pct(v.leads, totalLeads)}</td>
       <td class="num">${fmt(v.booked)}</td>
@@ -1136,6 +1144,8 @@ function renderTrafficTables(data) {
       <td class="num ${showR >= 70 ? 'good' : showR >= 50 ? 'warn' : 'bad'}">${v.booked > 0 ? pct(att, v.booked) : '-'}</td></tr>`;
   });
   t1 += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
+    <td class="num">${fmt(totalVisits)}</td>
+    <td class="num">${totalVisits > 0 ? pct(totalLeads, totalVisits) : '-'}</td>
     <td class="num">${fmt(totalLeads)}</td>
     <td class="num">100%</td>
     <td class="num">${fmt(totalBooked)}</td>

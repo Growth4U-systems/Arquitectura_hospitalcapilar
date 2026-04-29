@@ -753,15 +753,29 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_attended' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_no_show' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
 
-      // Leads by traffic source (separate query, quiz events only)
+      // Leads + Visits by traffic source. Leads from form events; visits
+      // derived from $utm_source on the pageview (most pages don't carry
+      // properties.traffic_source — that one's set later by GHL sync).
       hogqlQuery(apiKey, `
         SELECT
-          properties.traffic_source as source,
-          count() as leads
+          multiIf(
+            lower(toString(properties.$utm_source)) IN ('facebook', 'instagram', 'meta', 'fb', 'ig'), 'meta',
+            lower(toString(properties.$utm_source)) IN ('google', 'google_ads', 'gads', 'adwords'), 'google_ads',
+            properties.traffic_source IS NOT NULL AND toString(properties.traffic_source) != '', toString(properties.traffic_source),
+            'direct'
+          ) as source,
+          count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
+          countIf(event IN ('form_submitted', 'direct_form_submitted')) as leads
         FROM events
-        WHERE event IN ('form_submitted', 'direct_form_submitted')
+        WHERE event IN ('$pageview', 'form_submitted', 'direct_form_submitted')
+          AND properties.$pathname NOT LIKE '/admin%'
+          AND properties.$pathname NOT LIKE '/preview/%'
+          AND properties.$pathname NOT LIKE '/agendar%'
+          AND properties.$pathname NOT LIKE '/mi-cita%'
+          AND properties.$pathname NOT LIKE '/test-%'
+          AND properties.$pathname NOT LIKE '/api/%'
           ${dateFilter}
-        GROUP BY properties.traffic_source
+        GROUP BY source
         ORDER BY leads DESC
       `),
 
@@ -1061,16 +1075,17 @@ exports.handler = async (event) => {
     // Helper to extract single value
     const val = (result) => (result && result[0] && result[0][0]) || 0;
 
-    // Merge leads and bookings by traffic source
+    // Merge leads/visits and bookings by traffic source
     const sourceMap = {};
     for (const row of leadsBySource) {
       const src = row[0];
-      if (!sourceMap[src]) sourceMap[src] = { leads: 0, booked: 0, attended: 0, no_show: 0 };
-      sourceMap[src].leads = row[1];
+      if (!sourceMap[src]) sourceMap[src] = { visits: 0, leads: 0, booked: 0, attended: 0, no_show: 0 };
+      sourceMap[src].visits = row[1];
+      sourceMap[src].leads = row[2];
     }
     for (const row of bookingsBySource) {
       const src = row[0];
-      if (!sourceMap[src]) sourceMap[src] = { leads: 0, booked: 0, attended: 0, no_show: 0 };
+      if (!sourceMap[src]) sourceMap[src] = { visits: 0, leads: 0, booked: 0, attended: 0, no_show: 0 };
       sourceMap[src].booked = row[1];
       sourceMap[src].attended = row[2];
       sourceMap[src].no_show = row[3];
