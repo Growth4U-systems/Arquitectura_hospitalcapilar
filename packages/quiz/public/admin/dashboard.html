@@ -521,7 +521,9 @@ function renderCamino(data) {
     bucket.started  += r.started  || 0;
     bucket.leads    += r.leads    || 0;
     bucket.paid     += r.paid     || 0;
-    bucket.agendada += (r.agendada || 0) + (r.atendida || 0); // current+past appointments
+    // Use booked (= ever-was-an-appointment, includes cancelled) so the
+    // count matches the funnel KPI's "Citas (todas)".
+    bucket.agendada += r.booked || 0;
   }
 
   function emptyCamino() {

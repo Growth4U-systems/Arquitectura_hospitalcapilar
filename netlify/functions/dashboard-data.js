@@ -470,11 +470,14 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
 
     const tags = Array.isArray(contact.tags) ? contact.tags : [];
     const stage = opp.pipelineStageId;
-    const isBooked    = GHL_BOOKED_STAGES.has(stage);
     const isAgendada  = GHL_STAGE_AGENDADA.has(stage);
     const isAtendida  = GHL_STAGE_ATENDIDA.has(stage);
     const isNoShow    = GHL_STAGE_NO_SHOW.has(stage);
     const isCancelada = tags.includes('cita_cancelada') || tags.includes('appointment_cancelled');
+    // Total citas = ever-was-an-appointment. Includes cancelled bookings
+    // (which sit in stage='lost' but have a cancelada tag) so the count
+    // matches the funnel KPI's "Citas (todas)" everywhere in the dashboard.
+    const isBooked = GHL_BOOKED_STAGES.has(stage) || isCancelada;
     const isPaid = tags.includes('bono_pagado');
 
     return {
