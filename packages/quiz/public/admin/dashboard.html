@@ -618,10 +618,16 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
     ? '<span style="color:var(--hc-teal-light);display:inline-block;width:12px;">▾</span>'
     : '<span style="color:var(--hc-text-muted);display:inline-block;width:12px;">▸</span>';
 
-  // Render Campaign rows sorted by leads desc (then visits desc as tiebreak)
-  // Channel-tinted background: Meta=blue, Google=green
+  // Render Campaign rows. Channel order: Meta first, Google second, others
+  // last. Within each channel, sort by leads desc (visits desc as tiebreak).
+  // Background tint: Meta=blue, Google=green.
+  const channelRank = (ch) => ch === 'Meta' ? 0 : ch === 'Google' ? 1 : 2;
   [...tree.values()]
-    .sort((a, b) => (b.leads - a.leads) || (b.visits - a.visits))
+    .sort((a, b) =>
+      (channelRank(a.channel) - channelRank(b.channel)) ||
+      (b.leads - a.leads) ||
+      (b.visits - a.visits)
+    )
     .forEach(camp => {
       const cKey = `c:${tableId}:${camp.key}`;
       const cExp = _caminoExpanded.has(cKey);
