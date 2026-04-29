@@ -216,22 +216,6 @@
   </div>
 </div>
 
-<!-- QUALITY -->
-<div class="section-header">Calidad de leads y asistencia</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-header"><h3>No-show rate por fuente</h3><span class="type">Table</span></div>
-    <div class="card-body">
-      <table id="noShowTable"></table>
-      <div id="noShowWarning" style="margin-top:12px;padding:10px;background:#1a1c24;border-radius:6px;font-size:12px;color:#f59e0b;display:none;"></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3>Clasificaci&oacute;n ECP</h3><span class="type">Breakdown</span></div>
-    <div class="card-body" id="ecpChart"></div>
-  </div>
-</div>
-
 <!-- COST / ROI -->
 <div class="section-header">
   Coste y ROI <span style="font-size:10px;background:var(--hc-teal);padding:3px 10px;border-radius:12px;margin-left:8px;color:#fff;font-weight:700;letter-spacing:0.5px;">LIVE</span>
@@ -485,11 +469,6 @@ function renderDashboard(data) {
   renderSexo(data);
 
   // No-show table
-  renderNoShow(data);
-
-  // ECP
-  renderEcp(data);
-
   // Ad Spend / ROI
   renderAdSpend(data);
 
@@ -894,7 +873,7 @@ function renderFunnel(k) {
     { label: 'Quiz iniciado',  value: k.quiz_started, color: '#34495e' },
     { label: 'Quiz completado', value: k.quiz_completed, color: '#3d8e7e' },
     { label: 'Leads',  value: leads, color: '#4CA994' },
-    { label: 'Pago',  value: k.payment_completed || 0, color: '#52b89e' },
+    { label: 'Pago de protocolo',  value: k.payment_completed || 0, color: '#52b89e' },
     { label: 'Citas (todas)',  value: k.appointment_booked, color: '#5fbfa8' },
     { label: 'Asistidas',  value: k.appointment_attended, color: '#4ade80' },
   ];
@@ -929,8 +908,8 @@ function renderFunnel(k) {
   const cancelada = k.appointment_cancelada || 0;
   document.getElementById('funnelSummary').innerHTML = `
     <div><span style="color:#888;font-size:12px;">Conversion total (visit &rarr; attend)</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${totalConv}</span></div>
-    <div><span style="color:#888;font-size:12px;">Lead &rarr; Pago</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToPago}</span></div>
-    <div><span style="color:#888;font-size:12px;">Pago &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${pagoToCita}</span></div>
+    <div><span style="color:#888;font-size:12px;">Lead &rarr; Pago protocolo</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${leadToPago}</span></div>
+    <div><span style="color:#888;font-size:12px;">Pago protocolo &rarr; Cita</span><br><span style="font-size:20px;font-weight:700;color:#f59e0b;">${pagoToCita}</span></div>
     <div style="flex-basis:100%;height:0;"></div>
     <div><span style="color:#888;font-size:12px;">Agendadas</span><br><span style="font-size:20px;font-weight:700;color:#5fbfa8;">${agendada}</span></div>
     <div><span style="color:#888;font-size:12px;">Atendidas</span><br><span style="font-size:20px;font-weight:700;color:#4ade80;">${atendida}</span></div>
@@ -1099,6 +1078,7 @@ function renderSexo(data) {
     const norm = (key === 'female') ? 'mujer' : (key === 'male') ? 'hombre' : key;
     return {
       sexo: norm,
+      visits: r.visits || 0,
       leads: r.leads || 0,
       booked: r.booked || 0,
       paid: r.paid || 0,
@@ -1108,7 +1088,8 @@ function renderSexo(data) {
   // Merge entries that normalize to the same key (e.g., male+hombre)
   const sMap = {};
   rows.forEach(r => {
-    if (!sMap[r.sexo]) sMap[r.sexo] = { leads: 0, booked: 0, paid: 0 };
+    if (!sMap[r.sexo]) sMap[r.sexo] = { visits: 0, leads: 0, booked: 0, paid: 0 };
+    sMap[r.sexo].visits += r.visits;
     sMap[r.sexo].leads += r.leads;
     sMap[r.sexo].booked += r.booked;
     sMap[r.sexo].paid += r.paid;
@@ -1121,21 +1102,28 @@ function renderSexo(data) {
     return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
   });
 
+  const totalVisits = entries.reduce((s, [, v]) => s + v.visits, 0);
   const totalLeads = entries.reduce((s, [, v]) => s + v.leads, 0);
   const totalBooked = entries.reduce((s, [, v]) => s + v.booked, 0);
   const totalPaid = entries.reduce((s, [, v]) => s + v.paid, 0);
 
-  // Funnel order: Leads → L→C% → Citas → C→P% → Pagos
-  let html = `<thead><tr><th>Sexo</th><th class="num">Leads</th><th class="num">L&rarr;C %</th><th class="num">Citas</th><th class="num">C&rarr;P %</th><th class="num">Pagos</th></tr></thead><tbody>`;
+  // Funnel order: Visitantes → V→L% → Leads → L→C% → Citas → C→P% → Pagos
+  let html = `<thead><tr><th>Sexo</th><th class="num">Visitantes</th><th class="num">V&rarr;L %</th><th class="num">Leads</th><th class="num">L&rarr;C %</th><th class="num">Citas</th><th class="num">C&rarr;P %</th><th class="num">Pagos</th></tr></thead><tbody>`;
   entries.forEach(([name, v]) => {
     const label = SEXO_LABELS[name] || name;
     const color = SEXO_COLORS[name] || '#78716c';
+    const vlR = pctNum(v.leads, v.visits);
     const lcR = pctNum(v.booked, v.leads);
     const cpR = pctNum(v.paid, v.booked);
+    const vlCell = v.visits > 0
+      ? `<td class="num ${convClass(vlR)}">${pct(v.leads, v.visits)}</td>`
+      : `<td class="num" style="color:#666;">&mdash;</td>`;
     const cpCell = v.booked > 0
       ? `<td class="num ${convClass(cpR)}">${pct(v.paid, v.booked)}</td>`
       : `<td class="num" style="color:#666;">&mdash;</td>`;
     html += `<tr><td><span style="color:${color};">&#9679;</span> ${label}</td>
+      <td class="num">${fmt(v.visits)}</td>
+      ${vlCell}
       <td class="num">${fmt(v.leads)}</td>
       <td class="num ${convClass(lcR)}">${pct(v.booked, v.leads)}</td>
       <td class="num">${fmt(v.booked)}</td>
@@ -1145,7 +1133,12 @@ function renderSexo(data) {
   const totalCpCell = totalBooked > 0
     ? `<td class="num">${pct(totalPaid, totalBooked)}</td>`
     : `<td class="num" style="color:#666;">&mdash;</td>`;
+  const totalVlCell = totalVisits > 0
+    ? `<td class="num">${pct(totalLeads, totalVisits)}</td>`
+    : `<td class="num" style="color:#666;">&mdash;</td>`;
   html += `<tr style="font-weight:600;border-top:2px solid #444;"><td>Total</td>
+    <td class="num">${fmt(totalVisits)}</td>
+    ${totalVlCell}
     <td class="num">${fmt(totalLeads)}</td>
     <td class="num">${pct(totalBooked, totalLeads)}</td>
     <td class="num">${fmt(totalBooked)}</td>
@@ -1168,72 +1161,6 @@ function renderSexo(data) {
   } else {
     document.getElementById('sexoBreakdown').innerHTML = '';
   }
-}
-
-function renderNoShow(data) {
-  // Build per-source no-show data from by_traffic_source
-  const sourceMap = {};
-  (data.by_traffic_source || []).forEach(r => {
-    const s = normalizeSource(r.source);
-    if (!sourceMap[s]) sourceMap[s] = { booked: 0, no_show: 0 };
-    sourceMap[s].booked += r.booked || 0;
-    sourceMap[s].no_show += r.no_show || 0;
-  });
-  const entries = Object.entries(sourceMap)
-    .filter(([, v]) => v.booked > 0)
-    .sort((a, b) => {
-      const rateA = a[1].no_show / a[1].booked;
-      const rateB = b[1].no_show / b[1].booked;
-      return rateA - rateB;
-    });
-
-  let html = `<thead><tr><th>Fuente</th><th class="num">Citas</th><th class="num">No-show</th><th class="num">Rate</th><th>Visual</th></tr></thead><tbody>`;
-  let highNoShow = [];
-  entries.forEach(([name, v]) => {
-    const rate = pctNum(v.no_show, v.booked);
-    const rateStr = rate.toFixed(1) + '%';
-    const cls = noShowClass(rate);
-    const barColor = rate <= 20 ? '#4ade80' : rate <= 35 ? '#facc15' : '#f87171';
-    html += `<tr><td>${name}</td><td class="num">${fmt(v.booked)}</td><td class="num">${fmt(v.no_show)}</td>
-      <td class="num ${cls}">${rateStr}</td>
-      <td><div style="width:100%;background:#2a2c35;border-radius:3px;height:12px;"><div style="width:${Math.min(rate, 100)}%;height:100%;background:${barColor};border-radius:3px;"></div></div></td></tr>`;
-    if (rate > 50) highNoShow.push(name);
-  });
-  html += '</tbody>';
-  document.getElementById('noShowTable').innerHTML = html;
-
-  const warning = document.getElementById('noShowWarning');
-  if (highNoShow.length > 0) {
-    warning.innerHTML = `&#9888; ${highNoShow.join(' y ')} tienen >50% no-show &mdash; considerar confirmacion extra o bono obligatorio`;
-    warning.style.display = 'block';
-  } else {
-    warning.style.display = 'none';
-  }
-}
-
-function renderEcp(data) {
-  const ecps = (data.by_ecp || []).map(r => ({
-    ecp: normalizeNicho(r.ecp),
-    count: r.count || 0,
-  }));
-  const eMap = {};
-  ecps.forEach(r => { eMap[r.ecp] = (eMap[r.ecp] || 0) + r.count; });
-  const entries = Object.entries(eMap).sort((a, b) => b[1] - a[1]);
-  const max = entries.length > 0 ? entries[0][1] : 1;
-  const total = entries.reduce((s, [, v]) => s + v, 0);
-
-  let html = '';
-  entries.forEach(([name, cnt], i) => {
-    const widthPct = Math.max((cnt / max) * 100, 3);
-    const color = ECP_COLORS[i % ECP_COLORS.length];
-    html += `<div class="hbar">
-      <div class="hbar-label">${name}</div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${widthPct}%;background:${color};">${fmt(cnt)}</div></div>
-      <div class="hbar-value">${total > 0 ? pct(cnt, total) : '-'}</div>
-    </div>`;
-  });
-  if (entries.length === 0) html = '<div style="color:#555;text-align:center;padding:20px;">Sin datos de clasificacion ECP</div>';
-  document.getElementById('ecpChart').innerHTML = html;
 }
 
 // ---- AD SPEND / ROI ----

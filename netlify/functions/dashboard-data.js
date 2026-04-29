@@ -19,12 +19,14 @@ const GHL_BOOKED_STAGES = new Set([
   '437d0663-bd17-4d84-a939-11aed1b4b384', // no_show
 ]);
 // Per-stage classification so the dashboard can split:
-//   Agendadas (booked|reminder_sent), Atendidas (attended|won),
-//   No-show, Canceladas (lost — bookings that didn't happen).
-const GHL_STAGE_AGENDADA  = new Set(['f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', '24956338-65d9-4a16-97e5-ba01b64f390f']);
-const GHL_STAGE_ATENDIDA  = new Set(['71a5cc36-584e-47dc-9cce-215803e3140d', '1cd97c60-fb19-4699-9293-2b32fd48b54a']);
-const GHL_STAGE_NO_SHOW   = new Set(['437d0663-bd17-4d84-a939-11aed1b4b384']);
-const GHL_STAGE_CANCELADA = new Set(['c961b576-b14d-43a6-ac75-a26695886d58']); // lost
+//   Agendadas (booked|reminder_sent), Atendidas (attended|won), No-show.
+// "Canceladas" (booked → cancelled) cannot be derived from a single stage:
+// the `lost` stage holds *every* dead lead (never-converted, unqualified,
+// rejected) and would massively overcount. We only count canceladas via
+// GHL contact tags (set by Noemí when a booking is actually cancelled).
+const GHL_STAGE_AGENDADA = new Set(['f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', '24956338-65d9-4a16-97e5-ba01b64f390f']);
+const GHL_STAGE_ATENDIDA = new Set(['71a5cc36-584e-47dc-9cce-215803e3140d', '1cd97c60-fb19-4699-9293-2b32fd48b54a']);
+const GHL_STAGE_NO_SHOW  = new Set(['437d0663-bd17-4d84-a939-11aed1b4b384']);
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
@@ -431,7 +433,7 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     const isAgendada  = GHL_STAGE_AGENDADA.has(stage);
     const isAtendida  = GHL_STAGE_ATENDIDA.has(stage);
     const isNoShow    = GHL_STAGE_NO_SHOW.has(stage);
-    const isCancelada = GHL_STAGE_CANCELADA.has(stage);
+    const isCancelada = tags.includes('cita_cancelada') || tags.includes('appointment_cancelled');
     const isPaid = tags.includes('bono_pagado');
 
     return {
@@ -1232,13 +1234,21 @@ exports.handler = async (event) => {
     try {
       const ghlRows = await fetchGhlOppsWithContacts(effectiveStart, effectiveEnd);
       if (ghlRows) {
-        // by_sexo
+        // by_sexo — leads/booked/paid from GHL (operational truth) + visits
+        // from PostHog (only place we have $pageview by person.properties.sexo).
         const bySexoMap = {};
         for (const r of ghlRows) {
-          if (!bySexoMap[r.sexo]) bySexoMap[r.sexo] = { sexo: r.sexo, leads: 0, booked: 0, paid: 0 };
+          if (!bySexoMap[r.sexo]) bySexoMap[r.sexo] = { sexo: r.sexo, visits: 0, started: 0, leads: 0, booked: 0, paid: 0 };
           bySexoMap[r.sexo].leads += r.leads;
           bySexoMap[r.sexo].booked += r.booked;
           bySexoMap[r.sexo].paid += r.paid;
+        }
+        // Merge in PostHog visits/started by sexo (the original by_sexo array).
+        for (const ph of (result.by_sexo || [])) {
+          const s = ph.sexo || 'sin-dato';
+          if (!bySexoMap[s]) bySexoMap[s] = { sexo: s, visits: 0, started: 0, leads: 0, booked: 0, paid: 0 };
+          bySexoMap[s].visits = ph.visits || 0;
+          bySexoMap[s].started = ph.started || 0;
         }
         const bySexoArr = Object.values(bySexoMap).sort((a, b) => b.leads - a.leads);
         if (bySexoArr.length > 0) result.by_sexo = bySexoArr;
