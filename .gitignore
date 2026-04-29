@@ -40,3 +40,4 @@ deno.lock
 
 # Local Netlify folder
 .netlify
+docs/demo-alfonso.md

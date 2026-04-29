@@ -188,19 +188,17 @@ async function updateGHLOpportunity(contactId, apiKey, amountCents) {
       console.log('[Stripe Webhook] Failed to read opportunity details:', err.message);
     }
 
-    // Update opportunity with payment status (paid_195 or paid_125 based on amount)
-    const paymentStatus = amount >= 150 ? 'paid_195' : 'paid_125';
     const updateRes = await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
       method: 'PUT',
       headers: ghlHeaders,
       body: JSON.stringify({
         monetaryValue: amount,
         customFields: [
-          { id: OPP_CF.tratamiento_status, field_value: paymentStatus },
+          { id: OPP_CF.tratamiento_status, field_value: 'paid_125' },
         ],
       }),
     });
-    console.log('[Stripe Webhook] Opportunity updated:', opp.id, 'status:', updateRes.status, 'paymentStatus:', paymentStatus, 'amount:', amount, 'koiboxId:', koiboxId);
+    console.log('[Stripe Webhook] Opportunity updated:', opp.id, 'status:', updateRes.status, 'amount:', amount, 'koiboxId:', koiboxId);
 
     return koiboxId;
   } catch (err) {

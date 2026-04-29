@@ -131,80 +131,58 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         {/* Header */}
         <div className={`text-center pb-6 ${onClose ? '' : 'pt-8 md:pt-10'}`}>
           <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-4 md:mb-6 leading-tight">
-            {ecp === 'Protocolo Mujer' ? (
-              <><span className="text-[#4CA994]">{firstName},</span> deja de adivinar qué le pasa a tu pelo. <span className="text-[#4CA994]">Descúbrelo.</span></>
-            ) : (
-              <><span className="text-[#4CA994]">{firstName}</span>, descubre qué le pasa a tu pelo</>
-            )}
+            <span className="text-[#4CA994]">{firstName},</span> deja de adivinar qué le pasa a tu pelo. <span className="text-[#4CA994]">Descúbrelo.</span>
           </h2>
-          {ecp === 'Protocolo Mujer' ? (
-            <>
-              <div className="max-w-md md:max-w-xl mx-auto">
-                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
-                  La caída capilar femenina no tiene una única causa. Es <strong className="font-bold text-gray-900">multifactorial</strong>:
-                </p>
-                <div className="flex flex-wrap justify-center gap-2 my-3 md:my-4">
-                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Estrés</span>
-                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Desajustes hormonales</span>
-                  <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Déficits nutricionales</span>
-                </div>
-                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
-                  Por eso los tratamientos genéricos <strong className="font-bold text-gray-900">fallan</strong>.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 max-w-md md:max-w-xl mx-auto my-5 md:my-7">
-                <div className="flex-1 h-px bg-gray-200" />
-                <p className="text-xs md:text-sm text-[#4CA994] font-extrabold uppercase tracking-wider whitespace-nowrap">Necesitas precisión</p>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-              <div className="max-w-md md:max-w-xl mx-auto">
-                <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed mb-4 md:mb-5">
-                  Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> identificamos el origen real de tu caída:
-                </p>
-                <div className="grid grid-cols-3 gap-2 md:gap-4">
-                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
-                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
-                      <FlaskConical className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
-                    </div>
-                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">27 biomarcadores</p>
-                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Analítica hormonal</p>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
-                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
-                      <Microscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
-                    </div>
-                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Tricoscopía</p>
-                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Alta precisión</p>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
-                    <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
-                      <Stethoscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
-                    </div>
-                    <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Valoración</p>
-                    <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Médica especialista</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 md:mt-7 inline-flex items-center gap-1.5 md:gap-2 bg-[#F0F7F6] text-[#2C3E50] text-[11px] md:text-xs font-bold uppercase tracking-wider px-3 md:px-4 py-1.5 md:py-2 rounded-full">
-                <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#4CA994] rounded-full" />
-                Especialistas capilares · España
-              </div>
-            </>
-          ) : (
-            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed max-w-md mx-auto">
-              {ecp === 'Lo Que Vino Con el Bebé' ? (
-                <>Tu caso necesita el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong>: mide tus hormonas postparto y las cruza con un estudio capilar completo para identificar la causa real.</>
-              ) : ecp === '¿Qué Me Pasa?' ? (
-                <>Google no puede diagnosticarte. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué ocurre.</>
-              ) : ecp === 'La Farmacia' ? (
-                <>Sin saber la causa, cualquier producto es una apuesta. Un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> te dice exactamente qué necesitas.</>
-              ) : ecp === 'Es Normal' ? (
-                <>Tu caída puede tener causa hormonal. Solo el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> —con 27 biomarcadores clave— puede confirmarlo.</>
-              ) : (
-                <>Tu caída puede tener causa hormonal. Solo un <strong className="font-bold text-gray-900">analítica de perfil hormonal</strong> especializado puede confirmarlo.</>
-              )}
+          <div className="max-w-md md:max-w-xl mx-auto">
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
+              La caída capilar no tiene una única causa. Es <strong className="font-bold text-gray-900">multifactorial</strong>:
             </p>
-          )}
+            <div className="flex flex-wrap justify-center gap-2 my-3 md:my-4">
+              <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Estrés</span>
+              <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Desajustes hormonales</span>
+              <span className="bg-white border border-gray-200 text-gray-700 text-xs md:text-sm font-semibold px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm">Déficits nutricionales</span>
+            </div>
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed">
+              Por eso los tratamientos genéricos <strong className="font-bold text-gray-900">fallan</strong>.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 max-w-md md:max-w-xl mx-auto my-5 md:my-7">
+            <div className="flex-1 h-px bg-gray-200" />
+            <p className="text-xs md:text-sm text-[#4CA994] font-extrabold uppercase tracking-wider whitespace-nowrap">Necesitas precisión</p>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+          <div className="max-w-md md:max-w-xl mx-auto">
+            <p className="text-gray-700 text-base md:text-lg font-medium leading-relaxed mb-4 md:mb-5">
+              Con el <strong className="font-bold text-gray-900">Protocolo Femenino Trichometabolic</strong> identificamos el origen real de tu caída:
+            </p>
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                  <FlaskConical className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                </div>
+                <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">27 biomarcadores</p>
+                <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Analítica hormonal</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                  <Microscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                </div>
+                <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Tricoscopía</p>
+                <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Alta precisión</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 p-3 md:p-5 shadow-sm flex flex-col items-center text-center">
+                <div className="w-9 h-9 md:w-12 md:h-12 bg-[#F0F7F6] rounded-lg flex items-center justify-center mb-2 md:mb-3">
+                  <Stethoscope className="text-[#4CA994] w-[18px] h-[18px] md:w-6 md:h-6" />
+                </div>
+                <p className="text-[12px] md:text-sm font-bold text-gray-900 leading-tight">Valoración</p>
+                <p className="text-[11px] md:text-xs text-gray-500 leading-tight mt-0.5">Médica especialista</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 md:mt-7 inline-flex items-center gap-1.5 md:gap-2 bg-[#F0F7F6] text-[#2C3E50] text-[11px] md:text-xs font-bold uppercase tracking-wider px-3 md:px-4 py-1.5 md:py-2 rounded-full">
+            <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#4CA994] rounded-full" />
+            Especialistas capilares · España
+          </div>
         </div>
 
         {/* Video testimonial — right after hero (Especialistas chip) */}

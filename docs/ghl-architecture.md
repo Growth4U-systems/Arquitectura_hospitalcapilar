@@ -74,8 +74,8 @@ Solo 6 tags. Cada uno tiene un propósito claro y no duplica stages ni custom fi
 | `¿Qué Me Pasa?` | Hombre adulto | Consulta gratuita → comercial agenda |
 | `El Espejo` | Hombre joven | Consulta gratuita → comercial agenda |
 | `La Inversión` | Post-trasplante | Consulta gratuita → comercial agenda |
-| `Es Normal` | Mujer hormonal | Pago 195€ o 70€ → agenda en Koibox |
-| `Lo Que Vino Con el Bebé` | Postparto | Pago 195€ o 70€ → agenda en Koibox |
+| `Es Normal` | Mujer hormonal | Pago 125€ → agenda en Koibox |
+| `Lo Que Vino Con el Bebé` | Postparto | Pago 125€ → agenda en Koibox |
 | `Ya Me Engañaron` | Segunda opinión | Siempre llamada, nunca pago directo |
 | `No Candidato` | Dermatológico | Artículo educativo, fuera del funnel |
 

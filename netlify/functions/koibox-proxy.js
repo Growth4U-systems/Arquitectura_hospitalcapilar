@@ -748,7 +748,7 @@ async function syncCancellationToGHL(contactId, apiKey, koiboxId, reason) {
       await fetch(`${GHL_BASE}/opportunities/${opp.id}`, {
         method: 'PUT',
         headers: ghlHeaders,
-        // Note: tratamiento_status is NOT changed — it preserves payment state (not_paid/paid_195/paid_70)
+        // Note: tratamiento_status is NOT changed — it preserves payment state (not_paid/paid_125)
         // Cancellation is tracked via pipelineStageId only
         body: JSON.stringify({
           pipelineStageId: PIPELINE_STAGE_CANCELLED,
