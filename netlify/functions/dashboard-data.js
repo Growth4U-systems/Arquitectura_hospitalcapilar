@@ -772,15 +772,36 @@ exports.handler = async (event) => {
       hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_attended' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
       hogqlQuery(apiKey, `SELECT count(DISTINCT toString(properties.opportunity_id)) FROM events WHERE event = 'appointment_no_show' AND (toString(properties.$insert_id) LIKE '%_v4' OR toString(properties.$insert_id) LIKE '%_v5') ${dateFilter}`),
 
-      // Leads + Visits by traffic source. Leads from form events; visits
-      // derived from $utm_source on the pageview (most pages don't carry
-      // properties.traffic_source — that one's set later by GHL sync).
+      // Leads + Visits by traffic source. Coalesces UTM source from every
+      // place PostHog might park it: event-level $utm_source (autocapture
+      // from URL), event-level utm_source (sometimes set explicitly), and
+      // person-level $initial_utm_source (set on first pageview, propagates
+      // back to anonymous events). Without this coalesce 99% of visits fall
+      // into "direct" because PostHog stores UTM as $-prefixed only on the
+      // FIRST event, and everything else lacks it.
       hogqlQuery(apiKey, `
         SELECT
           multiIf(
-            lower(toString(properties.$utm_source)) IN ('facebook', 'instagram', 'meta', 'fb', 'ig'), 'meta',
-            lower(toString(properties.$utm_source)) IN ('google', 'google_ads', 'gads', 'adwords'), 'google_ads',
-            properties.traffic_source IS NOT NULL AND toString(properties.traffic_source) != '', toString(properties.traffic_source),
+            lower(coalesce(
+              nullIf(toString(properties.$utm_source), ''),
+              nullIf(toString(properties.utm_source), ''),
+              nullIf(toString(person.properties.$initial_utm_source), ''),
+              nullIf(toString(person.properties.utm_source), ''),
+              ''
+            )) IN ('facebook', 'instagram', 'meta', 'fb', 'ig'), 'meta',
+            lower(coalesce(
+              nullIf(toString(properties.$utm_source), ''),
+              nullIf(toString(properties.utm_source), ''),
+              nullIf(toString(person.properties.$initial_utm_source), ''),
+              nullIf(toString(person.properties.utm_source), ''),
+              ''
+            )) IN ('google', 'google_ads', 'gads', 'adwords'), 'google_ads',
+            isNotNull(properties.$initial_referring_domain) AND toString(properties.$initial_referring_domain) LIKE '%facebook%', 'meta',
+            isNotNull(properties.$initial_referring_domain) AND toString(properties.$initial_referring_domain) LIKE '%instagram%', 'meta',
+            isNotNull(properties.$initial_referring_domain) AND toString(properties.$initial_referring_domain) LIKE '%google%', 'google_ads',
+            isNotNull(properties.$referring_domain) AND toString(properties.$referring_domain) LIKE '%facebook%', 'meta',
+            isNotNull(properties.$referring_domain) AND toString(properties.$referring_domain) LIKE '%instagram%', 'meta',
+            isNotNull(properties.$referring_domain) AND toString(properties.$referring_domain) LIKE '%google%', 'google_ads',
             'direct'
           ) as source,
           count(DISTINCT if(event = '$pageview', person_id, NULL)) as visits,
