@@ -341,6 +341,9 @@ function canonicalCampaignFromUtm(utm_campaign) {
   if (/\bmenopausia\b|\bes[-_ ]?normal\b/.test(lower)) return 'Menopausia G4U';
   if (/\bque[-_ ]?me[-_ ]?pasa\b/.test(lower))          return '¿Qué me pasa? G4U';
   if (/\bpostparto\b/.test(lower))                      return 'Postparto_G4U_Madrid';
+  // Trichometabolic / tricometabolic — accepts both spellings (with and
+  // without the 'h'). Launched 2026-04-29 in Meta as "Tricometabolic G4U".
+  if (/\btric?h?o[-_ ]?metabolic\b/.test(lower))        return 'Tricometabolic G4U';
   return null; // unknown nicho → keep raw
 }
 
@@ -353,6 +356,11 @@ const CAMPAIGN_ALIASES = new Map([
   ['¿qué me pasa?',                         '¿Qué me pasa? G4U'],
   ['¿que me pasa?',                         '¿Qué me pasa? G4U'],
   ['postparto / lo que vino con el bebé /madrid', 'Postparto_G4U_Madrid'],
+  // Trichometabolic launched 2026-04-29. Accept variant spellings so any
+  // typo or pre-rename name still maps to the canonical campaign.
+  ['trichometabolic g4u',                   'Tricometabolic G4U'],
+  ['trichometabolic',                       'Tricometabolic G4U'],
+  ['tricometabolic',                        'Tricometabolic G4U'],
 ]);
 
 function aliasCampaignName(name) {
