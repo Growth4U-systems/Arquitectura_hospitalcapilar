@@ -23,7 +23,20 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { email, nombre, contactId, ecp, ubicacion, amount = 19500, embedded = false } = body;
+    const { email, nombre, telefono, contactId, ecp, ubicacion, amount = 19500, embedded = false } = body;
+
+    // Build success URL with lead data prellenada so /pago-confirmado renders
+    // personalized confirmation + WhatsApp CTA without needing to look up the
+    // contact (which may not exist in GHL yet — Stripe webhook is async).
+    const successQs = new URLSearchParams();
+    if (nombre)    successQs.set('nombre', nombre);
+    if (email)     successQs.set('email', email);
+    if (telefono)  successQs.set('telefono', telefono);
+    if (ubicacion) successQs.set('ubicacion', ubicacion);
+    if (contactId) successQs.set('contactId', contactId);
+    successQs.set('amount', String(amount / 100));
+    successQs.set('session_id', '{CHECKOUT_SESSION_ID}');
+    const successUrl = `https://diagnostico.hospitalcapilar.com/pago-confirmado?${successQs.toString()}`;
 
     const params = new URLSearchParams();
     params.append('mode', 'payment');
@@ -49,10 +62,10 @@ exports.handler = async (event) => {
     if (embedded) {
       // Embedded mode: returns client_secret for inline checkout
       params.append('ui_mode', 'embedded');
-      params.append('return_url', 'https://diagnostico.hospitalcapilar.com/?pago=exito&session_id={CHECKOUT_SESSION_ID}');
+      params.append('return_url', successUrl);
     } else {
       // Redirect mode: returns URL
-      params.append('success_url', 'https://diagnostico.hospitalcapilar.com/?pago=exito&session_id={CHECKOUT_SESSION_ID}');
+      params.append('success_url', successUrl);
       params.append('cancel_url', 'https://diagnostico.hospitalcapilar.com/?pago=cancelado');
     }
 

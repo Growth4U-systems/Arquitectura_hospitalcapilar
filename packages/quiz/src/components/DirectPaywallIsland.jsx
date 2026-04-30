@@ -135,6 +135,7 @@ function DirectPaywallInner() {
         body: JSON.stringify({
           email: lead.email || '',
           nombre: lead.nombre || '',
+          telefono: lead.telefono || '',
           contactId: '', // Meta→GHL native integration creates the contact; Stripe webhook links it
           ecp,
           ubicacion: lead.ciudad || '',
