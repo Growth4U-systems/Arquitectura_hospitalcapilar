@@ -1,9 +1,11 @@
 // Webhook receiver for GHL workflow that fires when a Meta Lead Form contact is created.
-// Sets `link_agendar` on the contact + `link_agendados` on the open opportunity,
-// using tipo=diagnostico (paid path) for every Meta-direct lead.
+// Sets `link_agendar` + `link_paywall` on the contact, `link_agendados` on the open
+// opportunity, and finally adds the tag `meta_form_directo` so the auto-reply
+// WhatsApp workflow can trigger on it (guaranteeing the links are populated before
+// the message goes out).
 //
 // Trigger setup (in GHL):
-//   Workflow trigger: Contact Created (or Tag Added: meta_form_directo)
+//   Workflow trigger: Contact Created (Source contains Facebook)
 //   → Webhook action POST { contactId, firstName, lastName, email, phone }
 //   → URL: https://diagnostico.hospitalcapilar.com/.netlify/functions/ghl-meta-lead-enrich
 
@@ -101,6 +103,23 @@ exports.handler = async (event) => {
     console.error('[meta-lead-enrich] opportunity update failed', e);
   }
 
+  // 4. Add `meta_form_directo` tag LAST so any downstream workflow (e.g. the
+  // auto-reply WhatsApp) triggered by this tag is guaranteed to read a contact
+  // with link_agendar + link_paywall already populated. Order matters — keep
+  // this as the final step.
+  let tagStatus = null;
+  try {
+    const tr = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify({ tags: ['meta_form_directo'] }),
+    });
+    tagStatus = tr.status;
+    console.log('[meta-lead-enrich] tag added', tagStatus);
+  } catch (e) {
+    console.error('[meta-lead-enrich] tag POST failed', e);
+  }
+
   return {
     statusCode: 200,
     headers: responseHeaders,
@@ -111,6 +130,7 @@ exports.handler = async (event) => {
       contactStatus,
       oppId,
       oppStatus,
+      tagStatus,
     }),
   };
 };

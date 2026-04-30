@@ -130,6 +130,17 @@ async function enrichOne(contact) {
     console.error('opp update failed for', c.id, e.message);
   }
 
+  // Tag last — mirrors the live function so backfilled contacts also enter the
+  // tag-based auto-reply WhatsApp flow.
+  try {
+    await fetch(`${GHL_BASE}/contacts/${c.id}/tags`, {
+      method: 'POST', headers: ghlHeaders,
+      body: JSON.stringify({ tags: ['meta_form_directo'] }),
+    });
+  } catch (e) {
+    console.error('tag POST failed for', c.id, e.message);
+  }
+
   return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), action: 'updated', contactStatus, oppId, oppStatus };
 }
 
