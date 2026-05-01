@@ -227,18 +227,18 @@
 <div class="section-header">
   Camino completo por anuncio
   <span style="font-size:11px;color:var(--hc-text-dim);font-weight:500;text-transform:none;letter-spacing:0;margin-left:8px;">
-    &mdash; mujeres = camino pago (paywall &rarr; Stripe) &middot; hombres = camino sin pago (agenda directa)
+    &mdash; pago = paywall &rarr; Stripe &middot; no pago = agenda directa
   </span>
 </div>
 <div class="grid">
   <div class="card full-width">
-    <div class="card-header"><h3>Camino Pago (mujeres)</h3><span class="type">Funnel por anuncio</span></div>
+    <div class="card-header"><h3>Camino Pago</h3><span class="type">Funnel por anuncio</span></div>
     <div class="card-body" style="overflow-x:auto;">
       <table id="caminoPagoTable" style="font-size:12px;white-space:nowrap;width:100%;"></table>
     </div>
   </div>
   <div class="card full-width">
-    <div class="card-header"><h3>Camino No-Pago (hombres)</h3><span class="type">Funnel por anuncio</span></div>
+    <div class="card-header"><h3>Camino No Pago</h3><span class="type">Funnel por anuncio</span></div>
     <div class="card-body" style="overflow-x:auto;">
       <table id="caminoNoPagoTable" style="font-size:12px;white-space:nowrap;width:100%;"></table>
     </div>
@@ -464,8 +464,11 @@ function aliasCampaignNameClient(name) {
 }
 
 function renderCamino(data) {
-  renderCaminoTree(data, 'mujer',  'caminoPagoTable',   true);
-  renderCaminoTree(data, 'hombre', 'caminoNoPagoTable', false);
+  // Pago = mujeres + sin-dato (campaigns currently target women, unattributed
+  // leads default to the paywall path).
+  // No Pago = hombres only (paused campaigns).
+  renderCaminoTree(data, ['mujer', 'sin-dato'], 'caminoPagoTable',   true);
+  renderCaminoTree(data, ['hombre'],            'caminoNoPagoTable', false);
 }
 
 function caminoAggInit() {
@@ -481,8 +484,9 @@ function caminoAdd(agg, r) {
 
 function renderCaminoTree(data, sexoFilter, tableId, isPago) {
   const allRows = data.by_master_funnel || [];
-  // Filter to one sex's path
-  const rows = allRows.filter(r => (r.sexo || '').toLowerCase() === sexoFilter);
+  const sexoSet = new Set(Array.isArray(sexoFilter) ? sexoFilter : [sexoFilter]);
+  // Filter to one or more sex buckets (Pago = mujer + sin-dato, NoPago = hombre)
+  const rows = allRows.filter(r => sexoSet.has((r.sexo || '').toLowerCase()));
 
   // Build tree: Campaña → AdSet → Anuncio
   // Key by (channel + campaign) so Meta "¿Qué me pasa? G4U" and Google
@@ -523,7 +527,7 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
   // For sexoFilter='mujer' we include EVERYTHING (current campaigns target
   // women). For 'hombre' we skip injection because campaigns to men are
   // paused — only show what actually has data.
-  if (sexoFilter === 'mujer') {
+  if (isPago) {
     // Meta: Campaign → AdSet → Ad
     const metaActive = data.meta_active_ads || [];
     for (const a of metaActive) {
@@ -568,8 +572,8 @@ function renderCaminoTree(data, sexoFilter, tableId, isPago) {
 
   if (tree.size === 0) {
     const msg = isPago
-      ? 'Sin tráfico de mujeres en el rango.'
-      : 'Sin tráfico de hombres en el rango. Campañas a hombres pausadas desde la 3ª semana de abril.';
+      ? 'Sin tráfico en el rango.'
+      : 'Sin tráfico en el camino sin pago. Campañas a hombres pausadas desde la 3ª semana de abril.';
     document.getElementById(tableId).innerHTML = `<tbody><tr><td colspan="10" style="padding:16px;text-align:center;color:#888;font-style:italic;">${msg}</td></tr></tbody>`;
     return;
   }
