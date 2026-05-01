@@ -36,7 +36,37 @@ function buildPaywallLink(c) {
     + `&telefono=${encodeURIComponent(c.phone || '')}`;
 }
 
-async function searchRecentFacebookContacts(ghlHeaders) {
+// Meta Lead Forms can be served on Facebook OR Instagram. The /contacts/search
+// endpoint does NOT return `createdBy`, so we can't rely on createdBy.sourceId
+// to identify Instagram leads. Instead we filter orphans by what they LACK:
+//   - empty link_agendar field (Quiz/Form leads always have one set by ghl-proxy)
+//   - source does not look like a Quiz/Form internal flow
+//   - not blocked / spammy (must have email or phone)
+// This catches Meta Facebook + Meta Instagram + any other native integration
+// lead missing the link, while skipping our own Quiz/Form leads (which are
+// already enriched at creation).
+
+function isQuizOrFormSource(c) {
+  const src = (c.source || '').toLowerCase();
+  return src.includes('quiz') || src.includes('form-') || src.includes(' form ') || src.startsWith('form ');
+}
+
+function isOrphanCandidate(c) {
+  // Must have at least email or phone (skip ghost/blocked contacts).
+  if (!c.email && !c.phone) return false;
+  // Skip our own quiz/form pipeline — those are populated at creation.
+  if (isQuizOrFormSource(c)) return false;
+  // Skip if blocked tag present (Instagram comment-spam, etc.)
+  const tags = (c.tags || []).map(t => (t || '').toLowerCase());
+  if (tags.includes('blocked')) return false;
+  // Skip if link_agendar is already set (idempotency).
+  const cfs = c.customFields || [];
+  const hasLink = !!cfs.find(f => f.id === CONTACT_LINK_AGENDAR_CF)?.value;
+  if (hasLink) return false;
+  return true;
+}
+
+async function searchRecentOrphans(ghlHeaders) {
   const since = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
   const results = [];
   let page = 1;
@@ -49,7 +79,6 @@ async function searchRecentFacebookContacts(ghlHeaders) {
         pageLimit: 100,
         page,
         filters: [
-          { field: 'source', operator: 'contains', value: 'Facebook' },
           { field: 'dateAdded', operator: 'range', value: { gte: since } },
         ],
       }),
@@ -64,7 +93,7 @@ async function searchRecentFacebookContacts(ghlHeaders) {
     if (batch.length < 100) break;
     page += 1;
   }
-  return results;
+  return results.filter(isOrphanCandidate);
 }
 
 async function enrichOne(c, ghlHeaders) {
@@ -137,7 +166,7 @@ exports.handler = async () => {
   const updates = [];
 
   try {
-    const contacts = await searchRecentFacebookContacts(ghlHeaders);
+    const contacts = await searchRecentOrphans(ghlHeaders);
     scanned = contacts.length;
     for (const c of contacts) {
       try {

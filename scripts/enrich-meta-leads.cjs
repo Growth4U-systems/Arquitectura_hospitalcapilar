@@ -45,7 +45,27 @@ function buildPaywallLink(c) {
     + `&telefono=${encodeURIComponent(c.phone || '')}`;
 }
 
-async function searchFacebookContacts() {
+// Filter orphans by what they LACK (empty link_agendar) rather than by source
+// — the search endpoint doesn't return createdBy, so we can't match Instagram
+// reliably. Skip Quiz/Form sources (those are populated by ghl-proxy at
+// creation) and blocked contacts.
+function isQuizOrFormSource(c) {
+  const src = (c.source || '').toLowerCase();
+  return src.includes('quiz') || src.includes('form-') || src.includes(' form ') || src.startsWith('form ');
+}
+
+function isOrphanCandidate(c) {
+  if (!c.email && !c.phone) return false;
+  if (isQuizOrFormSource(c)) return false;
+  const tags = (c.tags || []).map(t => (t || '').toLowerCase());
+  if (tags.includes('blocked')) return false;
+  const cfs = c.customFields || [];
+  const hasLink = !!cfs.find(f => f.id === CONTACT_LINK_AGENDAR_CF)?.value;
+  if (hasLink) return false;
+  return true;
+}
+
+async function searchMetaContacts() {
   const since = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000).toISOString();
   const results = [];
   let page = 1;
@@ -58,7 +78,6 @@ async function searchFacebookContacts() {
         pageLimit: 100,
         page,
         filters: [
-          { field: 'source', operator: 'contains', value: 'Facebook' },
           { field: 'dateAdded', operator: 'range', value: { gte: since } },
         ],
       }),
@@ -75,7 +94,7 @@ async function searchFacebookContacts() {
     page += 1;
     if (page > 50) break; // safety
   }
-  return results;
+  return results.filter(isOrphanCandidate);
 }
 
 async function enrichOne(contact) {
@@ -148,17 +167,8 @@ async function main() {
   console.log(EXECUTE ? '=== EXECUTE MODE ===' : '=== DRY-RUN (pass --execute to apply) ===');
   console.log(`Lookback window: ${DAYS} days`);
 
-  const contacts = await searchFacebookContacts();
-  console.log(`\nFound ${contacts.length} Facebook-source contacts in window.`);
-
-  // Filter: only those with empty link_agendar
-  const candidates = [];
-  for (const c of contacts) {
-    const cfs = c.customFields || [];
-    const link = cfs.find(f => f.id === CONTACT_LINK_AGENDAR_CF)?.value || '';
-    if (!link) candidates.push(c);
-  }
-  console.log(`Candidates with empty link_agendar: ${candidates.length}\n`);
+  const candidates = await searchMetaContacts();
+  console.log(`\nOrphan candidates (no link_agendar, not blocked, not Quiz/Form, has email/phone): ${candidates.length}\n`);
 
   for (const c of candidates) {
     const r = await enrichOne(c);
