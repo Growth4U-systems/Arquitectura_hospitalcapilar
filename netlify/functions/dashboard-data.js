@@ -519,20 +519,21 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     }
     if (!utmSource) utmSource = 'sin-dato';
 
-    // Funnel type — fall back chain. ghl-proxy.js writes the entry door to
-    // the `door` CF for every quiz/form lead (quiz_largo / quiz_corto /
-    // form), so it's the most reliable signal after funnel_type. Then tags
-    // and source string for Meta Lead Form leads that bypass the proxy.
-    let funnelType = cf('funnel_type') || cf('door');
-    if (funnelType === 'form') funnelType = 'formulario_directo';
-    if (!funnelType) {
-      if (tagsArr.includes('meta_form_directo'))                            funnelType = 'form_meta_directo';
-      else if (/lead ad|lead_ad/.test(sourceLower))                          funnelType = 'form_meta_directo';
-      else if (/quiz corto|quiz_corto|quiz r[áa]pido/.test(sourceLower))     funnelType = 'quiz_corto';
-      else if (/quiz hc/.test(sourceLower) && !/corto/.test(sourceLower))    funnelType = 'quiz_largo';
-      else if (/form hc/.test(sourceLower))                                  funnelType = 'formulario_directo';
-      else if (utmSource === 'facebook')                                     funnelType = 'form_meta_directo';
-      else                                                                    funnelType = 'sin-dato';
+    // Funnel type — only 3 buckets: quiz_largo / quiz_corto / form_directo.
+    // Anything that isn't an explicit quiz lands in form_directo (covers
+    // legacy /form/ landing + new Meta Lead Form + anything unattributed).
+    // Primary signal: door CF (set by ghl-proxy on every quiz/form lead).
+    // Then funnel_type CF (set by ghl-sync), then source string heuristics.
+    const doorOrFunnel = (cf('door') || cf('funnel_type') || '').toLowerCase();
+    let funnelType;
+    if (/quiz.*corto|quiz_corto|quiz_rapido|r[áa]pido/.test(doorOrFunnel) ||
+        /quiz corto/.test(sourceLower)) {
+      funnelType = 'quiz_corto';
+    } else if (/quiz.*largo|quiz_largo/.test(doorOrFunnel) ||
+               (/quiz hc/.test(sourceLower) && !/corto/.test(sourceLower))) {
+      funnelType = 'quiz_largo';
+    } else {
+      funnelType = 'form_directo';
     }
     const channelMap = { meta: 'Meta', facebook: 'Meta', instagram: 'Meta', google: 'Google', google_ads: 'Google', seo: 'SEO', tiktok: 'TikTok', direct: 'Directo', directo: 'Directo' };
     const channel = channelMap[utmSource] || (utmSource === 'sin-dato' ? 'Sin dato' : utmSource);
