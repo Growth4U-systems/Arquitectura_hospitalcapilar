@@ -1,4 +1,18 @@
-// Alert: inline minimal version to avoid dependency chain crashes
+// GHL → PostHog sync. Runs hourly (netlify.toml).
+//
+// Emits PostHog events ONLY when an opportunity's pipeline stage changes
+// since the previous run. State is persisted in Firestore collection
+// `opportunity_states/{opp_id}` so re-running on an unchanged pipeline
+// produces zero events.
+//
+// First run after deploy: if `opportunity_states` is empty, the function
+// performs a silent bootstrap — it stores the current state for every opp
+// without emitting events. The following run starts emitting on real changes.
+//
+// Always emits a single `ghl_pipeline_summary` heartbeat per run.
+
+const { getFirestore } = require('./lib/firebase-admin');
+
 async function sendAlert(source, message, details = {}) {
   console.error(`[ALERT][${source}] ${message}`, JSON.stringify(details));
 }
@@ -9,6 +23,8 @@ const POSTHOG_KEY = process.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = 'https://eu.i.posthog.com';
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
+
+const STATE_COLLECTION = 'opportunity_states';
 
 const STAGES = {
   'fbed92b1-5e91-4b86-820f-44b9f66f8b73': 'new_lead',
@@ -21,7 +37,6 @@ const STAGES = {
   'c961b576-b14d-43a6-ac75-a26695886d58': 'lost',
 };
 
-// Stages that imply PostHog events
 const STAGE_EVENTS = {
   booked:        ['appointment_booked'],
   reminder_sent: ['appointment_booked'],
@@ -31,6 +46,21 @@ const STAGE_EVENTS = {
   lost:          ['patient_lost'],
 };
 
+const CF_IDS = {
+  sexo:              'P7D2edjnOHwXLpglw9tB',
+  ecp:               'cFIcdJlT9sfnC3KMSwDD',
+  nicho:             'o4I4AG3ZK07nEzAMLTlK',
+  funnel_type:       'liIshAFJMngl2BV9MtVw',
+  traffic_source:    'miu6E3oxZowYahYGjX1A',
+  utm_source:        'MisB9YJJAH7cnh8JOtQn',
+  utm_medium:        'vykx7m6bcfbYMXRqToYP',
+  utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
+  utm_content:       'dydSaUSYbb5R7nYOboLq',
+  utm_term:          'eLdhsOthmyD38al527tG',
+  ubicacion_clinica: 'LygjPVQnLbqqdL4eqQwT',
+  door:              '2JYlfGk60lHbuyh9vcdV',
+};
+
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function fetchWithRetry(url, options, retries = 3) {
@@ -38,7 +68,7 @@ async function fetchWithRetry(url, options, retries = 3) {
     const res = await fetch(url, options);
     if (res.ok) return res;
     if (res.status === 429) {
-      const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+      const delay = Math.pow(2, i) * 1000;
       console.log(`[GHL] Rate limited, retrying in ${delay}ms...`);
       await sleep(delay);
       continue;
@@ -55,22 +85,19 @@ async function fetchAllOpportunities() {
   let startAfterId = '';
   let hasMore = true;
 
-  const PAGE_SIZE = 100;  // GHL opportunities/search max is 100
+  const PAGE_SIZE = 100;
   while (hasMore) {
     const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=${PAGE_SIZE}${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
     const res = await fetchWithRetry(url, { headers });
     const data = await res.json();
     const opps = data.opportunities || [];
     all = all.concat(opps);
-    console.log(`[GHL] opportunities page fetched: ${opps.length} (total ${all.length})`);
     hasMore = opps.length >= PAGE_SIZE;
     if (hasMore) {
       startAfterId = opps[opps.length - 1].id;
       await sleep(100);
     }
   }
-
-  console.log(`[GHL] fetchAllOpportunities complete: ${all.length} total`);
   return all;
 }
 
@@ -84,28 +111,6 @@ async function sendBatch(events) {
   return res.ok;
 }
 
-// GHL custom field IDs (mirrors HospitalCapilarQuiz.jsx CF map)
-const CF_IDS = {
-  sexo:              'P7D2edjnOHwXLpglw9tB',
-  ecp:               'cFIcdJlT9sfnC3KMSwDD',
-  nicho:             'o4I4AG3ZK07nEzAMLTlK',
-  funnel_type:       'liIshAFJMngl2BV9MtVw',
-  traffic_source:    'miu6E3oxZowYahYGjX1A',
-  utm_source:        'MisB9YJJAH7cnh8JOtQn',
-  utm_medium:        'vykx7m6bcfbYMXRqToYP',
-  utm_campaign:      '3fUI7GO9o7oZ7ddMNnFf',
-  utm_content:       'dydSaUSYbb5R7nYOboLq',
-  utm_term:          'eLdhsOthmyD38al527tG',
-  ubicacion_clinica: 'LygjPVQnLbqqdL4eqQwT',
-  door:              '2JYlfGk60lHbuyh9vcdV',
-};
-
-// Derive payment variant from contact properties + opportunity value.
-// 'clinica' = pago al terminar consulta (flow asesores)
-// '0'       = hombres, no bono
-// '195'     = mujer, bono completo (precio histórico / pago en clínica)
-// '125'     = mujer, bono anticipado web/phone (reframe 2026-04-22)
-// 'unknown' = falta dato para decidir
 function derivePaymentVariant({ sexo, funnel_type, monetary_value }) {
   if ((funnel_type || '').toLowerCase() === 'asesores') return 'clinica';
   const s = (sexo || '').toLowerCase();
@@ -114,13 +119,11 @@ function derivePaymentVariant({ sexo, funnel_type, monetary_value }) {
     const v = Number(monetary_value) || 0;
     if (v >= 180) return '195';
     if (v >= 100) return '125';
-    // sin monetary_value fiable: default al precio actual (125€ advance)
     return '125';
   }
   return 'unknown';
 }
 
-// Map GHL native gender (female/male/other) to our sexo taxonomy (mujer/hombre).
 function normalizeGender(g) {
   if (!g) return null;
   const s = String(g).toLowerCase();
@@ -142,9 +145,6 @@ async function fetchContactProperties(contactId) {
     cfs.forEach(f => { cfMap[f.id] = f.value; });
     const get = (key) => cfMap[CF_IDS[key]] || null;
 
-    // Sexo: fall back to GHL native `gender` field when the custom field is
-    // empty — in practice it is, because the GHL write path persists gender
-    // natively but the custom field `sexo` does not round-trip reliably.
     const sexoFromCF = get('sexo');
     const sexoFromNative = normalizeGender(contact.gender);
     const sexo = (sexoFromCF || sexoFromNative) || null;
@@ -169,153 +169,207 @@ async function fetchContactProperties(contactId) {
   }
 }
 
-async function parallelMap(items, fn, concurrency = 5) {
-  const results = new Array(items.length);
+async function parallelMap(items, fn, concurrency = 10) {
   let idx = 0;
   async function worker() {
     while (idx < items.length) {
       const i = idx++;
-      results[i] = await fn(items[i], i);
+      await fn(items[i], i);
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
-  return results;
 }
 
-// Scheduled function: runs every hour
-exports.handler = async (event) => {
+async function loadAllStates(db) {
+  const snapshot = await db.collection(STATE_COLLECTION).get();
+  const map = new Map();
+  snapshot.forEach(doc => map.set(doc.id, doc.data()));
+  return map;
+}
+
+async function saveStates(db, updates) {
+  for (let i = 0; i < updates.length; i += 400) {
+    const chunk = updates.slice(i, i + 400);
+    const batch = db.batch();
+    for (const u of chunk) {
+      batch.set(db.collection(STATE_COLLECTION).doc(u.id), u.data, { merge: true });
+    }
+    await batch.commit();
+  }
+}
+
+exports.handler = async () => {
   if (!GHL_KEY || !POSTHOG_KEY) {
-    await sendAlert('sync-ghl-posthog', 'Missing GHL or PostHog API keys — sync disabled', { severity: 'critical' });
+    await sendAlert('sync-ghl-posthog', 'Missing GHL or PostHog API keys', { severity: 'critical' });
     return { statusCode: 500, body: 'Missing GHL or PostHog API keys' };
   }
 
+  const db = getFirestore();
+  if (!db) {
+    await sendAlert('sync-ghl-posthog', 'Firestore not configured — sync requires FIREBASE_SERVICE_ACCOUNT', { severity: 'critical' });
+    return { statusCode: 500, body: 'Firestore unavailable' };
+  }
+
   try {
-  console.log('[GHL→PostHog Sync] Starting...');
-  const opps = await fetchAllOpportunities();
-  console.log(`[GHL→PostHog Sync] Found ${opps.length} opportunities`);
+    console.log('[GHL→PostHog Sync] Starting...');
+    const [opps, states] = await Promise.all([
+      fetchAllOpportunities(),
+      loadAllStates(db),
+    ]);
+    const isBootstrap = states.size === 0;
+    if (isBootstrap) {
+      console.log('[GHL→PostHog Sync] BOOTSTRAP: opportunity_states is empty. Saving current stages without emitting events.');
+    }
 
-  // Filter to opps in stages that emit events — avoids wasted contact fetches
-  const relevantOpps = opps.filter(o => STAGE_EVENTS[STAGES[o.pipelineStageId] || 'unknown']);
-  console.log(`[GHL→PostHog Sync] ${relevantOpps.length} opps in event-emitting stages`);
+    const stateUpdates = [];
+    const oppsToEmit = [];
 
-  // Fetch all contact custom fields in parallel (5 concurrent) — prevents Netlify timeout
-  const contactPropsByOppId = new Map();
-  await parallelMap(relevantOpps, async (opp) => {
-    if (!opp.contactId) return;
-    const props = await fetchContactProperties(opp.contactId);
-    contactPropsByOppId.set(opp.id, props);
-  }, 5);
+    for (const opp of opps) {
+      const stageName = STAGES[opp.pipelineStageId] || 'unknown';
+      const stored = states.get(opp.id);
+      const stageChanged = !stored || stored.stageId !== opp.pipelineStageId;
 
-  const events = [];
-
-  for (const opp of relevantOpps) {
-    const stageName = STAGES[opp.pipelineStageId] || 'unknown';
-    const eventsToSend = STAGE_EVENTS[stageName];
-
-    const contact = opp.contact || {};
-    const email = contact.email || '';
-    const distinctId = email || opp.id;
-    const contactProps = contactPropsByOppId.get(opp.id) || {};
-    const monetaryValue = opp.monetaryValue || 0;
-    const paymentVariant = derivePaymentVariant({
-      sexo: contactProps.sexo,
-      funnel_type: contactProps.funnel_type,
-      monetary_value: monetaryValue,
-    });
-
-    // Use the most recent timestamp available (stage change > updated > created)
-    const eventTimestamp = opp.lastStageChangeAt || opp.updatedAt || opp.createdAt || new Date().toISOString();
-
-    const baseProps = {
-      $lib: 'ghl-sync-scheduled',
-      contact_name: contact.name || opp.name || '',
-      contact_email: email,
-      contact_phone: contact.phone || '',
-      opportunity_id: opp.id,
-      pipeline_stage: stageName,
-      monetary_value: monetaryValue,
-      payment_variant: paymentVariant,
-      ...contactProps,
-    };
-
-    // Send $set to update person properties
-    if (email) {
-      events.push({
-        event: '$set',
-        distinct_id: email,
-        timestamp: eventTimestamp,
-        properties: {
-          $set: {
-            email,
-            name: contact.name || opp.name || '',
-            phone: contact.phone || '',
-            pipeline_stage: stageName,
-            monetary_value: monetaryValue,
-            payment_variant: paymentVariant,
-            ...contactProps,
+      if (stageChanged) {
+        stateUpdates.push({
+          id: opp.id,
+          data: {
+            stageId: opp.pipelineStageId,
+            stageName,
+            contactId: opp.contactId || null,
+            updatedAt: new Date().toISOString(),
           },
-        },
+        });
+        if (!isBootstrap && STAGE_EVENTS[stageName]) {
+          oppsToEmit.push({ opp, stageName, eventsToSend: STAGE_EVENTS[stageName] });
+        }
+      }
+    }
+
+    console.log(`[GHL→PostHog Sync] ${opps.length} opps total, ${stateUpdates.length} changed, ${oppsToEmit.length} to emit`);
+
+    // Only fetch contact details for opps that actually need to emit. With
+    // the change-based logic this is typically 0–10 per run, not hundreds —
+    // so we no longer hit the Netlify function timeout.
+    const contactPropsByOppId = new Map();
+    await parallelMap(oppsToEmit, async ({ opp }) => {
+      if (!opp.contactId) return;
+      const props = await fetchContactProperties(opp.contactId);
+      contactPropsByOppId.set(opp.id, props);
+    }, 10);
+
+    const events = [];
+    for (const { opp, stageName, eventsToSend } of oppsToEmit) {
+      const contact = opp.contact || {};
+      const email = contact.email || '';
+      const distinctId = email || opp.id;
+      const contactProps = contactPropsByOppId.get(opp.id) || {};
+      const monetaryValue = opp.monetaryValue || 0;
+      const paymentVariant = derivePaymentVariant({
+        sexo: contactProps.sexo,
+        funnel_type: contactProps.funnel_type,
+        monetary_value: monetaryValue,
+      });
+      const eventTimestamp = opp.lastStageChangeAt || opp.updatedAt || opp.createdAt || new Date().toISOString();
+
+      const baseProps = {
+        $lib: 'ghl-sync-scheduled',
+        contact_name: contact.name || opp.name || '',
+        contact_email: email,
+        contact_phone: contact.phone || '',
+        opportunity_id: opp.id,
+        pipeline_stage: stageName,
+        monetary_value: monetaryValue,
+        payment_variant: paymentVariant,
+        ...contactProps,
+      };
+
+      if (email) {
+        events.push({
+          event: '$set',
+          distinct_id: email,
+          timestamp: eventTimestamp,
+          properties: {
+            $set: {
+              email,
+              name: contact.name || opp.name || '',
+              phone: contact.phone || '',
+              pipeline_stage: stageName,
+              monetary_value: monetaryValue,
+              payment_variant: paymentVariant,
+              ...contactProps,
+            },
+          },
+        });
+      }
+
+      for (const eventName of eventsToSend) {
+        events.push({
+          event: eventName,
+          distinct_id: distinctId,
+          timestamp: eventTimestamp,
+          // (opp, event, stageId) is unique per real stage transition. If two
+          // runs ever race on the same change, PostHog dedups via $insert_id.
+          properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_${opp.pipelineStageId}` },
+        });
+      }
+    }
+
+    let batchFailures = 0;
+    for (let i = 0; i < events.length; i += 50) {
+      const batch = events.slice(i, i + 50);
+      const ok = await sendBatch(batch);
+      if (!ok) batchFailures++;
+    }
+
+    if (batchFailures > 0) {
+      await sendAlert('sync-ghl-posthog', `${batchFailures} batch(es) failed to send to PostHog`, {
+        severity: 'warning',
+        total_events: events.length,
+        batch_failures: batchFailures,
       });
     }
 
-    for (const eventName of eventsToSend) {
-      events.push({
-        event: eventName,
-        distinct_id: distinctId,
-        timestamp: eventTimestamp,
-        properties: { ...baseProps, $insert_id: `${opp.id}_${eventName}_v5` },
-      });
+    if (stateUpdates.length > 0) {
+      await saveStates(db, stateUpdates);
     }
-  }
 
-  // Send in batches of 50
-  let batchFailures = 0;
-  for (let i = 0; i < events.length; i += 50) {
-    const batch = events.slice(i, i + 50);
-    const ok = await sendBatch(batch);
-    if (!ok) batchFailures++;
-    console.log(`[GHL→PostHog Sync] Batch ${Math.floor(i / 50) + 1}: ${batch.length} events → ${ok ? 'OK' : 'FAILED'}`);
-  }
+    const stageCounts = {};
+    for (const opp of opps) {
+      const stage = STAGES[opp.pipelineStageId] || 'unknown';
+      stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+    }
 
-  if (batchFailures > 0) {
-    await sendAlert('sync-ghl-posthog', `${batchFailures} batch(es) failed to send to PostHog`, {
-      severity: 'warning',
-      total_events: events.length,
-      batch_failures: batchFailures,
+    await sendBatch([{
+      event: 'ghl_pipeline_summary',
+      distinct_id: 'ghl-sync',
+      timestamp: new Date().toISOString(),
+      properties: {
+        total_contacts: opps.length,
+        ...stageCounts,
+        changed_this_run: stateUpdates.length,
+        events_emitted: events.length,
+        bootstrap: isBootstrap,
+        $insert_id: `pipeline_summary_${new Date().toISOString().split(':')[0]}`,
+      },
+    }]);
+
+    console.log('[GHL→PostHog Sync] Done.', {
+      total: opps.length,
+      changed: stateUpdates.length,
+      emitted: events.length,
+      bootstrap: isBootstrap,
     });
-  }
 
-  const summary = {};
-  for (const e of events) {
-    summary[e.event] = (summary[e.event] || 0) + 1;
-  }
-
-  // Count leads by stage for dashboard KPI
-  const stageCounts = {};
-  for (const opp of opps) {
-    const stage = STAGES[opp.pipelineStageId] || 'unknown';
-    stageCounts[stage] = (stageCounts[stage] || 0) + 1;
-  }
-
-  // Send pipeline summary as a single event (dashboard reads this for lead count)
-  await sendBatch([{
-    event: 'ghl_pipeline_summary',
-    distinct_id: 'ghl-sync',
-    timestamp: new Date().toISOString(),
-    properties: {
-      total_contacts: opps.length,
-      ...stageCounts,
-      $insert_id: `pipeline_summary_${new Date().toISOString().split(':')[0]}`,
-    },
-  }]);
-
-  console.log('[GHL→PostHog Sync] Summary:', JSON.stringify(summary), 'Contacts:', opps.length);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ synced: events.length, summary, opportunities: opps.length, stages: stageCounts }),
-  };
-
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        total_opportunities: opps.length,
+        changed: stateUpdates.length,
+        events_emitted: events.length,
+        bootstrap: isBootstrap,
+        stages: stageCounts,
+      }),
+    };
   } catch (err) {
     console.error('[GHL→PostHog Sync] Fatal error:', err.message);
     await sendAlert('sync-ghl-posthog', `Sync crashed: ${err.message}`, {
