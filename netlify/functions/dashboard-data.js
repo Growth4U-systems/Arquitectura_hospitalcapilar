@@ -519,22 +519,20 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     }
     if (!utmSource) utmSource = 'sin-dato';
 
-    // Funnel type — only 3 buckets: quiz_largo / quiz_corto / form_directo.
-    // Anything that isn't an explicit quiz lands in form_directo (covers
-    // legacy /form/ landing + new Meta Lead Form + anything unattributed).
-    // Primary signal: door CF (set by ghl-proxy on every quiz/form lead).
-    // Then funnel_type CF (set by ghl-sync), then source string heuristics.
-    const doorOrFunnel = (cf('door') || cf('funnel_type') || '').toLowerCase();
+    // Funnel type — single authoritative source: GHL `door` CF.
+    //   quiz_largo        → / (que-me-pasa, es-normal, mujeres)        [ghl-proxy]
+    //   quiz_corto        → /rapido/*                                  [ghl-proxy]
+    //   form_directo      → /form/* (HC landing con formulario)         [ghl-proxy]
+    //   form_meta_directo → Meta Lead Form (form vive en FB/IG → /p/)  [cron 5 min]
+    const door = (cf('door') || cf('funnel_type') || '').toLowerCase();
     let funnelType;
-    if (/quiz.*corto|quiz_corto|quiz_rapido|r[áa]pido/.test(doorOrFunnel) ||
-        /quiz corto/.test(sourceLower)) {
-      funnelType = 'quiz_corto';
-    } else if (/quiz.*largo|quiz_largo/.test(doorOrFunnel) ||
-               (/quiz hc/.test(sourceLower) && !/corto/.test(sourceLower))) {
-      funnelType = 'quiz_largo';
-    } else {
-      funnelType = 'form_directo';
-    }
+    if (door === 'quiz_largo')                                  funnelType = 'quiz_largo';
+    else if (door === 'quiz_corto')                             funnelType = 'quiz_corto';
+    else if (door === 'form' || door === 'form_directo' ||
+             door === 'formulario_directo')                     funnelType = 'form_directo';
+    else if (door === 'meta_form_directo' ||
+             tagsArr.includes('meta_form_directo'))             funnelType = 'form_meta_directo';
+    else                                                         funnelType = 'sin-dato';
     const channelMap = { meta: 'Meta', facebook: 'Meta', instagram: 'Meta', google: 'Google', google_ads: 'Google', seo: 'SEO', tiktok: 'TikTok', direct: 'Directo', directo: 'Directo' };
     const channel = channelMap[utmSource] || (utmSource === 'sin-dato' ? 'Sin dato' : utmSource);
 
@@ -955,7 +953,8 @@ exports.handler = async (event) => {
         SELECT
           multiIf(
             properties.$pathname LIKE '%/rapido/%', 'quiz_corto',
-            properties.$pathname LIKE '%/form/%', 'formulario_directo',
+            properties.$pathname LIKE '%/form/%', 'form_directo',
+            properties.$pathname LIKE '/p/%' OR properties.$pathname = '/p', 'form_meta_directo',
             properties.$pathname LIKE '/agendar%'
               OR properties.$pathname LIKE '/mi-cita%'
               OR properties.$pathname LIKE '/test-%'
@@ -1525,26 +1524,32 @@ exports.handler = async (event) => {
         // than GHL opps (mostly because lead_form_submitted from Meta Lead Form
         // creates GHL opps without firing the standard form_submitted event).
         // Using GHL keeps "Comparativa por funnel" aligned with everything else.
+        // Normalize all funnel labels to one of 4 canonical buckets.
+        const normalizeFunnelKey = (raw) => {
+          const v = (raw || '').toLowerCase();
+          if (v === 'quiz_largo' || v === 'quiz largo') return 'quiz_largo';
+          if (v === 'quiz_corto' || v === 'quiz corto' || v === 'quiz_rapido' || /r[áa]pido/.test(v)) return 'quiz_corto';
+          if (v === 'form_directo' || v === 'formulario_directo' || v === 'form') return 'form_directo';
+          // form_meta_directo, sin-dato, anything unmatched → form_meta_directo
+          return 'form_meta_directo';
+        };
         const ghlFunnelMap = {};
         for (const r of ghlRows) {
-          const f = r.landing || 'sin-dato';
+          const f = normalizeFunnelKey(r.landing);
           if (!ghlFunnelMap[f]) ghlFunnelMap[f] = { funnel: f, visits: 0, started: 0, leads: 0, booked: 0 };
           ghlFunnelMap[f].leads  += r.leads || 0;
           ghlFunnelMap[f].booked += r.booked || 0;
         }
-        // Carry visits/started over from PostHog (GHL doesn't track pageviews).
+        // Merge PostHog visits/started (PostHog uses 'formulario_directo' which
+        // we collapse into 'form_directo' so visits and leads land on the same row).
         for (const ph of (result.by_funnel_type || [])) {
-          const f = ph.funnel;
-          if (ghlFunnelMap[f]) {
-            ghlFunnelMap[f].visits = ph.visits || 0;
-            ghlFunnelMap[f].started = ph.started || 0;
-          } else if (ph.visits > 0) {
-            ghlFunnelMap[f] = { funnel: f, visits: ph.visits, started: ph.started, leads: 0, booked: 0 };
-          }
+          const f = normalizeFunnelKey(ph.funnel);
+          if (!ghlFunnelMap[f]) ghlFunnelMap[f] = { funnel: f, visits: 0, started: 0, leads: 0, booked: 0 };
+          ghlFunnelMap[f].visits  += ph.visits  || 0;
+          ghlFunnelMap[f].started += ph.started || 0;
         }
         result.by_funnel_type = Object.values(ghlFunnelMap)
-          .filter(r => r.funnel && r.funnel !== 'null' && r.funnel !== 'None')
-          .sort((a, b) => b.visits - a.visits);
+          .sort((a, b) => b.leads - a.leads);
 
         // ─── Override by_traffic_source with GHL counts ───
         // PostHog form_submitted events lose UTM attribution often (autocapture
