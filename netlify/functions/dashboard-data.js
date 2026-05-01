@@ -406,12 +406,42 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
 
   const startTs = new Date(startDate + 'T00:00:00Z').getTime();
   const endTs = new Date(endDate + 'T23:59:59Z').getTime();
-  const inRange = allOpps.filter(opp => {
+  const inRangeRaw = allOpps.filter(opp => {
     const t = new Date(opp.createdAt || opp.updatedAt || 0).getTime();
     return t >= startTs && t <= endTs;
   });
 
-  const contactIds = [...new Set(inRange.map(o => o.contactId).filter(Boolean))];
+  // Dedupe to ONE opp per contact so leads count = unique contacts.
+  // GHL creates multiple opps per contact when workflows re-trigger or
+  // pipeline sync re-emits — counting all of them inflates leads ~9x.
+  // Keep the most-progressed opp (booked > contacted > new) to preserve
+  // the cita state. Tiebreaker: most recently updated.
+  const STAGE_PRIORITY = {
+    '71a5cc36-584e-47dc-9cce-215803e3140d': 6, // attended
+    '1cd97c60-fb19-4699-9293-2b32fd48b54a': 6, // won
+    '24956338-65d9-4a16-97e5-ba01b64f390f': 5, // reminder_sent
+    'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5': 5, // booked
+    '437d0663-bd17-4d84-a939-11aed1b4b384': 4, // no_show
+    'c961b576-b14d-43a6-ac75-a26695886d58': 3, // lost
+    'f0b2e24c-ce25-4c54-bb2f-6ba3571308c7': 2, // contacted
+    'fbed92b1-5e91-4b86-820f-44b9f66f8b73': 1, // new_lead
+  };
+  const oppByContact = new Map();
+  for (const opp of inRangeRaw) {
+    if (!opp.contactId) continue;
+    const existing = oppByContact.get(opp.contactId);
+    if (!existing) { oppByContact.set(opp.contactId, opp); continue; }
+    const a = STAGE_PRIORITY[opp.pipelineStageId] || 0;
+    const b = STAGE_PRIORITY[existing.pipelineStageId] || 0;
+    if (a > b) { oppByContact.set(opp.contactId, opp); continue; }
+    if (a === b) {
+      const at = new Date(opp.updatedAt || opp.createdAt || 0).getTime();
+      const bt = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+      if (at > bt) oppByContact.set(opp.contactId, opp);
+    }
+  }
+  const inRange = [...oppByContact.values()];
+  const contactIds = [...oppByContact.keys()];
   const contactById = {};
   const concurrency = 5;
   let idx = 0;
