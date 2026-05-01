@@ -510,17 +510,7 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     const tagsArr = Array.isArray(contact.tags) ? contact.tags : [];
     const sourceLower = (contact.source || '').toLowerCase();
 
-    // Funnel type — fall back through 3 signals: explicit CF, tag-based
-    // Meta Lead Form marker, and source string.
-    let funnelType = cf('funnel_type');
-    if (!funnelType) {
-      if (tagsArr.includes('meta_form_directo')) funnelType = 'form_meta_directo';
-      else if (sourceLower.includes('lead ad') || sourceLower.includes('lead_ad')) funnelType = 'form_meta_directo';
-      else funnelType = 'sin-dato';
-    }
-
-    // Channel — same fallback chain. utm_source CF first, then source string,
-    // then tags (Meta Lead Form leads always come from Meta).
+    // Channel — fall back through utm_source CF, source string, tags.
     let utmSource = (cf('utm_source') || cf('traffic_source') || '').toLowerCase();
     if (!utmSource) {
       if (/facebook|instagram|paid_social|lead ad|lead_ad/.test(sourceLower)) utmSource = 'facebook';
@@ -528,6 +518,20 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       else if (tagsArr.includes('meta_form_directo'))                         utmSource = 'facebook';
     }
     if (!utmSource) utmSource = 'sin-dato';
+
+    // Funnel type — fall back through 4 signals: explicit CF, source patterns
+    // (quiz vs form), tag-based Meta Lead Form, and finally infer from channel
+    // (anyone from Meta/Google without explicit landing → Meta Lead Form,
+    // since that's the dominant new flow).
+    let funnelType = cf('funnel_type');
+    if (!funnelType) {
+      if (tagsArr.includes('meta_form_directo'))                            funnelType = 'form_meta_directo';
+      else if (/lead ad|lead_ad/.test(sourceLower))                          funnelType = 'form_meta_directo';
+      else if (/quiz corto|quiz_corto|quiz r[áa]pido/.test(sourceLower))     funnelType = 'quiz_corto';
+      else if (/quiz largo|quiz_largo|quiz hc(?!\s*-\s*google)/.test(sourceLower)) funnelType = 'quiz_largo';
+      else if (utmSource === 'facebook')                                     funnelType = 'form_meta_directo';
+      else                                                                    funnelType = 'sin-dato';
+    }
     const channelMap = { meta: 'Meta', facebook: 'Meta', instagram: 'Meta', google: 'Google', google_ads: 'Google', seo: 'SEO', tiktok: 'TikTok', direct: 'Directo', directo: 'Directo' };
     const channel = channelMap[utmSource] || (utmSource === 'sin-dato' ? 'Sin dato' : utmSource);
 
@@ -1536,7 +1540,7 @@ exports.handler = async (event) => {
           }
         }
         result.by_funnel_type = Object.values(ghlFunnelMap)
-          .filter(r => r.funnel && r.funnel !== 'null' && r.funnel !== 'None' && r.funnel !== 'sin-dato')
+          .filter(r => r.funnel && r.funnel !== 'null' && r.funnel !== 'None')
           .sort((a, b) => b.visits - a.visits);
 
         // ─── Override by_traffic_source with GHL counts ───
