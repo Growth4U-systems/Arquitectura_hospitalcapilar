@@ -20,6 +20,7 @@ const GHL_BASE     = 'https://services.leadconnectorhq.com';
 
 const CONTACT_LINK_AGENDAR_CF = 'UdbclFWU2YGw0YYup4vm';
 const CONTACT_LINK_PAYWALL_CF = 'uRxexlYy8HItx45Z7sih';
+const CONTACT_DOOR_CF         = '2JYlfGk60lHbuyh9vcdV';
 const OPP_LINK_AGENDADOS_CF   = 'eHCAvPZKNph7h15z1gGt';
 
 const ghlHeaders = { 'Authorization': `Bearer ${GHL_KEY}`, 'Content-Type': 'application/json', 'Version': '2021-07-28' };
@@ -117,13 +118,14 @@ async function enrichOne(contact) {
     return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), action: 'WOULD update', link };
   }
 
-  // PUT contact: link_agendar + link_paywall. Bono gate triggers on tipo=diagnostico alone.
+  // PUT contact: link_agendar + link_paywall + door=meta_form_directo
   const ur = await fetch(`${GHL_BASE}/contacts/${c.id}`, {
     method: 'PUT', headers: ghlHeaders,
     body: JSON.stringify({
       customFields: [
         { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
         { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
+        { id: CONTACT_DOOR_CF, field_value: 'meta_form_directo' },
       ],
     }),
   });

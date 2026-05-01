@@ -15,6 +15,7 @@ const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 const CONTACT_LINK_AGENDAR_CF = 'UdbclFWU2YGw0YYup4vm';
 const CONTACT_LINK_PAYWALL_CF = 'uRxexlYy8HItx45Z7sih';
+const CONTACT_DOOR_CF         = '2JYlfGk60lHbuyh9vcdV'; // SINGLE_OPTIONS: quiz_corto|quiz_largo|form|meta_form_directo
 const OPP_LINK_AGENDADOS_CF   = 'eHCAvPZKNph7h15z1gGt';
 
 const LOOKBACK_HOURS = 24;
@@ -107,7 +108,10 @@ async function enrichOne(c, ghlHeaders) {
     return { id: c.id, skipped: true };
   }
 
-  // PUT contact CFs
+  // PUT contact CFs (link_agendar + link_paywall + door=meta_form_directo).
+  // Door is the analytics-facing field that distinguishes entry points
+  // (quiz_corto / quiz_largo / form / meta_form_directo). Setting it here
+  // ensures dashboards split Meta-direct funnel apart from the others.
   await fetch(`${GHL_BASE}/contacts/${c.id}`, {
     method: 'PUT',
     headers: ghlHeaders,
@@ -115,6 +119,7 @@ async function enrichOne(c, ghlHeaders) {
       customFields: [
         { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
         { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
+        { id: CONTACT_DOOR_CF, field_value: 'meta_form_directo' },
       ],
     }),
   });
