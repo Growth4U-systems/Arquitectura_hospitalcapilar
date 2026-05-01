@@ -81,22 +81,22 @@ async function fetchWithRetry(url, options, retries = 3) {
 
 async function fetchAllOpportunities() {
   const headers = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' };
-  let all = [];
-  let startAfterId = '';
-  let hasMore = true;
-
-  const PAGE_SIZE = 100;
-  while (hasMore) {
-    const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=${PAGE_SIZE}${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
-    const res = await fetchWithRetry(url, { headers });
+  const all = [];
+  // Use the cursor URL GHL returns in meta.nextPageUrl. The previous code
+  // built the next URL from `opps[opps.length-1].id`, but GHL's internal
+  // cursor is a different value (and also requires a startAfter timestamp),
+  // so manual construction caused the request to keep returning the same
+  // page on accounts with > 100 opportunities — leading to the infinite
+  // loop that timed out the function.
+  let nextUrl = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=100`;
+  let pages = 0;
+  while (nextUrl && pages < 100) {
+    const res = await fetchWithRetry(nextUrl, { headers });
     const data = await res.json();
-    const opps = data.opportunities || [];
-    all = all.concat(opps);
-    hasMore = opps.length >= PAGE_SIZE;
-    if (hasMore) {
-      startAfterId = opps[opps.length - 1].id;
-      await sleep(100);
-    }
+    all.push(...(data.opportunities || []));
+    nextUrl = data?.meta?.nextPageUrl || null;
+    pages++;
+    if (nextUrl) await sleep(100);
   }
   return all;
 }
