@@ -519,16 +519,18 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     }
     if (!utmSource) utmSource = 'sin-dato';
 
-    // Funnel type — fall back through 4 signals: explicit CF, source patterns
-    // (quiz vs form), tag-based Meta Lead Form, and finally infer from channel
-    // (anyone from Meta/Google without explicit landing → Meta Lead Form,
-    // since that's the dominant new flow).
-    let funnelType = cf('funnel_type');
+    // Funnel type — fall back chain. ghl-proxy.js writes the entry door to
+    // the `door` CF for every quiz/form lead (quiz_largo / quiz_corto /
+    // form), so it's the most reliable signal after funnel_type. Then tags
+    // and source string for Meta Lead Form leads that bypass the proxy.
+    let funnelType = cf('funnel_type') || cf('door');
+    if (funnelType === 'form') funnelType = 'formulario_directo';
     if (!funnelType) {
       if (tagsArr.includes('meta_form_directo'))                            funnelType = 'form_meta_directo';
       else if (/lead ad|lead_ad/.test(sourceLower))                          funnelType = 'form_meta_directo';
       else if (/quiz corto|quiz_corto|quiz r[áa]pido/.test(sourceLower))     funnelType = 'quiz_corto';
-      else if (/quiz largo|quiz_largo|quiz hc(?!\s*-\s*google)/.test(sourceLower)) funnelType = 'quiz_largo';
+      else if (/quiz hc/.test(sourceLower) && !/corto/.test(sourceLower))    funnelType = 'quiz_largo';
+      else if (/form hc/.test(sourceLower))                                  funnelType = 'formulario_directo';
       else if (utmSource === 'facebook')                                     funnelType = 'form_meta_directo';
       else                                                                    funnelType = 'sin-dato';
     }
