@@ -460,35 +460,38 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Filter to paid-funnel leads only. We want to exclude:
-  //   - IG/FB DMs via Manychat (source="Social media instagram"/...) — not funnel
-  //   - Manual entries
-  //   - Meta Lead Form leads with no attribution (no UTM, no source) — those
-  //     are real but show as "sin-dato" in the master table and inflate counts
-  //     without giving us anything actionable
-  // Keep:
-  //   - Quiz HC / Quiz Corto HC (facebook/paid_social, google/cpc)
-  //   - Anything with a custom field utm_source set (post-Meta-Lead-Form fix)
-  const isFunnelSource = (contact, cfMap) => {
+  // Filter to paid-funnel leads only. EXCLUDE only the obvious non-funnel
+  // sources (IG/FB DMs via Manychat, manual entries). KEEP everything else
+  // including Meta Lead Form leads that arrive without UTMs — they're real
+  // leads from real ad spend, just have attribution gaps.
+  const isFunnelSource = (contact) => {
     const source = (contact.source || '').toLowerCase();
+    // Hard exclusions: known non-funnel sources
     if (source.includes('social media instagram')) return false;
     if (source.includes('social media facebook')) return false;
     if (source.includes('manual')) return false;
-    // Has a recognized paid funnel source string
-    if (/quiz hc|quiz corto hc|paid_social|cpc|google\/|facebook\//.test(source)) return true;
-    // Or has explicit UTM tracking from CF (new Meta Lead Form path will have
-    // this once /p/ paywall captures UTMs and propagates them to GHL)
-    const utmSource = cfMap[GHL_CF.utm_source];
-    const utmCampaign = cfMap[GHL_CF.utm_campaign];
-    if (utmSource || utmCampaign) return true;
-    // Otherwise drop (sin-atribución noise)
-    return false;
+    // Everything else passes — including empty source (Meta Lead Form,
+    // legit leads with broken tracking, etc.). Better to over-include than
+    // hide real ad-driven leads.
+    return true;
   };
+  // GHL `lost` stage holds two very different things:
+  //   1) Real appointment cancellations (have tag cita_cancelada / appointment_cancelled)
+  //   2) Abandoned leads (IG DM that never engaged, dead leads, etc.)
+  // The marketer filters #2 out of their pipeline view → we do the same so
+  // dashboard lead count matches their operational view.
+  const LOST_STAGE = 'c961b576-b14d-43a6-ac75-a26695886d58';
   return inRange.map(opp => {
     const contact = contactById[opp.contactId] || {};
+    if (!isFunnelSource(contact)) return null;
+    // Drop abandoned-lead lost opps (no real cancellation tag)
+    if (opp.pipelineStageId === LOST_STAGE) {
+      const tags = Array.isArray(contact.tags) ? contact.tags : [];
+      const isRealCancellation = tags.includes('cita_cancelada') || tags.includes('appointment_cancelled');
+      if (!isRealCancellation) return null;
+    }
     const cfMap = {};
     (contact.customFields || []).forEach(f => { cfMap[f.id] = f.value; });
-    if (!isFunnelSource(contact, cfMap)) return null;
     const cf = (key) => cfMap[GHL_CF[key]] || null;
 
     const g = (contact.gender || '').toLowerCase();
