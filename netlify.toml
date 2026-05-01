@@ -18,9 +18,14 @@
 [functions."sync-ad-spend"]
   schedule = "0 6 * * *"
 
-# Sync GHL pipeline data → PostHog: moved to GitHub Actions, see
-# .github/workflows/sync-ghl-posthog.yml. The function file is kept so the
-# logic can still be invoked manually via HTTP if needed.
+# Sync GHL pipeline data → PostHog every hour
+# DUAL-RUN MODE: this Netlify schedule runs in parallel with the GitHub
+# Actions workflow at .github/workflows/sync-ghl-posthog.yml during the
+# verification window. Both share the same $insert_id formula, so PostHog
+# dedup prevents cross-emitter duplication. Once the GH Actions path is
+# validated, remove this schedule block to retire the Netlify cron.
+[functions."sync-ghl-posthog"]
+  schedule = "17 * * * *"
 
 # Reconcile Koibox → GHL: catches staff edits/cancellations made directly in Koibox
 [functions."reconcile-koibox-ghl"]
