@@ -26,6 +26,10 @@
 [functions."reconcile-koibox-ghl"]
   schedule = "*/15 * * * *"
 
+# Enrich Meta-direct leads: backfill link_agendar / link_paywall + meta_form_directo tag
+[functions."cron-enrich-meta-leads"]
+  schedule = "*/5 * * * *"
+
 [[redirects]]
   from = "/ingest/static/*"
   to = "https://eu-assets.i.posthog.com/static/:splat"
