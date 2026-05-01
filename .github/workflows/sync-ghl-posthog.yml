@@ -1,0 +1,52 @@
+name: sync-ghl-posthog
+
+# Runs the GHL→PostHog sync hourly. Replaces the Netlify scheduled function
+# that has been silently timing out. State is stored in `state/opportunity_states.json`
+# committed back to the repo after each successful run.
+
+on:
+  schedule:
+    - cron: '17 * * * *'   # every hour at :17 (matches former Netlify schedule)
+  workflow_dispatch: {}     # allow manual trigger
+
+permissions:
+  contents: write   # needed to commit state file back
+
+concurrency:
+  group: sync-ghl-posthog
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root dependencies
+        run: npm install --no-audit --no-fund --omit=optional
+
+      - name: Run sync
+        env:
+          VITE_GHL_API_KEY: ${{ secrets.GHL_API_KEY }}
+          VITE_GHL_LOCATION_ID: ${{ secrets.GHL_LOCATION_ID }}
+          VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+        run: node netlify/functions/sync-ghl-posthog.js
+
+      - name: Commit state file if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain state/opportunity_states.json)" ]]; then
+            git add state/opportunity_states.json
+            git commit -m "chore(sync): update opportunity_states [skip ci]"
+            git push
+          else
+            echo "No state changes to commit."
+          fi

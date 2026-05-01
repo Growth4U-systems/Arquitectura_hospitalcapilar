@@ -18,9 +18,9 @@
 [functions."sync-ad-spend"]
   schedule = "0 6 * * *"
 
-# Sync GHL pipeline data → PostHog every hour
-[functions."sync-ghl-posthog"]
-  schedule = "17 * * * *"
+# Sync GHL pipeline data → PostHog: moved to GitHub Actions, see
+# .github/workflows/sync-ghl-posthog.yml. The function file is kept so the
+# logic can still be invoked manually via HTTP if needed.
 
 # Reconcile Koibox → GHL: catches staff edits/cancellations made directly in Koibox
 [functions."reconcile-koibox-ghl"]

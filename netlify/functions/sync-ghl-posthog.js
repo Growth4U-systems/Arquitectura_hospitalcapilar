@@ -11,7 +11,15 @@
 //
 // Always emits a single `ghl_pipeline_summary` heartbeat per run.
 
-const { getFirestore } = require('./lib/firebase-admin');
+const fs = require('fs');
+const path = require('path');
+
+// Firestore is optional now: we lazy-load it only when its env is configured.
+// File-backed state is used when running outside Netlify (e.g. GitHub Actions).
+let getFirestoreLazy = null;
+try {
+  ({ getFirestore: getFirestoreLazy } = require('./lib/firebase-admin'));
+} catch (_) { /* lib not available in standalone runs */ }
 
 async function sendAlert(source, message, details = {}) {
   console.error(`[ALERT][${source}] ${message}`, JSON.stringify(details));
@@ -81,22 +89,21 @@ async function fetchWithRetry(url, options, retries = 3) {
 
 async function fetchAllOpportunities() {
   const headers = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' };
-  let all = [];
-  let startAfterId = '';
-  let hasMore = true;
-
-  const PAGE_SIZE = 100;
-  while (hasMore) {
-    const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=${PAGE_SIZE}${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
-    const res = await fetchWithRetry(url, { headers });
+  const all = [];
+  // Use the cursor URL GHL returns in meta.nextPageUrl. The previous code
+  // built the next URL from `opps[opps.length-1].id`, but GHL's internal
+  // cursor is a distinct value (and also requires a startAfter timestamp),
+  // so manual construction caused infinite loops on accounts with > 100
+  // opportunities — which is why the cron was hanging.
+  let nextUrl = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${PIPELINE_ID}&limit=100`;
+  let pages = 0;
+  while (nextUrl && pages < 100) {
+    const res = await fetchWithRetry(nextUrl, { headers });
     const data = await res.json();
-    const opps = data.opportunities || [];
-    all = all.concat(opps);
-    hasMore = opps.length >= PAGE_SIZE;
-    if (hasMore) {
-      startAfterId = opps[opps.length - 1].id;
-      await sleep(100);
-    }
+    all.push(...(data.opportunities || []));
+    nextUrl = data?.meta?.nextPageUrl || null;
+    pages++;
+    if (nextUrl) await sleep(100);
   }
   return all;
 }
@@ -180,22 +187,63 @@ async function parallelMap(items, fn, concurrency = 10) {
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
 }
 
-async function loadAllStates(db) {
-  const snapshot = await db.collection(STATE_COLLECTION).get();
-  const map = new Map();
-  snapshot.forEach(doc => map.set(doc.id, doc.data()));
-  return map;
-}
+// State store: two backends, picked at runtime.
+//   - Firestore: when FIREBASE_SERVICE_ACCOUNT is set (Netlify Function path).
+//   - File:      otherwise (GitHub Actions path — workflow commits the file
+//                back after the run).
+//
+// Same shape: { load(): Map, save(updates): void }.
 
-async function saveStates(db, updates) {
-  for (let i = 0; i < updates.length; i += 400) {
-    const chunk = updates.slice(i, i + 400);
-    const batch = db.batch();
-    for (const u of chunk) {
-      batch.set(db.collection(STATE_COLLECTION).doc(u.id), u.data, { merge: true });
+const STATE_FILE = path.join(__dirname, '..', '..', 'state', 'opportunity_states.json');
+
+function createStateStore() {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT && getFirestoreLazy) {
+    const db = getFirestoreLazy();
+    if (db) {
+      return {
+        kind: 'firestore',
+        async load() {
+          const snapshot = await db.collection(STATE_COLLECTION).get();
+          const map = new Map();
+          snapshot.forEach(doc => map.set(doc.id, doc.data()));
+          return map;
+        },
+        async save(updates) {
+          for (let i = 0; i < updates.length; i += 400) {
+            const chunk = updates.slice(i, i + 400);
+            const batch = db.batch();
+            for (const u of chunk) {
+              batch.set(db.collection(STATE_COLLECTION).doc(u.id), u.data, { merge: true });
+            }
+            await batch.commit();
+          }
+        },
+      };
     }
-    await batch.commit();
   }
+  // File backend
+  return {
+    kind: 'file',
+    async load() {
+      const map = new Map();
+      try {
+        const raw = fs.readFileSync(STATE_FILE, 'utf8');
+        const obj = JSON.parse(raw);
+        for (const [id, data] of Object.entries(obj)) map.set(id, data);
+      } catch (e) {
+        if (e.code !== 'ENOENT') console.warn('[State] file read error:', e.message);
+      }
+      return map;
+    },
+    async save(updates) {
+      // Read current file (may have changed since load), merge, write back.
+      let current = {};
+      try { current = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch (_) {}
+      for (const u of updates) current[u.id] = u.data;
+      fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+      fs.writeFileSync(STATE_FILE, JSON.stringify(current, null, 2) + '\n');
+    },
+  };
 }
 
 exports.handler = async () => {
@@ -204,17 +252,14 @@ exports.handler = async () => {
     return { statusCode: 500, body: 'Missing GHL or PostHog API keys' };
   }
 
-  const db = getFirestore();
-  if (!db) {
-    await sendAlert('sync-ghl-posthog', 'Firestore not configured — sync requires FIREBASE_SERVICE_ACCOUNT', { severity: 'critical' });
-    return { statusCode: 500, body: 'Firestore unavailable' };
-  }
+  const store = createStateStore();
+  console.log(`[GHL→PostHog Sync] State backend: ${store.kind}`);
 
   try {
     console.log('[GHL→PostHog Sync] Starting...');
     const [opps, states] = await Promise.all([
       fetchAllOpportunities(),
-      loadAllStates(db),
+      store.load(),
     ]);
     const isBootstrap = states.size === 0;
     if (isBootstrap) {
@@ -330,7 +375,7 @@ exports.handler = async () => {
     }
 
     if (stateUpdates.length > 0) {
-      await saveStates(db, stateUpdates);
+      await store.save(stateUpdates);
     }
 
     const stageCounts = {};
@@ -380,3 +425,15 @@ exports.handler = async () => {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+// Allow running this file directly: `node netlify/functions/sync-ghl-posthog.js`.
+// Used by the GitHub Actions workflow at .github/workflows/sync-ghl-posthog.yml.
+if (require.main === module) {
+  exports.handler({}).then((res) => {
+    console.log(res.body);
+    process.exit(res.statusCode === 200 ? 0 : 1);
+  }).catch((err) => {
+    console.error('Standalone run failed:', err);
+    process.exit(1);
+  });
+}
