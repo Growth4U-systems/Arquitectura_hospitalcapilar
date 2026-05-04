@@ -230,11 +230,23 @@ exports.handler = async (event) => {
       };
       console.log('[GHL] Creating opportunity with custom fields:', JSON.stringify(oppPayload));
 
-      const oppRes = await fetch(`${GHL_BASE}/opportunities/`, {
-        method: 'POST',
-        headers: ghlHeaders,
-        body: JSON.stringify(oppPayload),
-      });
+      // POST opp with retry-with-backoff for transient failures (429 rate
+      // limit, 5xx). Retries: 3 attempts with 1s/2s/4s backoff. Stops on
+      // 4xx (other than 429) since those are permanent (validation, dup).
+      let oppRes, oppResStatus;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        oppRes = await fetch(`${GHL_BASE}/opportunities/`, {
+          method: 'POST',
+          headers: ghlHeaders,
+          body: JSON.stringify(oppPayload),
+        });
+        oppResStatus = oppRes.status;
+        if (oppRes.ok) break;
+        if (oppResStatus !== 429 && oppResStatus < 500) break; // permanent error
+        const wait = Math.pow(2, attempt) * 1000;
+        console.log(`[GHL] Opp POST ${oppResStatus} — retrying in ${wait}ms (attempt ${attempt + 1}/3)`);
+        await new Promise(r => setTimeout(r, wait));
+      }
       opportunityData = await oppRes.json();
       console.log('[GHL] Opportunity response status:', oppRes.status, 'lead_priority:', priority, JSON.stringify(opportunityData));
 
@@ -242,24 +254,32 @@ exports.handler = async (event) => {
       let oppId = opportunityData?.opportunity?.id;
 
       if (!oppRes.ok) {
-        console.log('[GHL] Opportunity POST failed:', oppRes.status, JSON.stringify(opportunityData));
-        // POST failed (likely duplicate from GHL Workflow) — search by contact_id to find existing opportunity
+        console.log('[GHL] Opportunity POST failed after retries:', oppRes.status, JSON.stringify(opportunityData));
+        // Capa 2: post-creation verification with delay. Wait 1.5s for any
+        // race-condition workflow to finish creating its opp, then search
+        // ALL pipelines (no pipeline_id filter) — the existing opp may live
+        // in Paid/Abandoned/Cancelled stages that our pipeline-filtered
+        // search would miss otherwise.
+        await new Promise(r => setTimeout(r, 1500));
         try {
           const searchRes = await fetch(
-            `${GHL_BASE}/opportunities/search?location_id=${body.locationId}&contact_id=${contactId}&status=open`,
+            `${GHL_BASE}/opportunities/search?location_id=${body.locationId}&contact_id=${contactId}`,
             { headers: ghlHeaders }
           );
           const searchData = await searchRes.json();
-          const existing = (searchData?.opportunities || [])[0];
+          // Prefer open opps; fall back to any opp for this contact
+          const opps = searchData?.opportunities || [];
+          const openOpp = opps.find(o => o.status === 'open');
+          const existing = openOpp || opps[0];
           if (existing?.id) {
             oppId = existing.id;
-            console.log('[GHL] Found existing opportunity for contact:', oppId);
+            console.log('[GHL] Recovered opportunity via post-create search:', oppId, 'stage:', existing.pipelineStageId);
           }
         } catch (searchErr) {
           console.log('[GHL] Opportunity search failed:', searchErr.message);
         }
         if (!oppId) {
-          oppError = `Opportunity creation failed: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
+          oppError = `Opportunity creation failed after retry+verify: ${oppRes.status} ${JSON.stringify(opportunityData)}`;
         }
       }
 
