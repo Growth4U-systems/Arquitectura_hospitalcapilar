@@ -478,20 +478,29 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
 
-  // Filter to paid-funnel leads only. EXCLUDE only the obvious non-funnel
-  // sources (IG/FB DMs via Manychat, manual entries). KEEP everything else
-  // including Meta Lead Form leads that arrive without UTMs — they're real
-  // leads from real ad spend, just have attribution gaps.
+  // Filter to paid-funnel leads only. We run only paid (Meta + Google) so
+  // every legit lead has at least ONE of these signals:
+  //   - contact.source matches a paid pattern
+  //   - door CF set (came through ghl-proxy or cron-enrich)
+  //   - utm_source CF set (came with URL tracking)
+  //   - tag meta_form_directo (cron-enrich tagged it)
+  // Anything with ALL FOUR missing is Manychat/IG DM/manual noise.
   const isFunnelSource = (contact) => {
     const source = (contact.source || '').toLowerCase();
     // Hard exclusions: known non-funnel sources
     if (source.includes('social media instagram')) return false;
     if (source.includes('social media facebook')) return false;
     if (source.includes('manual')) return false;
-    // Everything else passes — including empty source (Meta Lead Form,
-    // legit leads with broken tracking, etc.). Better to over-include than
-    // hide real ad-driven leads.
-    return true;
+    // Positive signals: any indication of paid funnel
+    const hasSourcePattern = /facebook|instagram|paid_social|google|cpc|adwords|quiz|form hc|lead ad|meta/i.test(source);
+    const cfs = contact.customFields || [];
+    const cfHas = (id) => cfs.some(f => f.id === id && (f.value || f.fieldValue));
+    const hasDoor = cfHas('2JYlfGk60lHbuyh9vcdV');     // CONTACT_DOOR_CF
+    const hasUtmSource = cfHas('MisB9YJJAH7cnh8JOtQn'); // CONTACT_UTM_SOURCE_CF
+    const hasMetaTag = (contact.tags || []).some(t => /meta_form_directo/i.test(t || ''));
+    if (hasSourcePattern || hasDoor || hasUtmSource || hasMetaTag) return true;
+    // No paid funnel signals → Manychat/DM noise, exclude
+    return false;
   };
   // Count every lead in the pipeline including lost + abandoned. Only filter
   // is isFunnelSource (drops IG/FB DMs from Manychat + manual entries).
