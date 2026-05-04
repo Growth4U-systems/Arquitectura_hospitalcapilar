@@ -286,6 +286,27 @@ const PaywallOverlay = ({ ecp, nombre, onPay, onClose, onCallRequest, bonoPrice 
         <div className="mb-6 md:mb-10">
           <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 md:mb-4 text-center">Historias reales</h3>
           <div className="space-y-3 md:space-y-4">
+            {/* Video testimonial — Yolanda */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-bold text-sm md:text-base text-gray-900">Yolanda</span>
+                <span className="text-gray-400 text-xs md:text-sm">Paciente Hospital Capilar</span>
+                <div className="flex gap-0.5 ml-auto">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} className="text-yellow-400 fill-yellow-400 w-[14px] h-[14px] md:w-4 md:h-4" />
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden bg-black aspect-[9/16] max-h-[300px] md:max-h-[340px] mx-auto max-w-[170px] md:max-w-[190px]">
+                <video
+                  src="https://res.cloudinary.com/dsc0jsbkz/video/upload/v1777898178/YOLANDA_TESTIMONIO_rv2tei.mp4"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
             {testimonials.map((t, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
