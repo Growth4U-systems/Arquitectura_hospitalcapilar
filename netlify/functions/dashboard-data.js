@@ -475,21 +475,11 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     // hide real ad-driven leads.
     return true;
   };
-  // GHL `lost` stage holds two very different things:
-  //   1) Real appointment cancellations (have tag cita_cancelada / appointment_cancelled)
-  //   2) Abandoned leads (IG DM that never engaged, dead leads, etc.)
-  // The marketer filters #2 out of their pipeline view → we do the same so
-  // dashboard lead count matches their operational view.
-  const LOST_STAGE = 'c961b576-b14d-43a6-ac75-a26695886d58';
+  // Count every lead in the pipeline including lost + abandoned. Only filter
+  // is isFunnelSource (drops IG/FB DMs from Manychat + manual entries).
   return inRange.map(opp => {
     const contact = contactById[opp.contactId] || {};
     if (!isFunnelSource(contact)) return null;
-    // Drop abandoned-lead lost opps (no real cancellation tag)
-    if (opp.pipelineStageId === LOST_STAGE) {
-      const tags = Array.isArray(contact.tags) ? contact.tags : [];
-      const isRealCancellation = tags.includes('cita_cancelada') || tags.includes('appointment_cancelled');
-      if (!isRealCancellation) return null;
-    }
     const cfMap = {};
     (contact.customFields || []).forEach(f => { cfMap[f.id] = f.value; });
     const cf = (key) => cfMap[GHL_CF[key]] || null;
