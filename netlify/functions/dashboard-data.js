@@ -537,12 +537,15 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     const tagsArr = Array.isArray(contact.tags) ? contact.tags : [];
     const sourceLower = (contact.source || '').toLowerCase();
 
-    // Channel — fall back through utm_source CF, source string, tags.
+    // Channel — fall back through utm_source CF, source string, tags, door.
+    // Order matters: explicit source/UTM beats inference from tags/door.
+    const doorRaw = (cf('door') || cf('funnel_type') || '').toLowerCase();
     let utmSource = (cf('utm_source') || cf('traffic_source') || '').toLowerCase();
     if (!utmSource) {
       if (/facebook|instagram|paid_social|lead ad|lead_ad/.test(sourceLower)) utmSource = 'facebook';
       else if (/google|cpc|adwords/.test(sourceLower))                        utmSource = 'google';
       else if (tagsArr.includes('meta_form_directo'))                         utmSource = 'facebook';
+      else if (doorRaw === 'meta_form_directo')                               utmSource = 'facebook';
     }
     if (!utmSource) utmSource = 'sin-dato';
 
@@ -555,7 +558,7 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     // Source override: if contact.source clearly says "Quiz HC" or "Quiz
     // Corto HC" but door=meta_form_directo, source wins. This recovers
     // contacts whose door was overwritten by an old cron-enrich bug.
-    const door = (cf('door') || cf('funnel_type') || '').toLowerCase();
+    const door = doorRaw;
     let funnelType;
     // Source override — runs FIRST to fix legacy door corruption.
     if (sourceLower.includes('quiz corto hc') ||
@@ -1611,11 +1614,14 @@ exports.handler = async (event) => {
         // por fuente" match the Camino tables row-for-row.
         const channelFromGhlRow = (r) => {
           // r.channel comes pre-normalized in fetchGhlOppsWithContacts.
+          // Anything unmatched (Sin dato, empty, organic IG DM) → sin_tracking.
+          // Pre-2026-05-04 we labelled this 'direct' which was misleading
+          // because we only run paid Meta/Google — there is no organic
+          // direct funnel. Renaming makes attribution honest.
           const ch = (r.channel || '').toLowerCase();
           if (ch === 'meta') return 'meta';
           if (ch === 'google') return 'google_ads';
-          if (ch === 'directo' || ch === 'direct') return 'direct';
-          return 'direct';
+          return 'sin_tracking';
         };
         const ghlChannelMap = {};
         for (const r of ghlRows) {

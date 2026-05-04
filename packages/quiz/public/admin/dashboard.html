@@ -256,7 +256,7 @@ const SOURCE_COLORS = {
   'Google Ads': '#34a853', 'google_ads': '#34a853', 'google': '#34a853',
   'SEO': '#a855f7', 'seo': '#a855f7',
   'TikTok': '#ff0050', 'tiktok': '#ff0050',
-  'Directo': '#6b7280', 'direct': '#6b7280', 'directo': '#6b7280',
+  'Sin tracking': '#78716c', 'sin_tracking': '#78716c', 'direct': '#78716c', 'directo': '#78716c',
   'Sin dato': '#78716c', 'Otro': '#78716c',
 };
 const SOURCE_CSS = {
@@ -264,7 +264,7 @@ const SOURCE_CSS = {
   'Google Ads': 'c-google', 'google_ads': 'c-google', 'google': 'c-google',
   'SEO': 'c-seo', 'seo': 'c-seo',
   'TikTok': 'c-tiktok', 'tiktok': 'c-tiktok',
-  'Directo': 'c-direct', 'direct': 'c-direct', 'directo': 'c-direct',
+  'Sin tracking': 'c-other', 'sin_tracking': 'c-other', 'direct': 'c-other', 'directo': 'c-other',
   'Sin dato': 'c-other', 'Otro': 'c-other',
 };
 const FUNNEL_COLORS = { 'quiz_largo': '#2c6df6', 'quiz_corto': '#f59e0b', 'form_directo': '#10b981', 'form_meta_directo': '#a855f7', 'sin-dato': '#78716c' };
@@ -324,7 +324,7 @@ function noShowClass(rate) {
 function normalizeSource(s) {
   if (!s || s === 'null' || s === 'None' || s === 'undefined' || s.trim() === '') return 'Sin dato';
   // Capitalize common sources
-  const map = { 'meta': 'Meta', 'google_ads': 'Google Ads', 'google': 'Google Ads', 'seo': 'SEO', 'tiktok': 'TikTok', 'direct': 'Directo', 'directo': 'Directo' };
+  const map = { 'meta': 'Meta', 'google_ads': 'Google Ads', 'google': 'Google Ads', 'seo': 'SEO', 'tiktok': 'TikTok', 'sin_tracking': 'Sin tracking', 'direct': 'Sin tracking', 'directo': 'Sin tracking' };
   const lower = s.toLowerCase().trim();
   return map[lower] || s;
 }
@@ -689,7 +689,7 @@ function renderCaminoTree(data, predicate, tableId, isPago) {
 
 // Shared state for Camino re-renders + channel color palette.
 let _lastDashboardData = null;
-const CHANNEL_COLORS = { Meta: '#1877f2', Google: '#34a853', SEO: '#a855f7', TikTok: '#ff0050', Directo: '#6b7280', 'Sin dato': '#78716c' };
+const CHANNEL_COLORS = { Meta: '#1877f2', Google: '#34a853', SEO: '#a855f7', TikTok: '#ff0050', 'Sin tracking': '#78716c', 'Sin dato': '#78716c' };
 
 function renderFunnel(k) {
   // Use GHL-derived leads count when available (single source of truth).
