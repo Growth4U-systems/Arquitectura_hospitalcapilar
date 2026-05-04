@@ -10,23 +10,34 @@ const LAUNCH_DATE = '2026-04-09';
 // GHL constants (mirrors sync-ghl-posthog.js)
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_PIPELINE_ID = 'xXCgpUIEizlqdrmGrJkg';
-// Stages that count as "ever booked" (used for total appointments count).
+// Pipeline stages (10 total). User added "Paid" + "Abandoned" stages so we
+// no longer need the cita_cancelada tag workaround: Lost/Cancelled now means
+// real cancellations only, Abandoned is its own bucket.
+const GHL_STAGE_NEW_LEAD   = 'fbed92b1-5e91-4b86-820f-44b9f66f8b73';
+const GHL_STAGE_CONTACTED  = 'f0b2e24c-ce25-4c54-bb2f-6ba3571308c7';
+const GHL_STAGE_PAID       = '2eac8c05-25cf-4a21-9d1f-4fb2df071c0d';
+const GHL_STAGE_BOOKED     = 'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5';
+const GHL_STAGE_REMINDER   = '24956338-65d9-4a16-97e5-ba01b64f390f';
+const GHL_STAGE_ATTENDED   = '71a5cc36-584e-47dc-9cce-215803e3140d';
+const GHL_STAGE_WON        = '1cd97c60-fb19-4699-9293-2b32fd48b54a';
+const GHL_STAGE_NO_SHOW_ID = '437d0663-bd17-4d84-a939-11aed1b4b384';
+const GHL_STAGE_CANCELLED  = 'c961b576-b14d-43a6-ac75-a26695886d58';
+const GHL_STAGE_ABANDONED  = '28227d12-8f47-4da3-b5d9-140bc546a635';
+
+// Stages that count as "ever booked" (total appointments incl. cancellations).
 const GHL_BOOKED_STAGES = new Set([
-  'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', // booked
-  '24956338-65d9-4a16-97e5-ba01b64f390f', // reminder_sent
-  '71a5cc36-584e-47dc-9cce-215803e3140d', // attended
-  '1cd97c60-fb19-4699-9293-2b32fd48b54a', // won
-  '437d0663-bd17-4d84-a939-11aed1b4b384', // no_show
+  GHL_STAGE_PAID,         // pago hecho → cita inminente
+  GHL_STAGE_BOOKED,
+  GHL_STAGE_REMINDER,
+  GHL_STAGE_ATTENDED,
+  GHL_STAGE_WON,
+  GHL_STAGE_NO_SHOW_ID,
+  GHL_STAGE_CANCELLED,    // real cancellations count as "had a booking"
 ]);
-// Per-stage classification so the dashboard can split:
-//   Agendadas (booked|reminder_sent), Atendidas (attended|won), No-show.
-// "Canceladas" (booked → cancelled) cannot be derived from a single stage:
-// the `lost` stage holds *every* dead lead (never-converted, unqualified,
-// rejected) and would massively overcount. We only count canceladas via
-// GHL contact tags (set by Noemí when a booking is actually cancelled).
-const GHL_STAGE_AGENDADA = new Set(['f9e5c1cf-7701-4883-ac96-f16b3d78c0d5', '24956338-65d9-4a16-97e5-ba01b64f390f']);
-const GHL_STAGE_ATENDIDA = new Set(['71a5cc36-584e-47dc-9cce-215803e3140d', '1cd97c60-fb19-4699-9293-2b32fd48b54a']);
-const GHL_STAGE_NO_SHOW  = new Set(['437d0663-bd17-4d84-a939-11aed1b4b384']);
+// Sub-classification for the funnel breakdown chips.
+const GHL_STAGE_AGENDADA = new Set([GHL_STAGE_BOOKED, GHL_STAGE_REMINDER, GHL_STAGE_PAID]);
+const GHL_STAGE_ATENDIDA = new Set([GHL_STAGE_ATTENDED, GHL_STAGE_WON]);
+const GHL_STAGE_NO_SHOW  = new Set([GHL_STAGE_NO_SHOW_ID]);
 
 async function hogqlQuery(apiKey, query) {
   const res = await fetch(`${POSTHOG_HOST}/api/projects/${PROJECT_ID}/query/`, {
@@ -422,14 +433,16 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   // Keep the most-progressed opp (booked > contacted > new) to preserve
   // the cita state. Tiebreaker: most recently updated.
   const STAGE_PRIORITY = {
-    '71a5cc36-584e-47dc-9cce-215803e3140d': 6, // attended
-    '1cd97c60-fb19-4699-9293-2b32fd48b54a': 6, // won
-    '24956338-65d9-4a16-97e5-ba01b64f390f': 5, // reminder_sent
-    'f9e5c1cf-7701-4883-ac96-f16b3d78c0d5': 5, // booked
-    '437d0663-bd17-4d84-a939-11aed1b4b384': 4, // no_show
-    'c961b576-b14d-43a6-ac75-a26695886d58': 3, // lost
-    'f0b2e24c-ce25-4c54-bb2f-6ba3571308c7': 2, // contacted
-    'fbed92b1-5e91-4b86-820f-44b9f66f8b73': 1, // new_lead
+    [GHL_STAGE_WON]:        7, // won (closed deal)
+    [GHL_STAGE_ATTENDED]:   7, // attended
+    [GHL_STAGE_REMINDER]:   6, // reminder_sent
+    [GHL_STAGE_BOOKED]:     6, // booked
+    [GHL_STAGE_PAID]:       5, // paid (between contacted and booked)
+    [GHL_STAGE_NO_SHOW_ID]: 4, // no_show
+    [GHL_STAGE_CANCELLED]:  3, // lost/cancelled (real cancellation)
+    [GHL_STAGE_CONTACTED]:  2, // contacted
+    [GHL_STAGE_NEW_LEAD]:   1, // new_lead
+    [GHL_STAGE_ABANDONED]:  0, // abandoned (lowest — dead lead)
   };
   const oppByContact = new Map();
   for (const opp of inRangeRaw) {
@@ -552,12 +565,15 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     const isAgendada  = GHL_STAGE_AGENDADA.has(stage);
     const isAtendida  = GHL_STAGE_ATENDIDA.has(stage);
     const isNoShow    = GHL_STAGE_NO_SHOW.has(stage);
-    const isCancelada = tags.includes('cita_cancelada') || tags.includes('appointment_cancelled');
-    // Total citas = ever-was-an-appointment. Includes cancelled bookings
-    // (which sit in stage='lost' but have a cancelada tag) so the count
-    // matches the funnel KPI's "Citas (todas)" everywhere in the dashboard.
-    const isBooked = GHL_BOOKED_STAGES.has(stage) || isCancelada;
-    const isPaid = tags.includes('bono_pagado');
+    const isCancelada = stage === GHL_STAGE_CANCELLED;       // dedicated stage now
+    const isAbandoned = stage === GHL_STAGE_ABANDONED;       // new stage
+    // Total citas = anything that ever was a booking. Stage Lost/Cancelled
+    // is now ONLY real cancellations (Abandoned is its own stage), so we
+    // include cancellations in the booked count without needing the tag.
+    const isBooked = GHL_BOOKED_STAGES.has(stage);
+    const isPaid = stage === GHL_STAGE_PAID
+                || stage === GHL_STAGE_WON
+                || tags.includes('bono_pagado');             // belt-and-suspenders
 
     return {
       opp_id: opp.id,
@@ -576,11 +592,12 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       pago,
       clinica,
       leads: 1,
-      booked:    isBooked ? 1 : 0,    // anything that ever was a booking
-      agendada:  isAgendada ? 1 : 0,  // currently scheduled (booked|reminder_sent)
-      atendida:  isAtendida ? 1 : 0,  // attended|won
+      booked:    isBooked ? 1 : 0,
+      agendada:  isAgendada ? 1 : 0,
+      atendida:  isAtendida ? 1 : 0,
       no_show:   isNoShow ? 1 : 0,
-      cancelada: isCancelada ? 1 : 0, // lost stage
+      cancelada: isCancelada ? 1 : 0,
+      abandoned: isAbandoned ? 1 : 0,
       paid: isPaid ? 1 : 0,
     };
   }).filter(Boolean);
