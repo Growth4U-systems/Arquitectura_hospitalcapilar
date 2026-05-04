@@ -79,8 +79,8 @@ function isOrphanCandidate(c) {
   return true;
 }
 
-async function searchRecentOrphans(ghlHeaders) {
-  const since = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
+async function searchRecentOrphans(ghlHeaders, lookbackHours = LOOKBACK_HOURS) {
+  const since = new Date(Date.now() - lookbackHours * 60 * 60 * 1000).toISOString();
   const results = [];
   let page = 1;
   while (page <= 10) {
@@ -180,7 +180,7 @@ async function enrichOne(c, ghlHeaders, metaAttribution) {
   return { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(' '), updated: true };
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   const apiKey = process.env.VITE_GHL_API_KEY;
   if (!apiKey) {
     console.error('[cron-enrich] VITE_GHL_API_KEY not set');
@@ -191,6 +191,12 @@ exports.handler = async () => {
     'Content-Type': 'application/json',
     'Version': '2021-07-28',
   };
+  // Allow caller to override lookback for backfill / testing.
+  const params = (event && event.queryStringParameters) || {};
+  const lookback = parseInt(params.days, 10) > 0
+    ? parseInt(params.days, 10) * 24
+    : LOOKBACK_HOURS;
+  const maxContacts = parseInt(params.max, 10) > 0 ? parseInt(params.max, 10) : Infinity;
 
   const startedAt = Date.now();
   let scanned = 0, skipped = 0, updated = 0, failed = 0, attributed = 0;
@@ -204,7 +210,7 @@ exports.handler = async () => {
   try {
     // Match the GHL contact lookback so all candidates have a chance to
     // be matched against Meta attribution.
-    const result = await fetchRecentMetaLeads(LOOKBACK_HOURS);
+    const result = await fetchRecentMetaLeads(lookback);
     if (result.errors && result.errors.length) {
       metaError = result.errors.join('; ');
       console.log('[cron-enrich] meta-leads warnings:', metaError);
@@ -219,7 +225,8 @@ exports.handler = async () => {
   }
 
   try {
-    const contacts = await searchRecentOrphans(ghlHeaders);
+    let contacts = await searchRecentOrphans(ghlHeaders, lookback);
+    if (Number.isFinite(maxContacts)) contacts = contacts.slice(0, maxContacts);
     scanned = contacts.length;
     for (const c of contacts) {
       try {
