@@ -88,6 +88,42 @@ exports.handler = async (event) => {
     sample: allForms.slice(0, 8).map(f => ({ id: f.id, name: f.name, status: f.status, page_id: f.page_id })),
   };
 
+  // 3.5) If no forms via Pages, find form IDs by inspecting Lead-Ads from the ad account
+  if (allForms.length === 0 && account) {
+    try {
+      const url = `${META_GRAPH}/${account}/ads?fields=id,name,creative{object_story_spec},effective_status&filtering=[{"field":"effective_status","operator":"IN","value":["ACTIVE"]}]&limit=100&access_token=${token}`;
+      const r = await fetch(url);
+      const d = await r.json();
+      const formIdsFromAds = new Set();
+      for (const a of (d.data || [])) {
+        const oss = a.creative?.object_story_spec || {};
+        // Lead Ads stash form_id in link_data.lead_gen_form_id or similar
+        const fid = oss.link_data?.lead_gen_form_id
+                 || oss.video_data?.lead_gen_form_id
+                 || oss.lead_gen?.form_id;
+        if (fid) formIdsFromAds.add(fid);
+      }
+      result.checks.form_ids_from_ads = {
+        ok: formIdsFromAds.size > 0,
+        total: formIdsFromAds.size,
+        sample: [...formIdsFromAds].slice(0, 10),
+      };
+      // Try to fetch a lead from each form ID directly
+      const formProbes = [];
+      for (const fid of [...formIdsFromAds].slice(0, 5)) {
+        const fr = await fetch(`${META_GRAPH}/${fid}?fields=id,name,status,page_id&access_token=${token}`);
+        const fd = await fr.json();
+        formProbes.push({ form_id: fid, ok: fr.ok, name: fd.name, page_id: fd.page_id, error: fd.error?.message });
+        if (fr.ok) {
+          allForms.push({ id: fd.id, name: fd.name, status: fd.status, page_id: fd.page_id });
+        }
+      }
+      result.checks.form_probes = formProbes;
+    } catch (e) {
+      result.checks.form_ids_from_ads = { ok: false, error: e.message };
+    }
+  }
+
   // 4) Try to fetch leads from the first form
   if (allForms.length > 0) {
     const firstForm = allForms[0];
