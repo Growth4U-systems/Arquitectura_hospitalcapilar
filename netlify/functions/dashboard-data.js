@@ -461,46 +461,47 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   const inRange = [...oppByContact.values()];
   const contactIds = [...oppByContact.keys()];
   const contactById = {};
-  const concurrency = 5;
+  // Concurrency 3 + 3-attempt retry on 429/5xx. Earlier we lost ~7 contacts
+  // per run to silent rate-limit failures, which dropped quiz_largo leads.
+  const concurrency = 3;
   let idx = 0;
+  let lookupFails = 0;
+  async function fetchContactWithRetry(cid) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch(`${GHL_BASE}/contacts/${cid}`, { headers });
+        if (r.ok) return (await r.json()).contact || {};
+        if (r.status === 429 || r.status >= 500) {
+          await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+          continue;
+        }
+        return null; // 4xx other than 429: don't retry
+      } catch (_) {
+        await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+      }
+    }
+    return null;
+  }
   async function worker() {
     while (idx < contactIds.length) {
       const i = idx++;
       const cid = contactIds[i];
-      try {
-        const r = await fetch(`${GHL_BASE}/contacts/${cid}`, { headers });
-        if (r.ok) {
-          const d = await r.json();
-          contactById[cid] = d.contact || {};
-        }
-      } catch (_) { /* skip */ }
+      const contact = await fetchContactWithRetry(cid);
+      if (contact) contactById[cid] = contact;
+      else lookupFails++;
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, contactIds.length) }, worker));
+  if (lookupFails > 0) console.log('[dashboard-data] contact lookup failures:', lookupFails, 'of', contactIds.length);
 
-  // Filter to paid-funnel leads only. We run only paid (Meta + Google) so
-  // every legit lead has at least ONE of these signals:
-  //   - contact.source matches a paid pattern
-  //   - door CF set (came through ghl-proxy or cron-enrich)
-  //   - utm_source CF set (came with URL tracking)
-  //   - tag meta_form_directo (cron-enrich tagged it)
-  // Anything with ALL FOUR missing is Manychat/IG DM/manual noise.
+  // Keep all leads in pipeline. Only exclude obvious non-funnel sources
+  // (IG/FB DMs from Manychat with explicit source, manual entries).
   const isFunnelSource = (contact) => {
     const source = (contact.source || '').toLowerCase();
-    // Hard exclusions: known non-funnel sources
     if (source.includes('social media instagram')) return false;
     if (source.includes('social media facebook')) return false;
     if (source.includes('manual')) return false;
-    // Positive signals: any indication of paid funnel
-    const hasSourcePattern = /facebook|instagram|paid_social|google|cpc|adwords|quiz|form hc|lead ad|meta/i.test(source);
-    const cfs = contact.customFields || [];
-    const cfHas = (id) => cfs.some(f => f.id === id && (f.value || f.fieldValue));
-    const hasDoor = cfHas('2JYlfGk60lHbuyh9vcdV');     // CONTACT_DOOR_CF
-    const hasUtmSource = cfHas('MisB9YJJAH7cnh8JOtQn'); // CONTACT_UTM_SOURCE_CF
-    const hasMetaTag = (contact.tags || []).some(t => /meta_form_directo/i.test(t || ''));
-    if (hasSourcePattern || hasDoor || hasUtmSource || hasMetaTag) return true;
-    // No paid funnel signals → Manychat/DM noise, exclude
-    return false;
+    return true;
   };
   // Count every lead in the pipeline including lost + abandoned. Only filter
   // is isFunnelSource (drops IG/FB DMs from Manychat + manual entries).
