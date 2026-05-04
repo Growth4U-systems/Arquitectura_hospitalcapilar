@@ -393,7 +393,12 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
   let startAfterId = '';
   let hasMore = true;
   let guard = 0;
-  while (hasMore && guard++ < 20) {
+  // Hard cap: 50 pages × 100 = 5000 opps. GHL accumulates re-emitted opps
+  // per contact over time so we need headroom — at 22 days post-launch
+  // we hit ~3000 opps for ~150 contacts (~9× ratio). Bumped from 2000 →
+  // 5000 so tail-end contacts (typically older quiz_largo leads) aren't
+  // dropped from the dashboard.
+  while (hasMore && guard++ < 50) {
     const url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION}&pipeline_id=${GHL_PIPELINE_ID}&limit=100${startAfterId ? `&startAfterId=${startAfterId}` : ''}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`GHL search ${res.status}`);
@@ -491,7 +496,16 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
       const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.name || '';
       sexo = inferSexoFromName(fullName);
     }
-    sexo = (sexo || 'sin-dato').toLowerCase();
+    // Normalize to one of 3 buckets so Pago + No-Pago always sum to total.
+    // Camino Pago = mujer + sin-dato (paywall flow), Camino No-Pago = hombre.
+    const sexoLower = (sexo || '').toLowerCase().trim();
+    if (sexoLower === 'female' || sexoLower === 'mujer' || sexoLower === 'f' || sexoLower === 'woman') {
+      sexo = 'mujer';
+    } else if (sexoLower === 'male' || sexoLower === 'hombre' || sexoLower === 'm' || sexoLower === 'man') {
+      sexo = 'hombre';
+    } else {
+      sexo = 'sin-dato';
+    }
 
     const ubicacion = (cf('ubicacion_clinica') || '').toLowerCase();
     const clinica = CLINICAS_OPERATIVAS.has(ubicacion) ? ubicacion

@@ -11,12 +11,20 @@
 //
 // Idempotent: re-running on a populated contact is a no-op (skip path).
 
+const { fetchRecentMetaLeads } = require('./lib/meta-leads-fetcher');
+
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_LOCATION = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 const CONTACT_LINK_AGENDAR_CF = 'UdbclFWU2YGw0YYup4vm';
 const CONTACT_LINK_PAYWALL_CF = 'uRxexlYy8HItx45Z7sih';
 const CONTACT_DOOR_CF         = '2JYlfGk60lHbuyh9vcdV'; // SINGLE_OPTIONS: quiz_corto|quiz_largo|form|meta_form_directo
 const OPP_LINK_AGENDADOS_CF   = 'eHCAvPZKNph7h15z1gGt';
+// UTM CFs (mirror of dashboard-data.js GHL_CF map)
+const CONTACT_UTM_SOURCE_CF   = 'MisB9YJJAH7cnh8JOtQn';
+const CONTACT_UTM_MEDIUM_CF   = 'vykx7m6bcfbYMXRqToYP';
+const CONTACT_UTM_CAMPAIGN_CF = '3fUI7GO9o7oZ7ddMNnFf';
+const CONTACT_UTM_CONTENT_CF  = 'dydSaUSYbb5R7nYOboLq';
+const CONTACT_UTM_TERM_CF     = 'eLdhsOthmyD38al527tG';
 
 const LOOKBACK_HOURS = 24;
 
@@ -97,31 +105,45 @@ async function searchRecentOrphans(ghlHeaders) {
   return results.filter(isOrphanCandidate);
 }
 
-async function enrichOne(c, ghlHeaders) {
+async function enrichOne(c, ghlHeaders, metaAttribution) {
   const cfs = c.customFields || [];
   const currentLink = cfs.find(f => f.id === CONTACT_LINK_AGENDAR_CF)?.value || '';
   const currentPaywall = cfs.find(f => f.id === CONTACT_LINK_PAYWALL_CF)?.value || '';
+  const currentUtmCampaign = cfs.find(f => f.id === CONTACT_UTM_CAMPAIGN_CF)?.value || '';
   const link = buildLink(c);
   const linkPaywall = buildPaywallLink(c);
 
-  if (currentLink === link && currentPaywall === linkPaywall) {
+  // Skip only if links are populated AND (no meta attribution to add OR
+  // utm_campaign already set). This way new attribution data still flows
+  // through even on idempotent re-runs.
+  const linksOk = currentLink === link && currentPaywall === linkPaywall;
+  const utmsOk = !metaAttribution || currentUtmCampaign === metaAttribution.campaign_name;
+  if (linksOk && utmsOk) {
     return { id: c.id, skipped: true };
   }
 
   // PUT contact CFs (link_agendar + link_paywall + door=meta_form_directo).
-  // Door is the analytics-facing field that distinguishes entry points
-  // (quiz_corto / quiz_largo / form / meta_form_directo). Setting it here
-  // ensures dashboards split Meta-direct funnel apart from the others.
+  // When metaAttribution is available, also write utm_source/medium/campaign
+  // /content/term so the dashboard can group leads by Meta campaign instead
+  // of dropping them into "sin-dato".
+  const customFields = [
+    { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
+    { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
+    { id: CONTACT_DOOR_CF, field_value: 'meta_form_directo' },
+  ];
+  if (metaAttribution) {
+    customFields.push(
+      { id: CONTACT_UTM_SOURCE_CF,   field_value: 'facebook' },
+      { id: CONTACT_UTM_MEDIUM_CF,   field_value: 'paid_social' },
+      { id: CONTACT_UTM_CAMPAIGN_CF, field_value: metaAttribution.campaign_name || '' },
+      { id: CONTACT_UTM_CONTENT_CF,  field_value: metaAttribution.ad_id || '' },
+      { id: CONTACT_UTM_TERM_CF,     field_value: metaAttribution.adset_name || '' },
+    );
+  }
   await fetch(`${GHL_BASE}/contacts/${c.id}`, {
     method: 'PUT',
     headers: ghlHeaders,
-    body: JSON.stringify({
-      customFields: [
-        { id: CONTACT_LINK_AGENDAR_CF, field_value: link },
-        { id: CONTACT_LINK_PAYWALL_CF, field_value: linkPaywall },
-        { id: CONTACT_DOOR_CF, field_value: 'meta_form_directo' },
-      ],
-    }),
+    body: JSON.stringify({ customFields }),
   });
 
   // Mirror link on the open opportunity
@@ -167,15 +189,38 @@ exports.handler = async () => {
   };
 
   const startedAt = Date.now();
-  let scanned = 0, skipped = 0, updated = 0, failed = 0;
+  let scanned = 0, skipped = 0, updated = 0, failed = 0, attributed = 0;
   const updates = [];
+
+  // Pre-fetch Meta attribution for recent leads so we can match by email
+  // when enriching each GHL contact. Falls back gracefully if Meta API
+  // doesn't yet have leads_retrieval permission (returns empty + logs).
+  let metaByEmail = new Map();
+  let metaError = null;
+  try {
+    const result = await fetchRecentMetaLeads(48);
+    if (result.errors && result.errors.length) {
+      metaError = result.errors.join('; ');
+      console.log('[cron-enrich] meta-leads warnings:', metaError);
+    }
+    for (const lead of (result.leads || [])) {
+      if (lead.email) metaByEmail.set(lead.email.toLowerCase().trim(), lead);
+    }
+    console.log('[cron-enrich] fetched', metaByEmail.size, 'attributed Meta leads from API');
+  } catch (e) {
+    metaError = e.message;
+    console.log('[cron-enrich] meta-leads fetch failed (continuing without attribution):', e.message);
+  }
 
   try {
     const contacts = await searchRecentOrphans(ghlHeaders);
     scanned = contacts.length;
     for (const c of contacts) {
       try {
-        const r = await enrichOne(c, ghlHeaders);
+        const email = (c.email || '').toLowerCase().trim();
+        const metaLead = email ? metaByEmail.get(email) : null;
+        if (metaLead) attributed += 1;
+        const r = await enrichOne(c, ghlHeaders, metaLead);
         if (r.skipped) skipped += 1;
         else if (r.updated) { updated += 1; updates.push(r.name + ' (' + r.id + ')'); }
       } catch (e) {
@@ -189,10 +234,10 @@ exports.handler = async () => {
   }
 
   const ms = Date.now() - startedAt;
-  console.log(`[cron-enrich] done in ${ms}ms — scanned:${scanned} updated:${updated} skipped:${skipped} failed:${failed}`);
+  console.log(`[cron-enrich] done in ${ms}ms — scanned:${scanned} updated:${updated} attributed:${attributed} skipped:${skipped} failed:${failed}`);
   if (updates.length) console.log('[cron-enrich] updated:', updates.join(', '));
   return {
     statusCode: 200,
-    body: JSON.stringify({ ms, scanned, updated, skipped, failed, updates }),
+    body: JSON.stringify({ ms, scanned, updated, attributed, skipped, failed, metaError, updates }),
   };
 };
