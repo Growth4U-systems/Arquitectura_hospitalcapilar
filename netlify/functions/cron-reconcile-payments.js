@@ -137,79 +137,99 @@ async function runCheckB(stripeKey, ghlKey, now) {
 }
 
 /**
- * Check C: every quiz-driven booking from the last 4h must have a matching
+ * Check C: every paid+booked GHL contact (recently updated) must have a matching
  * GHL calendar event. Self-heals if missing, alerts if heal also fails.
  *
- * We iterate Firestore `quiz_leads` (not Koibox) because (a) Koibox API has no
- * created-date filter and pages over staff-managed appts, (b) we only care about
- * quiz/paywall bookings here — staff bookings legitimately don't go to GHL.
+ * Source: GHL contacts with tag `bono_pagado` and appointment CFs set, sorted by
+ * dateUpdated desc. This is the universal source — it covers quiz, quiz_rapido,
+ * Meta→paywall direct, and any future flow that ends up with the same tag.
  */
 async function runCheckC(ghlKey) {
   const result = { scanned: 0, healed: 0, alerts: 0, ok: 0, errors: 0 };
-  const db = getFirestore();
-  if (!db) { console.log('[Reconcile C] no Firestore — skipping'); return result; }
+  const locationId = process.env.VITE_GHL_LOCATION_ID || 'U4SBRYIlQtGBDHLFwEUf';
 
-  // Window: 5 min ago (let synchronous flow finish) → 4h ago.
-  const upper = new Date(Date.now() - 5 * 60_000).toISOString();
-  const lower = new Date(Date.now() - 4 * 3600_000).toISOString();
+  // CF ids that mark a contact as booked
+  const CF = {
+    fecha_cita: 'yEjha5MpjAeDrrUfFmur',
+    hora_cita: 'KX7eyTmYQKbi0937Wj9I',
+    clinica_cita: 'upGgK5yc0bSDwqC99DkZ',
+  };
 
-  let docs;
+  // Search GHL contacts with bono_pagado tag, most recently updated first
+  let contacts;
   try {
-    const snap = await db.collection('quiz_leads')
-      .where('appointmentBookedAt', '>=', lower)
-      .where('appointmentBookedAt', '<=', upper)
-      .get();
-    docs = snap.docs;
+    const res = await fetch(`${GHL_BASE}/contacts/search`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ghlKey}`,
+        'Content-Type': 'application/json',
+        Version: '2021-07-28',
+      },
+      body: JSON.stringify({
+        locationId,
+        pageLimit: 50,
+        sort: [{ field: 'dateUpdated', direction: 'desc' }],
+        filters: [{ field: 'tags', operator: 'contains', value: 'bono_pagado' }],
+      }),
+    });
+    if (!res.ok) {
+      console.log('[Reconcile C] GHL search failed:', res.status);
+      return result;
+    }
+    contacts = (await res.json()).contacts || [];
   } catch (err) {
-    console.log('[Reconcile C] firestore query failed:', err.message);
+    console.log('[Reconcile C] GHL search error:', err.message);
     return result;
   }
-  result.scanned = docs.length;
 
-  for (const doc of docs) {
-    const lead = doc.data();
-    const email = (lead.email || '').toLowerCase();
-    const koiboxId = lead.appointmentKoiboxId || '';
-    const fecha = lead.appointmentFecha || '';
-    const hora = lead.appointmentHora || '';
-    if (!email || !fecha || !hora) { result.errors++; continue; }
+  // Filter window: dateUpdated within last 4h, older than 5 min (let sync flow finish)
+  const upperMs = Date.now() - 5 * 60_000;
+  const lowerMs = Date.now() - 4 * 3600_000;
+  const inWindow = contacts.filter(c => {
+    const t = c.dateUpdated ? new Date(c.dateUpdated).getTime() : 0;
+    return t >= lowerMs && t <= upperMs;
+  });
+  result.scanned = inWindow.length;
 
-    const dedupKey = `cal_event_${koiboxId || `${email}_${fecha}_${hora}`}`;
+  for (const c of inWindow) {
+    const cfs = c.customFields || [];
+    const getCf = (id) => {
+      const f = cfs.find(x => x.id === id);
+      return f ? (f.fieldValue || f.value || '') : '';
+    };
+    const fecha = (getCf(CF.fecha_cita) || '').slice(0, 10); // DATE comes back as ISO sometimes
+    const hora = getCf(CF.hora_cita);
+    if (!fecha || !hora) { result.ok++; continue; } // No appointment CFs = no booking yet — fine
+
+    const dedupKey = `cal_event_${c.id}_${fecha}_${hora}`;
     if (await alreadyAlerted(dedupKey)) { result.ok++; continue; }
 
     try {
-      const contactId = await findContactIdByEmail(email, ghlKey);
-      if (!contactId) {
-        // Check A would have alerted on this — skip silently here.
-        result.errors++;
-        continue;
-      }
-      const apptShape = { fecha, hora_inicio: hora, cliente: { text: lead.nombre || '' } };
-      const has = await hasMatchingGHLCalendarEvent(contactId, apptShape, ghlKey);
+      const apptShape = { fecha, hora_inicio: hora, cliente: { text: `${c.firstName || ''} ${c.lastName || ''}`.trim() } };
+      const has = await hasMatchingGHLCalendarEvent(c.id, apptShape, ghlKey);
       if (has) { result.ok++; continue; }
 
-      // Self-heal
-      const created = await createGHLCalendarEvent(contactId, apptShape, ghlKey);
+      const created = await createGHLCalendarEvent(c.id, apptShape, ghlKey);
       if (created.ok) {
-        console.log('[Reconcile C] Self-healed cal event for lead', email, koiboxId, '→ ghl', created.id);
+        console.log('[Reconcile C] Self-healed cal event for', c.email, '→ ghl', created.id);
         result.healed++;
-        await markAlerted(dedupKey, { check: 'C_healed', koiboxId, ghlEventId: created.id, email });
+        await markAlerted(dedupKey, { check: 'C_healed', contactId: c.id, ghlEventId: created.id, email: c.email });
         await sendAlert(
           'reconcile-payments',
-          `Self-healed missing GHL calendar event for ${email} (${fecha} ${hora})`,
-          { severity: 'info', check: 'C_calendar_event_healed', koibox_id: koiboxId, contact_id: contactId, email, fecha, hora, ghl_event_id: created.id }
+          `Self-healed missing GHL calendar event for ${c.email} (${fecha} ${hora})`,
+          { severity: 'info', check: 'C_calendar_event_healed', contact_id: c.id, email: c.email, fecha, hora, ghl_event_id: created.id }
         );
       } else {
         await sendAlert(
           'reconcile-payments',
-          `GHL calendar event missing AND self-heal failed for ${email} (${fecha} ${hora})`,
-          { severity: 'critical', check: 'C_calendar_event', koibox_id: koiboxId, contact_id: contactId, email, fecha, hora, heal_status: created.status, heal_error: created.error }
+          `GHL calendar event missing AND self-heal failed for ${c.email} (${fecha} ${hora})`,
+          { severity: 'critical', check: 'C_calendar_event', contact_id: c.id, email: c.email, fecha, hora, heal_status: created.status, heal_error: created.error }
         );
-        await markAlerted(dedupKey, { check: 'C_failed', koiboxId, email });
+        await markAlerted(dedupKey, { check: 'C_failed', contactId: c.id, email: c.email });
         result.alerts++;
       }
     } catch (err) {
-      console.log('[Reconcile C] error on lead', email, err.message);
+      console.log('[Reconcile C] error on contact', c.id, err.message);
       result.errors++;
     }
   }
