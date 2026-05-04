@@ -121,10 +121,13 @@ async function enrichOne(c, ghlHeaders, metaAttribution) {
   // utm_campaign already set). This way new attribution data still flows
   // through even on idempotent re-runs.
   const linksOk = currentLink === link && currentPaywall === linkPaywall;
-  const utmsOk = !metaAttribution || currentUtmCampaign === metaAttribution.campaign_name;
+  const metaCamp = metaAttribution?.campaign_name || '';
+  const utmsOk = !metaAttribution || (metaCamp && currentUtmCampaign === metaCamp);
   if (linksOk && utmsOk) {
+    console.log(`[cron-enrich] SKIP ${c.email || c.id} — linksOk=${linksOk} hasMeta=${!!metaAttribution} curCamp="${currentUtmCampaign}" metaCamp="${metaCamp}"`);
     return { id: c.id, skipped: true };
   }
+  console.log(`[cron-enrich] WILL UPDATE ${c.email || c.id} — linksOk=${linksOk} hasMeta=${!!metaAttribution} curCamp="${currentUtmCampaign}" metaCamp="${metaCamp}"`);
 
   // PUT contact CFs (link_agendar + link_paywall + door=meta_form_directo).
   // When metaAttribution is available, also write utm_source/medium/campaign
