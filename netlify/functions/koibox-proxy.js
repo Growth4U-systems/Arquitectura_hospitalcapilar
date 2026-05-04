@@ -1466,20 +1466,32 @@ async function syncAppointmentToGHL({ nombre, email, movil, fecha, hora_inicio, 
     };
     console.log('[Koibox→GHL] Creating calendar event, payload:', JSON.stringify(calPayload));
 
-    const calRes = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
-      method: 'POST',
-      headers: ghlHeaders,
-      body: JSON.stringify(calPayload),
-    });
-    const calData = await calRes.json();
+    // Retry once on failure — every silent-failure incident in this flow has been
+    // a single transient external call. We already validated config-level inputs
+    // (assignedUserId + ignoreFreeSlotValidation), so retry covers the rest.
+    let calRes, calData;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      calRes = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify(calPayload),
+      });
+      calData = await calRes.json().catch(() => ({}));
+      if (calRes.ok) break;
+      if (attempt === 1) {
+        console.log('[Koibox→GHL] Calendar create attempt 1 failed:', calRes.status, '— retrying once');
+        await new Promise(r => setTimeout(r, 800));
+      }
+    }
     if (calRes.ok) {
       ghlAppointmentId = calData?.id || calData?.event?.id || null;
       console.log('[Koibox→GHL] Calendar appointment created:', ghlAppointmentId);
     } else {
-      console.log('[Koibox→GHL] Calendar appointment failed:', calRes.status, JSON.stringify(calData));
+      console.log('[Koibox→GHL] Calendar appointment failed after retry:', calRes.status, JSON.stringify(calData));
       // The Koibox booking already succeeded — failing here means the GHL UI's
       // Appointments tab won't show the cita. Alert so we notice instead of
-      // discovering it via a confused user.
+      // discovering it via a confused user. The 15-min reconcile cron will
+      // also pick this up and self-heal.
       sendAlert(
         'koibox-proxy',
         `GHL calendar event creation failed for ${nombre || email || 'paciente'} (${fecha} ${hora_inicio})`,
