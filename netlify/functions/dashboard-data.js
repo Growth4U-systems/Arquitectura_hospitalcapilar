@@ -536,14 +536,26 @@ async function fetchGhlOppsWithContacts(startDate, endDate) {
     }
     if (!utmSource) utmSource = 'sin-dato';
 
-    // Funnel type — single authoritative source: GHL `door` CF.
+    // Funnel type — primary signal: GHL `door` CF.
     //   quiz_largo        → / (que-me-pasa, es-normal, mujeres)        [ghl-proxy]
     //   quiz_corto        → /rapido/*                                  [ghl-proxy]
     //   form_directo      → /form/* (HC landing con formulario)         [ghl-proxy]
     //   form_meta_directo → Meta Lead Form (form vive en FB/IG → /p/)  [cron 5 min]
+    //
+    // Source override: if contact.source clearly says "Quiz HC" or "Quiz
+    // Corto HC" but door=meta_form_directo, source wins. This recovers
+    // contacts whose door was overwritten by an old cron-enrich bug.
     const door = (cf('door') || cf('funnel_type') || '').toLowerCase();
     let funnelType;
-    if (door === 'quiz_largo')                                  funnelType = 'quiz_largo';
+    // Source override — runs FIRST to fix legacy door corruption.
+    if (sourceLower.includes('quiz corto hc') ||
+        sourceLower.includes('quiz rápido hc') || sourceLower.includes('quiz rapido hc')) {
+      funnelType = 'quiz_corto';
+    } else if (sourceLower.includes('quiz hc') && !sourceLower.includes('corto') && !sourceLower.includes('rapido') && !sourceLower.includes('rápido')) {
+      funnelType = 'quiz_largo';
+    } else if (sourceLower.includes('form hc')) {
+      funnelType = 'form_directo';
+    } else if (door === 'quiz_largo')                           funnelType = 'quiz_largo';
     else if (door === 'quiz_corto')                             funnelType = 'quiz_corto';
     else if (door === 'form' || door === 'form_directo' ||
              door === 'formulario_directo')                     funnelType = 'form_directo';
