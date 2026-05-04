@@ -328,8 +328,10 @@ async function syncPaymentToKoibox(koiboxId, session) {
     console.log('[Stripe→Koibox] Appointment update failed:', err.message);
   }
 
-  // Update client notes using cliente.id from the appointment (reliable — no broken filter)
-  const clienteId = appt.cliente?.id;
+  // Update client notes using the cliente reference on the appointment (reliable — no broken filter).
+  // Koibox represents cliente as { value: <id>, text: <nombre>, email, movil, ... } on /agenda/ —
+  // the id lives in `value`, NOT `id`.
+  const clienteId = appt.cliente?.value;
   if (clienteId) {
     try {
       const clientRes = await fetch(`${KOIBOX_BASE}/clientes/${clienteId}/`, { headers: koiboxHeaders });
