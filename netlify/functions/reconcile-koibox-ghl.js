@@ -179,12 +179,16 @@ async function createGhlAppointment(contactId, fecha, hora, name, assignedUserId
 
 function eventMatchesKoibox(event, koiboxFecha, koiboxHora) {
   if (!event.startTime) return false;
-  // Parse ISO and convert to Madrid local for comparison with koibox YYYY-MM-DD + HH:MM
-  const dt = new Date(event.startTime);
-  if (isNaN(dt)) return false;
-  const madridStr = dt.toLocaleString('sv-SE', { timeZone: 'Europe/Madrid' }); // "2026-05-07 18:30:00"
-  const [date, time] = madridStr.split(' ');
-  return date === koiboxFecha && (time || '').slice(0, 5) === koiboxHora;
+  // GHL returns startTime as a naive "YYYY-MM-DD HH:MM:SS" string in the calendar's
+  // selectedTimezone (Europe/Madrid for us) — no timezone marker. We MUST NOT pass
+  // it to `new Date()` then convert to Madrid: Node parses naive strings as local
+  // (UTC on Netlify), so the round-trip adds the +1h/+2h offset and the comparison
+  // never matches Koibox's already-Madrid-local hora. This caused a runaway
+  // create/cancel loop for every patient (41 cancelled events on one Dhally Jaimes
+  // before we noticed). Compare the raw string instead.
+  const [date, time] = event.startTime.split(' ');
+  if (!date || !time) return false;
+  return date === koiboxFecha && time.slice(0, 5) === koiboxHora;
 }
 
 function isActiveEvent(e) {
@@ -197,9 +201,28 @@ function isActiveEvent(e) {
 // events are tolerated as historical noise; only future events get
 // reconciled. (Discovered 2026-05-04 after Dhally received a confusing
 // "no pudiste venir hoy" message when we cancelled her stale Apr 29 event.)
+// Madrid TZ offset for a given date in hours (CET=+1, CEST=+2).
+// Asks Intl for the Madrid hour at noon UTC on that date — saves us from
+// hardcoding DST changeover rules.
+function madridOffsetHours(year, monthIdx /* 0-11 */, day) {
+  const sample = new Date(Date.UTC(year, monthIdx, day, 12, 0));
+  const madridHourStr = sample.toLocaleString('en-GB', {
+    timeZone: 'Europe/Madrid', hour: '2-digit', hour12: false,
+  });
+  return parseInt(madridHourStr, 10) - 12;
+}
+
 function isFutureEvent(e) {
   if (!e.startTime) return false;
-  return new Date(e.startTime).getTime() > Date.now();
+  // GHL returns startTime as a naive "YYYY-MM-DD HH:MM:SS" string in the
+  // calendar's selectedTimezone (Madrid). Convert to UTC ms via the
+  // computed offset for that specific date (handles DST changeover).
+  const m = e.startTime.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  if (!m) return false;
+  const [, y, mo, d, h, mi] = m.map(Number);
+  const offsetH = madridOffsetHours(y, mo - 1, d);
+  const utcMs = Date.UTC(y, mo - 1, d, h - offsetH, mi);
+  return utcMs > Date.now();
 }
 
 // Sync GHL calendar events to match Koibox state. Cancels mismatched active
