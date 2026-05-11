@@ -1,0 +1,338 @@
+# Quiz Hospital Capilar — Documentación de Producción
+
+**Stack:** Astro SSR + React 19 + Firestore + GHL + Stripe + Koibox + PostHog
+**Lanzamiento:** 2026-05-11
+**Owner técnico:** Philippe (Growth4U)
+
+---
+
+## 1. Arquitectura del Flujo
+
+```
+Anuncio Meta (mujer / nicho específico)
+     │
+     ▼
+Meta Lead Form (6 campos)
+   • Sexo (mujer/hombre)
+   • ¿Preocupado/a por caída? (si/no)
+   • Ciudad (madrid/murcia/pontevedra/otra)
+   • Nombre (autofill)
+   • Email (autofill)
+   • Teléfono (autofill)
+     │
+     ├──► GHL nativo (lead creado con custom fields)
+     │
+     └──► Thank-you redirect →
+              /quiz-hospitalcapilar/?v=...&caida=...&ciudad=...&nombre=...&email=...&telefono=...&leadId=...&utm_*=...
+                   │
+                   ├──► Si v=mujer (5 preguntas)
+                   │     ▼
+                   │   P1 Tiempo · P2 Patrón · P3 Origen · P4 Tratamientos · P5 Objetivo
+                   │     ▼ Scoring CRT vs HRT
+                   │     ▼ Resultado: Protocolo CRT o HRT + bloque Hair Pro + disclaimer Tricometabólico
+                   │     │
+                   │     ├── CTA primario → Calendario HC Videollamadas (GHL prefilled)
+                   │     │                    → cita en Gmail de Noemí
+                   │     │                    → videollamada con asesora
+                   │     │                    → cobro 125€ Stripe / 195€ clínica
+                   │     │
+                   │     └── CTA secundario → WhatsApp (+34 623 457 218)
+                   │
+                   └──► Si v=hombre (3 preguntas)
+                         P1 Tiempo · P2 Patrón Norwood · P3 Tratamientos
+                         ▼ Resultado: Asesoría presencial gratuita
+                         └── CTA → WhatsApp (Koibox embed pendiente)
+```
+
+---
+
+## 2. Meta Lead Form
+
+### Campos del form
+
+| # | Campo | Tipo | Nombre interno (slug) | Opciones / Valor |
+|---|---|---|---|---|
+| 1 | Sexo | Single select | `sexo` | `mujer` / `hombre` |
+| 2 | ¿Estás preocupado/a por tu caída? | Single select | `caida` | `si` / `no` |
+| 3 | ¿En qué ciudad vives? | Single select | `ciudad` | `madrid` / `murcia` / `pontevedra` / `otra` |
+| 4 | Nombre | Autofill | `full_name` | — |
+| 5 | Email | Autofill | `email` | — |
+| 6 | Teléfono | Autofill | `phone_number` | — |
+
+### Intro screen
+
+```
+Deja de adivinar qué le pasa a tu pelo
+
+Test online en 5 preguntas. Te decimos qué tratamiento necesita tu caso
+y agendas asesoría gratuita con nuestro equipo médico.
+
+⏰ 1 minuto · 100% gratis · Sin compromiso
+👩🏻‍⚕️ Validado por médicos especialistas
+```
+
+### Thank-you screen
+
+- **Botón CTA:** `Empezar mi diagnóstico`
+- **Redirect URL:**
+
+```
+https://diagnostico.hospitalcapilar.com/quiz-hospitalcapilar/?v={{form.sexo}}&caida={{form.caida}}&ciudad={{form.ciudad}}&nombre={{form.full_name}}&email={{form.email}}&telefono={{form.phone_number}}&leadId={{lead_id}}&utm_source=meta&utm_medium=lead_form&utm_campaign={{ad.campaign.name}}&utm_content={{ad.id}}&utm_term={{adset.id}}
+```
+
+---
+
+## 3. GHL Setup
+
+### Custom fields creados (2026-05-07)
+
+| Field Name | ID | Type | Picklist |
+|---|---|---|---|
+| Sexo Lead Form | `ySOJCraPl26CR161KFxW` | SINGLE_OPTIONS | mujer, hombre |
+| Preocupacion caida | `hLiD1jVS5UkzJUjLWo8g` | SINGLE_OPTIONS | si, no |
+
+### Custom fields preexistentes relevantes
+
+| Field Name | ID | Type |
+|---|---|---|
+| Door | `2JYlfGk60lHbuyh9vcdV` | SINGLE_OPTIONS |
+| ECP | `cFIcdJlT9sfnC3KMSwDD` | TEXT |
+| utm_source / medium / campaign / content / term | varios | TEXT |
+| Funnel Type | `liIshAFJMngl2BV9MtVw` | TEXT |
+| Traffic Source | `miu6E3oxZowYahYGjX1A` | TEXT |
+| contact_score | `SGT17lKk7bZgkInBTtrT` | NUMERICAL |
+| Qué ha hecho por la caída | `P2GSHqir1PRJKMihQx1h` | TEXT |
+
+### Calendarios
+
+| Calendar | ID | Type | Uso |
+|---|---|---|---|
+| **Calendario HC Videollamadas** | `kZbXjtt6kmjj1phXdoqP` | personal | CTA mujer post-quiz → Gmail de Noemí |
+| Calendario HC | `sMbNt8SyzfjroMbZvB74` | class_booking | Citas presenciales clínica |
+
+### Pipeline Leads HC
+
+```
+fbed92b1-... | New Lead
+f0b2e24c-... | Contacted
+2eac8c05-... | Paid
+f9e5c1cf-... | Booked
+24956338-... | Reminder sent
+71a5cc36-... | Attended
+1cd97c60-... | Won
+437d0663-... | No-show
+c961b576-... | Lost/Cancelled
+28227d12-... | Abandoned
+```
+
+---
+
+## 4. Quiz Corto — Rama MUJER (5 preguntas + resultado)
+
+### Framework clínico (validado por dirección médica 2026-05-07)
+
+- **CRT (PRP)** → efluvios telógenos, cuadros transitorios, postparto, estrés, dieta, enfermedad
+- **HRT (dutasterida intradérmica)** → androgenética real (patrón Ludwig, antecedentes, evolución >1 año)
+- **Hair Pro** → booster del cuero cabelludo, combinable con CRT o HRT
+
+### P1 · ¿Hace cuánto pierdes pelo?
+
+| Opción | Score |
+|---|---|
+| <3 meses | +2 CRT |
+| 3-12 meses | +1 CRT |
+| 1-3 años | +2 HRT |
+| >3 años | +3 HRT |
+
+### P2 · ¿Dónde notas más la pérdida?
+
+| Opción | Score |
+|---|---|
+| Raya central / parte superior | +3 HRT |
+| Sienes y línea frontal | +3 CRT |
+| Difuso por toda la cabeza | +3 HRT + 🚩 flag médico |
+| Zonas localizadas (parches) | +2 HRT + 🚩 flag médico |
+| No lo tengo claro | 0 |
+
+### P3 · ¿Identificas alguna causa?
+
+| Opción | Score |
+|---|---|
+| Embarazo o postparto | +3 CRT |
+| Menopausia o perimenopausia | +3 HRT + 🚩 flag médico |
+| Problema hormonal diagnosticado | +3 HRT + 🚩 flag médico |
+| Estrés / dieta / enfermedad reciente | +3 CRT |
+| Antecedentes familiares de calvicie | +3 HRT |
+| No identifico causa | 0 |
+
+### P4 · ¿Has probado algo? *(sin scoring, contextual)*
+
+- Minoxidil / finasterida sin resultado
+- PRP / mesoterapia en otra clínica
+- Champús / vitaminas / productos casa
+- Tratamiento hormonal
+- Nada todavía
+
+### P5 · ¿Qué buscas conseguir? *(sin scoring)*
+
+- Frenar caída
+- Recuperar densidad
+- Entender qué me pasa
+
+### Lógica de decisión
+
+```
+Sumar puntos CRT y HRT (solo P1, P2, P3)
+SI diff(CRT, HRT) ≥ 2 → gana el mayor
+SI diff < 2 → HRT por defecto
+SI flag médico activo → marca al asesor + nota visible
+```
+
+### Pantalla resultado mujer
+
+- Header: "Pre-recomendación: Protocolo {CRT|HRT}"
+- 3 bullets: qué hace, indicado para ti porque, resultado esperado
+- Si `flag === true` → banner ámbar "Tu caso necesita atención especializada"
+- Bloque "Combinable con Hair Pro"
+- Disclaimer Tricometabólico
+- **CTA primario:** "Agenda una videollamada con nuestro equipo médico" → `kZbXjtt6kmjj1phXdoqP` con prefill
+- **CTA secundario:** "Hablar por WhatsApp con una asesora" → wa.me/34623457218
+
+---
+
+## 5. Quiz Corto — Rama HOMBRE (3 preguntas + resultado)
+
+**Sin scoring** — solo data clínica para el médico.
+
+- **P1** · ¿Hace cuánto pierdes pelo? (Menos de 3m / 3-12m / 1-3a / Más de 3a)
+- **P2** · ¿Cómo describes tu pérdida? Escala Norwood (Entradas leves / Entradas marcadas / Coronilla afectada / Avanzado)
+- **P3** · ¿Has probado algo antes? (Minoxidil / Finasterida / PRP otra clínica / Trasplante / Productos casa / Nada)
+
+### Pantalla resultado hombre
+
+"Asesoría presencial gratuita con nuestro equipo médico" + CTA WhatsApp (Koibox embed por ciudad pendiente).
+
+---
+
+## 6. URLs de referencia
+
+| URL | Uso |
+|---|---|
+| `https://diagnostico.hospitalcapilar.com/quiz-hospitalcapilar/` | Landing + quiz (orgánico) |
+| `?v=mujer` / `?v=hombre` | Preselecciona rama desde Meta |
+| `https://api.leadconnectorhq.com/widget/booking/kZbXjtt6kmjj1phXdoqP` | Calendario videollamadas |
+| `https://wa.me/34623457218` | WhatsApp asesora |
+
+---
+
+## 7. Plan de medición
+
+### 7.1 Funnel y sources of truth
+
+| # | Etapa | Source of truth | Métrica clave |
+|---|---|---|---|
+| 1 | Impresión anuncio | Meta Ads / Google Ads | Impressions, frequency |
+| 2 | Clic anuncio | Meta / Google + UTMs | CTR, CPC |
+| 3 | Lead form abierto | Meta Ads | Form opens |
+| 4 | Lead form submit | Meta Ads + GHL Contact | CPL, lead volume |
+| 5 | Redirect a quiz | PostHog `$pageview` `/quiz-hospitalcapilar/` | Drop-off Meta→quiz (~30-40%) |
+| 6 | Quiz iniciado | PostHog `diagnostic_quiz_started` | Start rate |
+| 7 | Quiz completado | PostHog `diagnostic_quiz_completed` + Firestore | Completion rate |
+| 8 | CTA cita pulsado | PostHog `diagnostic_quiz_cta_clicked` | Click rate calendar vs WhatsApp |
+| 9 | Videollamada agendada | GHL Calendar (kZbXjtt6kmjj1phXdoqP) | Booking rate |
+| 10 | Videollamada atendida | GHL Pipeline → "Attended" | Show-up rate |
+| 11 | Pago 125€ Stripe | Stripe webhook → GHL Pipeline "Paid" | Conversion rate |
+| 12 | Cita Koibox | Koibox API → Firestore `bookings` | Booking físico |
+| 13 | Tratamiento vendido | GHL Pipeline "Won" + Salesforce | Revenue / venta |
+
+### 7.2 Eventos PostHog actuales (implementados)
+
+```javascript
+diagnostic_quiz_prefilled_sex    { sexo }
+diagnostic_quiz_started          { nicho, sexo }
+diagnostic_quiz_sex_selected     { sexo }
+diagnostic_quiz_completed        { nicho, sexo, result: {protocol, flag, scores} }
+diagnostic_quiz_cta_clicked      { sexo, protocol, channel: 'ghl_calendar'|'whatsapp' }
+```
+
+### 7.3 Eventos a añadir (gap)
+
+```javascript
+diagnostic_quiz_question_answered    { sexo, questionId, answer, step, totalSteps }
+diagnostic_quiz_landing_viewed       { nicho, source: 'meta'|'organic' }
+ghl_appointment_booked               // vía webhook GHL → backend → PostHog
+stripe_payment_completed             { amount, contactId }
+koibox_appointment_created           { city, calendarId, ghlContactId }
+treatment_purchased                  { protocol, amount, contactId }
+```
+
+### 7.4 Atribución cross-system
+
+```
+Meta Ad URL (utm_source=meta&...)
+  │
+  ├──► Meta Lead Form thank-you URL preserva UTMs como params
+  │     │
+  │     └──► /quiz-hospitalcapilar/ → URL params persisten en Firestore quiz_leads.source
+  │           │
+  │           └──► PostHog $set y trackQuizStarted con UTMs
+  │
+  └──► Meta → GHL native integration → GHL custom fields utm_source/medium/etc
+        │
+        └──► GHL Calendar event hereda contact.customFields
+              │
+              └──► Stripe metadata.utm_source (si se setea al crear checkout)
+                    │
+                    └──► Koibox sync (vía GHL relay) preserva atribución original
+```
+
+### 7.5 KPIs por etapa (target fase 1)
+
+| Etapa | Tasa target | Tiempo validar |
+|---|---|---|
+| CTR anuncio | ≥2% | Diaria, 200 imp |
+| Submit form | ≥30% del clic | Diaria, 100 clics |
+| Quiz iniciado / lead | ≥60% | 3 días |
+| Quiz completado | ≥60% del iniciado | 3-5 días, 100 starts |
+| Click CTA cita | ≥40% del completado | Semanal |
+| Cita agendada | ≥60% del click | Semanal |
+| Cita atendida | ≥60% de la agendada | Semanal |
+| Pago 125€ | ≥40% de la atendida | Quincenal |
+| Venta tratamiento | ≥40% del 125€ | Quincenal |
+
+**CAC target:** ≤270€ (con ticket medio 900€).
+
+### 7.6 Dashboard a construir
+
+Sección `/quiz-hc` en el package `dashboard`:
+
+1. **Funnel chart** (PostHog Funnels): pageview → quiz_started → completed → cta_clicked → ghl_booked
+2. **Por canal (UTM):** mismo funnel agrupado por `utm_source`, `utm_campaign`
+3. **Por sexo:** mujer vs hombre, conversión por rama
+4. **Distribución CRT vs HRT:** % de mujeres que terminan en cada protocolo
+5. **Flagged leads:** leads con flag médico para revisión manual
+6. **CAC por canal:** spend Meta + Google / ventas atribuidas
+7. **Tiempo lead → venta:** distribución del lag entre cada etapa
+
+### 7.7 Stripe — tracking de pagos
+
+Webhook Stripe → Netlify function → Firestore `stripe_payments` + PostHog event `stripe_payment_completed`. Asociar al `ghl_lead_id` via `customer_email` o `metadata.ghl_contact_id`.
+
+Ya existe parcialmente en `netlify/functions/` — verificar y completar.
+
+### 7.8 Koibox — tracking de citas presenciales
+
+Sync existente Koibox → Firestore guarda en `bookings`. Cross-reference contra `quiz_leads` por teléfono o email para atribuir al canal original.
+
+---
+
+## 8. Lo que falta para 100% operativo
+
+| Tarea | Owner | Prioridad |
+|---|---|---|
+| Test E2E con lead real Meta → quiz → calendar | Miguel + Philippe | 🔴 antes de campaña real |
+| Conectar GHL custom field submit del quiz (protocolo CRT/HRT) | Philippe | 🟡 esta semana |
+| Embed Koibox calendar en rama hombre filtrado por ciudad | Philippe | 🟡 esta semana |
+| Webhook backup Meta → backend (para no perder leads que no clican thank-you) | Philippe | 🟢 próximo sprint |
+| Dashboard funnel completo (sección `/quiz-hc`) | Philippe | 🟢 próximo sprint |
+| Añadir eventos PostHog de granularidad por pregunta | Philippe | 🟢 próximo sprint |
