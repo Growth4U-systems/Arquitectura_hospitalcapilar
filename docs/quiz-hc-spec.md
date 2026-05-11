@@ -346,7 +346,223 @@ Sync existente Koibox → Firestore guarda en `bookings`. Cross-reference contra
 
 ---
 
-## 8. Estado del proyecto
+## 8. Workflows GHL — Avisos, recordatorios y nurturing
+
+**Owner:** Ramiro · **Estado:** Por implementar antes de campaña real
+
+Cada workflow se monta en GHL → Automations. Convención de naming: `[QHC] · {nombre_workflow}` para que sean filtrables ("Quiz HC").
+
+### 8.1 Mapa de workflows
+
+| # | Workflow | Trigger | Audience | Canal |
+|---|---|---|---|---|
+| W1 | Quiz incompleto — recuperación | Contact created tag `intent:high` AND no `quiz_completed` evento a +30min | Leads que no terminaron quiz | WhatsApp |
+| W2 | Quiz completado sin booking — mujer | Evento `quiz_completed` AND no appointment en `kZbXjtt6kmjj1phXdoqP` a +1h | Mujeres con CRT/HRT que no agendaron | WhatsApp + Email |
+| W3 | Quiz completado sin booking — hombre | Evento `quiz_completed` AND no Koibox appointment a +1h | Hombres sin agendar presencial | WhatsApp |
+| W4 | **Pre-videollamada — nurturing** | Appointment created en `kZbXjtt6kmjj1phXdoqP` | Mujeres con cita confirmada | WhatsApp + Email |
+| W5 | Notificación interna asesora | Appointment created | Noemí + hermano de Óscar | GHL internal + Email |
+| W6 | No-show videollamada | Appointment time + 30min AND status != attended | Mujeres que no asistieron | WhatsApp |
+| W7 | Post-videollamada sin pago | Status `attended` AND no Stripe payment a +24h | Asistentes sin pago 125€ | WhatsApp |
+| W8 | Post-pago — pre-clínica | Stripe `payment_completed` | Pagadoras esperando cita clínica | WhatsApp + Email |
+| W9 | Low intent — nurturing largo | Tag `intent:low` aplicado | Leads que respondieron "no" a la pregunta de caída | Email (no WhatsApp) |
+| W10 | Reactivación lost/cancelled | Stage `Lost/Cancelled` | Pacientes perdidas, 30d después | Email |
+
+---
+
+### 8.2 Workflows detallados
+
+#### W1 · Quiz incompleto — recuperación
+
+**Trigger:** GHL Contact created · tag `intent:high` · sin evento `diagnostic_quiz_completed` después de 30 minutos
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+30min | WhatsApp | "Hola {firstName}, vi que empezaste tu diagnóstico capilar pero no lo terminaste. ¿Tuviste algún problema? Aquí lo retomas: {link_quiz_with_prefill}" |
+| T+1d | WhatsApp | "Solo te tomaba 1 minuto 😊 ¿Lo retomamos? Tu pelo te lo agradece. {link_quiz}" |
+| T+3d | WhatsApp | Contenido educativo: "El 40% de mujeres sufre caída capilar y el 80% está mal diagnosticada. Hacer tu test online es el primer paso para entender qué te pasa. {link_quiz}" |
+| T+7d | WhatsApp | Último intento: "Hacemos tu pre-diagnóstico gratis. {link_quiz}" |
+
+**Exit condition:** quiz_completed event disparado, contact unsubscribe, o cita agendada manualmente.
+
+---
+
+#### W2 · Quiz completado sin booking — Mujer
+
+**Trigger:** Evento `diagnostic_quiz_completed` con `sexo=mujer` · sin appointment en `Calendario HC Videollamadas` después de 1h
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+1h | WhatsApp | "Hola {firstName}, vi que tu pre-recomendación fue Protocolo {protocol}. Agenda tu videollamada gratuita con nuestro equipo médico para que te lo expliquen al detalle: {link_calendar}" |
+| T+1d | WhatsApp | Testimonio: "{Laura M., 52 años — caso similar} consiguió frenar su caída con nuestro Protocolo {protocol}. Mira su historia. Agenda tu videollamada: {link_calendar}" |
+| T+3d | Email | Artículo más profundo del protocolo (qué es, cómo funciona, resultados) + CTA agenda |
+| T+7d | Email | "¿Sigues considerando hacer algo por tu pelo? Estamos aquí cuando estés lista. {link_calendar}" |
+
+**Exit condition:** appointment booked, paid, o tag `not_interested`.
+
+---
+
+#### W3 · Quiz completado sin booking — Hombre
+
+**Trigger:** Evento `diagnostic_quiz_completed` con `sexo=hombre` · sin appointment Koibox después de 1h
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+1h | WhatsApp | "Hola {firstName}, vi que terminaste tu diagnóstico. El siguiente paso es una asesoría presencial gratuita con nuestro equipo médico. Reserva aquí: {link_agendar}" |
+| T+1d | WhatsApp | Trust signals: "Hospital Capilar - 12.000+ pacientes tratados. Dr. {nombre}, colegiado nº {X}. {link_agendar}" |
+| T+3d | WhatsApp | "Te enviamos algo de info útil: {link_articulo_norwood}. Cuando quieras, agendas aquí: {link_agendar}" |
+| T+7d | WhatsApp | Último contacto: "¿Cómo va? Si tienes dudas o quieres agendar: {link_agendar}" |
+
+---
+
+#### W4 · Pre-videollamada — NURTURING (clave) 🎯
+
+**Trigger:** Appointment created en `Calendario HC Videollamadas` (`kZbXjtt6kmjj1phXdoqP`)
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+0 inmediato | WhatsApp | "¡Genial {firstName}! Tu videollamada está confirmada para el {fecha} a las {hora}. Aquí te dejamos qué vamos a hacer y qué esperar: {link_microsite_personalizado}" |
+| T+0 inmediato | Email | Confirmación con calendario .ics adjunto + link videollamada + microsite personalizado |
+| T+1h | WhatsApp | Microsite con: tu protocolo {CRT/HRT}, qué evaluamos en la asesoría, preguntas que puedes traer, fotos del equipo, FAQs |
+| T-24h | WhatsApp | "Mañana a las {hora} es tu videollamada. Prepara estas 3 preguntas: 1) ¿Qué incluye el Examen Tricometabólico? 2) ¿Es compatible con tratamientos previos? 3) {pregunta_personalizada_segun_protocolo}. Link: {link_videollamada}" |
+| T-2h | WhatsApp | "En 2 horas tu cita. Recuerda tener buena conexión y un sitio tranquilo. Link directo: {link_videollamada}" |
+| T-30min | WhatsApp | "Tu asesora te espera en 30 min: {link_videollamada}" |
+
+**Exit condition:** appointment attended, no-show, o canceled.
+
+**🎯 Bloqueante crítico:** el microsite personalizado (`/diagnostico/{leadId}`) no está construido. Es parte del compromiso con Óscar de la reunión 2026-05-06. **Owner:** Ramiro + Martin.
+
+---
+
+#### W5 · Notificación interna asesora
+
+**Trigger:** Appointment created en `Calendario HC Videollamadas`
+
+**Pasos:**
+| Tiempo | Canal | Destinatario | Mensaje |
+|---|---|---|---|
+| T+0 | GHL internal notification | Asesora asignada (Noemí o hermano de Óscar) | "Nueva videollamada agendada: {firstName} {lastName} · {hora} · Protocolo recomendado: {CRT/HRT} · Ciudad: {ciudad} · Score: {contact_score}" |
+| T+0 | Email | Asesora | Resumen completo del lead: respuestas del quiz, UTMs, qué ha probado antes (P4), objetivo (P5), flag médico si aplica |
+| T-1h | WhatsApp interno | Asesora | "Tu próxima cita en 1h: {firstName}. Resumen: {link_dashboard_lead}" |
+| T+15min post-cita | GHL task | Asesora | "Actualiza el pipeline de {firstName}: ¿pagó 125€? ¿quiere presencial? ¿no-show?" |
+
+---
+
+#### W6 · No-show videollamada
+
+**Trigger:** Appointment time + 30min · status != attended
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+30min | WhatsApp | "{firstName}, te esperamos para tu videollamada y no apareciste. ¿Pasó algo? Reagenda aquí sin problema: {link_calendar}" |
+| T+1d | WhatsApp | "No queremos que pierdas la oportunidad de saber qué necesita tu pelo. Re-agenda cuando quieras: {link_calendar}" |
+| T+3d | WhatsApp | Oferta alternativa: "Si la videollamada no te encaja, también podemos hacer la asesoría presencial en clínica. {link_agendar}" |
+| T+7d | Email | Último intento con testimonio + link |
+
+**Mover pipeline:** stage `No-show` automáticamente al disparar el trigger.
+
+---
+
+#### W7 · Post-videollamada sin pago
+
+**Trigger:** Status `attended` (videollamada terminada) · sin Stripe `payment_completed` después de 24h
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+24h | WhatsApp | "Hola {firstName}, ¿qué te pareció la asesoría con {asesora}? Si quieres seguir adelante con el Examen Tricometabólico, aquí tienes el link de pago seguro: {link_stripe_125}" |
+| T+3d | WhatsApp | Testimonio: "{Patricia G., 48} hizo el Tricometabolic hace 3 meses y los resultados son brutales. {link_stripe}" |
+| T+7d | WhatsApp | "Si prefieres pagar en clínica son 195€. Reserva aquí: {link_agendar_clinica}" |
+
+---
+
+#### W8 · Post-pago — pre-clínica
+
+**Trigger:** Stripe `payment_completed` con `metadata.ghl_contact_id`
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+0 inmediato | WhatsApp | "¡Pago confirmado {firstName}! Ahora elige el día y hora de tu Examen Tricometabólico en clínica: {link_koibox_filtered_by_city}" |
+| T+0 inmediato | Email | Recibo + qué esperar en la clínica + dirección + horarios |
+| T-3d cita clínica | WhatsApp | "En 3 días tu Examen Tricometabólico. Te recordamos lo que vamos a hacer: {link_microsite_personalizado}" |
+| T-1d | WhatsApp | "Mañana a las {hora} tu cita en {clinica}. Dirección: {direccion} · Cómo llegar: {link_maps}" |
+| T-2h | WhatsApp | "En 2 horas tu cita. Te esperamos en {clinica}. Por favor llega 10 min antes." |
+
+---
+
+#### W9 · Low intent — nurturing largo
+
+**Trigger:** Tag `intent:low` aplicado (la persona respondió "no" a "¿Estás preocupada por tu caída?")
+
+**Canal:** Solo Email (no WhatsApp para no quemar el número con audiencia fría)
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+3d | Email | Contenido educativo: "5 señales tempranas de caída capilar que mucha gente ignora" |
+| T+14d | Email | Testimonio: "Cómo Laura detectó su caída a tiempo y la frenó" |
+| T+30d | Email | Mini-encuesta: "¿Cómo está tu pelo este mes?" + CTA suave al quiz |
+| T+60d | Email | Última: "Si en algún momento quieres saber qué le pasa a tu pelo, aquí estamos. {link_quiz}" |
+
+**Exit condition:** intent change a `intent:high`, unsubscribe, o T+90d sin engagement → archivar.
+
+---
+
+#### W10 · Reactivación Lost/Cancelled
+
+**Trigger:** Stage `Lost/Cancelled` aplicado + 30 días sin movimiento
+
+**Pasos:**
+| Tiempo | Canal | Mensaje |
+|---|---|---|
+| T+30d | Email | "Hola {firstName}, ha pasado un tiempo. ¿Cómo va tu pelo? Si quieres retomar tu diagnóstico, aquí estamos. {link_quiz}" |
+| T+60d | Email | Caso de éxito con perfil similar |
+| T+90d | Email | Último intento con oferta especial (si aplica según política comercial) |
+
+---
+
+### 8.3 Mensajes base — tono y guidelines
+
+**Tono general:**
+- Cercano, empático, NO comercial agresivo (per feedback Albert sobre tono asesora)
+- Primera persona, segundo nombre cuando se conoce
+- Sin alarmismo ("se te cae el pelo!!")
+- Pone al paciente en control ("cuando estés lista", "si quieres")
+
+**Variables disponibles en todas las plantillas:**
+- `{firstName}`, `{lastName}`, `{fullName}`
+- `{protocol}` — CRT o HRT (solo en mujeres post-quiz)
+- `{ciudad}`
+- `{fecha}`, `{hora}` — para citas
+- `{link_quiz}`, `{link_calendar}`, `{link_agendar}`, `{link_stripe}`, `{link_microsite_personalizado}`
+
+**Compliance:**
+- Todos los emails deben incluir footer LOPD + unsubscribe link
+- WhatsApp: opt-out fácil ("Responde STOP para no recibir más mensajes")
+- No usar lenguaje médico ("diagnóstico", "te recetamos", etc.) en pre-clínica — solo "pre-recomendación" hasta confirmación médica
+
+---
+
+### 8.4 Pendientes para activar workflows
+
+| Tarea | Owner | Status |
+|---|---|---|
+| Microsite personalizado `/diagnostico/{leadId}` | Ramiro + Martin | 🔴 No empezado (bloqueante para W4) |
+| Webhook GHL appointment → backend para disparar W4 | Ramiro | 🟡 Diseño |
+| Webhook Stripe `payment_completed` → GHL `payment_completed` event | Ramiro + Martin | 🟡 Diseño |
+| Plantillas de mensaje (WhatsApp + Email) en GHL Templates | Ramiro | 🟡 Por escribir |
+| Numbers/identidades WhatsApp para no quemar el principal | Ramiro | 🟢 Decidir si 1 o 2 números |
+| Tag automation `intent:low` cuando llega `caida=no` del Meta form | Ramiro | 🟡 GHL workflow simple |
+| Stage automations: `Videocall booked`, `No-show`, `Paid`, etc. | Ramiro | 🟡 GHL workflow |
+
+---
+
+## 9. Estado del proyecto
 
 ### ✅ DONE (en producción)
 
