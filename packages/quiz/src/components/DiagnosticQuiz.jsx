@@ -327,12 +327,16 @@ const DiagnosticQuiz = ({ nicho = 'quiz-hospitalcapilar' }) => {
   if (phase === 'results' && sexo === 'mujer' && result) {
     const protocol = result.protocol;
     const content = PROTOCOL_CONTENT[protocol];
-    const firstName = (prefill.nombre || '').split(' ')[0];
-    const WA_PHONE = '34623457218';
-    const waText = encodeURIComponent(
-      `Hola, soy ${firstName || 'una paciente'}. Acabo de completar el diagnóstico online en Hospital Capilar. Mi pre-recomendación es Protocolo ${protocol}. Me gustaría agendar mi videollamada gratuita con una asesora.`
-    );
-    const waUrl = `https://wa.me/${WA_PHONE}?text=${waText}`;
+    const fullName = (prefill.nombre || '').trim();
+    const firstName = fullName.split(' ')[0];
+    const lastName = fullName.split(' ').slice(1).join(' ');
+    // GHL Calendar widget — "Calendario HC Videollamadas" (kZbXjtt6kmjj1phXdoqP)
+    const calendarParams = new URLSearchParams();
+    if (firstName) calendarParams.set('first_name', firstName);
+    if (lastName) calendarParams.set('last_name', lastName);
+    if (prefill.email) calendarParams.set('email', prefill.email);
+    if (prefill.telefono) calendarParams.set('phone', prefill.telefono);
+    const calendarUrl = `https://api.leadconnectorhq.com/widget/booking/kZbXjtt6kmjj1phXdoqP${calendarParams.toString() ? '?' + calendarParams.toString() : ''}`;
 
     return (
       <div className="min-h-screen bg-[#F7F8FA] font-sans">
@@ -413,17 +417,16 @@ const DiagnosticQuiz = ({ nicho = 'quiz-hospitalcapilar' }) => {
           <div className="bg-[#2C3E50] rounded-2xl p-6 text-white text-center">
             <h3 className="text-xl font-extrabold mb-2">¿Lista para el siguiente paso?</h3>
             <p className="text-sm text-gray-300 mb-5">
-              Agenda una videollamada gratuita con una asesora especializada. Te explicará el protocolo y resolverá todas tus dudas.
+              Agenda una videollamada gratuita con nuestro equipo médico. Te explicarán el protocolo y resolverán todas tus dudas.
             </p>
-            {/* TODO post-deploy: replace WhatsApp CTA with GHL videollamada calendar embed */}
             <a
-              href={waUrl}
+              href={calendarUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => analytics.trackEvent('diagnostic_quiz_cta_clicked', { sexo: 'mujer', protocol, channel: 'whatsapp' })}
+              onClick={() => analytics.trackEvent('diagnostic_quiz_cta_clicked', { sexo: 'mujer', protocol, channel: 'ghl_calendar' })}
               className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-[#4CA994] hover:bg-[#3d9583] text-white font-bold text-base shadow-lg transition-all w-full justify-center"
             >
-              Quiero recuperar mi pelo
+              Agenda una videollamada con nuestro equipo médico
               <ArrowRight size={20} />
             </a>
             <p className="text-xs text-gray-400 mt-3">100% gratuita · Sin compromiso · Lunes a domingo</p>
