@@ -200,18 +200,29 @@ const DiagnosticQuiz = ({ nicho = 'quiz-hospitalcapilar' }) => {
   // Note: we always show the landing first, even for Meta leads. This lets us
   // iterate on the hero/landing copy independently of routing logic. The `v=`
   // param is still used to pre-select sex so the quiz skips the sex-select step.
+  //
+  // Defensive: in Meta's "Vista previa" mode the macros come through unsubstituted
+  // as literal strings like "{{form.full_name}}". Strip those so we don't show
+  // template syntax to users.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const v = params.get('v'); // mujer | hombre — preselects sex but doesn't skip landing
+
+    const clean = (value) => {
+      if (!value) return '';
+      if (value.startsWith('{{') || value.includes('{{form.') || value.includes('{{lead_id') || value.includes('{{ad.')) return '';
+      return value;
+    };
+
+    const v = clean(params.get('v')); // mujer | hombre — preselects sex but doesn't skip landing
 
     setPrefill({
-      leadId: params.get('leadId') || '',
-      nombre: params.get('nombre') || '',
-      email: params.get('email') || '',
-      telefono: params.get('telefono') || '',
-      ciudad: params.get('ciudad') || '',
-      caida: params.get('caida') || '',
+      leadId: clean(params.get('leadId')),
+      nombre: clean(params.get('nombre')),
+      email: clean(params.get('email')),
+      telefono: clean(params.get('telefono')),
+      ciudad: clean(params.get('ciudad')),
+      caida: clean(params.get('caida')),
     });
 
     if (v === 'mujer' || v === 'hombre') {
