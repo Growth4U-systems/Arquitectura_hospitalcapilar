@@ -102,6 +102,30 @@ https://diagnostico.hospitalcapilar.com/quiz-hospitalcapilar/?v={{form.sexo}}&ca
 |---|---|---|---|
 | Sexo Lead Form | `ySOJCraPl26CR161KFxW` | SINGLE_OPTIONS | mujer, hombre |
 | Preocupacion caida | `hLiD1jVS5UkzJUjLWo8g` | SINGLE_OPTIONS | si, no |
+| link_quiz | (TBD por Ramiro) | TEXT | URL del quiz prerellenada con datos del contacto |
+
+### Custom field `link_quiz` — propósito y populación
+
+**Owner:** Ramiro · **Status:** En implementación 2026-05-13
+
+Almacena la URL completa al quiz prerellenada con los datos del contacto. Lo usa el **workflow W1 (Quiz incompleto)** para enviar al lead un link que retoma el quiz con sus datos sin tener que reescribirlos.
+
+**Plantilla de la URL:**
+
+```
+https://diagnostico.hospitalcapilar.com/quiz-hospitalcapilar/?v={{contact.sexo_lead_form}}&caida={{contact.preocupacion_caida}}&ciudad={{contact.city}}&nombre={{contact.first_name}}+{{contact.last_name}}&email={{contact.email}}&telefono={{contact.phone}}&leadId={{contact.id}}&utm_source={{contact.utm_source}}&utm_medium={{contact.utm_medium}}&utm_campaign={{contact.utm_campaign}}&utm_content={{contact.utm_content}}&utm_term={{contact.utm_term}}
+```
+
+**Workflow GHL para popular el campo:**
+
+- **Trigger:** Contact Created
+- **Filtro:** `Funnel Type = quiz_hospitalcapilar` (o `Door` equivalente)
+- **Action:** Update Contact Field → `link_quiz` = plantilla de arriba con las variables `{{contact.X}}`
+
+**Caveats:**
+- Variables custom usan `field_key` no ID — verificar `contact.sexo_lead_form` y `contact.preocupacion_caida`
+- Espacios en nombres llegan como `+` o `%20` automáticamente
+- Valores con tildes o caracteres especiales pueden romper la URL — el quiz sanitiza macros literales `{{form.X}}` pero no caracteres extraños. Probar con lead test antes de activar W1.
 
 ### Custom fields preexistentes relevantes
 
@@ -373,13 +397,14 @@ Cada workflow se monta en GHL → Automations. Convención de naming: `[QHC] · 
 
 **Trigger:** Form Meta enviado · sin evento `diagnostic_quiz_completed` después de 30 minutos
 **Canal:** WhatsApp
+**Pre-requisito:** custom field `{{contact.link_quiz}}` populado previamente (ver sección de GHL Setup)
 
 | Tiempo | Mensaje |
 |---|---|
-| T+30min | "Hola {firstName}, vi que empezaste tu diagnóstico capilar y no lo terminaste. ¿Lo retomas? {link_quiz}" |
-| T+1d | "Solo te toma 1 minuto. {link_quiz}" |
-| T+3d | Educativo: "40% de mujeres sufre caída, 80% mal diagnosticadas. Tu pre-diagnóstico es el primer paso. {link_quiz}" |
-| T+7d | Último intento: "Pre-diagnóstico gratis. {link_quiz}" |
+| T+30min | "Hola {{contact.first_name}}, vi que empezaste tu diagnóstico capilar y no lo terminaste. ¿Lo retomas? {{contact.link_quiz}}" |
+| T+1d | "Solo te toma 1 minuto. {{contact.link_quiz}}" |
+| T+3d | Educativo: "40% de mujeres sufre caída, 80% mal diagnosticadas. Tu pre-diagnóstico es el primer paso. {{contact.link_quiz}}" |
+| T+7d | Último intento: "Pre-diagnóstico gratis. {{contact.link_quiz}}" |
 
 **Exit:** `quiz_completed` event, cita agendada, o unsubscribe.
 
@@ -515,6 +540,7 @@ Cada workflow se monta en GHL → Automations. Convención de naming: `[QHC] · 
 | Plantillas de mensaje (WhatsApp) en GHL Templates | Ramiro | 🟡 Por escribir |
 | Tag automation `intent:low` cuando llega `caida=no` del Meta form | Ramiro | 🟡 GHL workflow simple |
 | Stage automations: `Videocall booked`, `No-show`, `Paid`, etc. | Ramiro | 🟡 GHL workflow |
+| **Custom field `link_quiz` + workflow de population** (pre-requisito de W1) | Ramiro | 🟡 En implementación 2026-05-13 |
 
 **Microsite personalizado descartado** — se simplificó W2 a recordatorios solo. Si en el futuro queremos volver a la versión rica con microsite, lo añadimos como W11 sin bloquear el lanzamiento.
 
